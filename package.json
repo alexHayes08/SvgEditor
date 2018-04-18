@@ -1,0 +1,27 @@
+{
+  "name": "svgeditor",
+  "version": "1.0.0",
+  "description": "Another svg editor for the web",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexHayes08/SvgEditor.git"
+  },
+  "keywords": [
+    "Svg"
+  ],
+  "author": "alex.c.hayes08@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alexHayes08/SvgEditor/issues"
+  },
+  "homepage": "https://github.com/alexHayes08/SvgEditor#readme",
+  "devDependencies": {
+    "webpack": "^4.6.0",
+    "webpack-dev-server": "^3.1.3"
+  },
+  "dependencies": {}
+}

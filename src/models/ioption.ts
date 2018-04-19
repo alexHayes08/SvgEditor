@@ -32,10 +32,10 @@ export class StringOption implements IOption<string> {
     public parseNode(node: Attr|Element): void {
         if (NodeHelper.isAttr(node)) {
             let attr = <Attr>node;
-            this.value = attr.value;
+            this.value = attr.nodeValue || undefined;
         } else if (NodeHelper.isElement(node)) {
             let element = <Element>node;
-            this.value = element.textContent || undefined;
+            this.value = element.innerHTML;
         }
     }
 }

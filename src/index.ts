@@ -2,11 +2,9 @@
 
 import ApertureSvgEditor from './models/aperture-svg-editor';
 
-declare var SvgEditors: ApertureSvgEditor[];
-
 $(function() {
-    SvgEditors = [];
+    let Editors: ApertureSvgEditor[] = [];
     $('aperture-svg-editor').each(function() {
-        SvgEditors.push(new ApertureSvgEditor(this));
+        Editors.push(new ApertureSvgEditor(this));
     });
 });

@@ -1,5 +1,8 @@
 import IOption, { BooleanOption, IFromNode, NumberOption, StringOption } from "./ioption";
 import NodeHelper from '../helpers/node-helper';
+import SvgOperationsService from "../services/svg-operations-service";
+import SvgTypeService from "../services/svg-type-service";
+import SvgUndoManagerService from "../services/svg-undo-manager-service";
 
 class EditorCssOptions {
     
@@ -67,7 +70,7 @@ export class ApertureSvgEditorOptions implements IFromNode {
     /**
      * Css properties for the SVGElement.
      */
-    public svgElementOptions: IOption<SVGElementCSSOptions>;
+    public svgElementCssOptions: IOption<SVGElementCSSOptions>;
 
     /**
      * Whether to allow operators to apply to multiple svg child elements.
@@ -107,10 +110,36 @@ export class ApertureSvgEditorOptions implements IFromNode {
         };
 
         // Init svgElementOptions
-        this.svgElementOptions = {
+        this.svgElementCssOptions = {
             name: 'svg-element-options',
             parseNode: function(node: Attr|Element): void {
+                
+                // Ignore if not an element
+                if (NodeHelper.isElement(node)) {
+                    let element = <Element>node;
+                    let subNodes = NodeHelper.getChildNodesArray(element);
+                    let svgElementCssOptions = new SVGElementCSSOptions();
 
+                    for (let subNode of subNodes) {
+                        let subNodeName = NodeHelper.getNameOfNode(subNode);
+                        switch(subNodeName) {
+                            case svgElementCssOptions.height.name:
+                                svgElementCssOptions.height.parseNode(subNode);
+                                break;
+                            case svgElementCssOptions.width.name:
+                                svgElementCssOptions.width.parseNode(subNode);
+                                break;
+                            case svgElementCssOptions.xOffset.name:
+                                svgElementCssOptions.xOffset.parseNode(subNode);
+                                break;
+                            case svgElementCssOptions.yOffset.name:
+                                svgElementCssOptions.yOffset.parseNode(subNode);
+                                break;
+                        }
+                    }
+
+                    this.value = svgElementCssOptions;
+                }
             },
             value: undefined
         }
@@ -153,6 +182,12 @@ export default class ApertureSvgEditor {
      */
     private element: Element;
 
+    private nodes: Array<Attr|Element>;
+
+    private svgElement: SVGElement;
+
+    private services: object;
+
     /**
      * The settings of this class.
      */
@@ -164,7 +199,15 @@ export default class ApertureSvgEditor {
 
     public constructor(element: Element) {
         this.element = element;
+        this.nodes = [];
         this.settings = new ApertureSvgEditorOptions();
+        
+        // Init all services
+        this.services = {
+            SvgOperationsService,
+            SvgTypeService,
+            SvgUndoManagerService
+        };
 
         // Retrieve the options child element
         let optionEls = element.getElementsByTagName('options');
@@ -172,11 +215,27 @@ export default class ApertureSvgEditor {
 
             // Init settings from node
             this.settings.parseNode(optionEls[0]);
-
         }
 
         // Now that the settings have been retrieved, update the editor accordingly
-        // TODO: Implement settings
+        
+        // Handle svgElementSelector
+        if (this.settings.svgElementSelector.value != null) {
+            let element = document.querySelector(this.settings.svgElementSelector.value || '');
+
+            // Verify the element exists
+           if (element == null) {
+                throw new Error(`Failed to locate an SVGElement using the css query: ${this.settings.svgElementSelector.value}`);
+           } else {
+                this.svgElement = <SVGElement>element;
+           }
+        } else {
+            let svgCanvas = document.createElement("svg");
+            this.element.appendChild(svgCanvas);
+            this.svgElement = element.getElementsByTagName('svg')[0];
+        }
+
+        // TODO:  Finish implement settings
     }
 
     // [End Ctor]

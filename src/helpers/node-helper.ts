@@ -21,7 +21,7 @@ export default class NodeHelper {
         
         if (NodeHelper.isAttr(node)) {
             let attr = <Attr>node;
-            name = attr.name;
+            name = attr.nodeName;
         } else if (NodeHelper.isElement(node)) {
             let element = <Element>node;
             name = element.tagName;
@@ -52,5 +52,23 @@ export default class NodeHelper {
         }
     
         return nodes;
+    }
+
+    /**
+     * Returns the stringified node.
+     * @param node
+     */
+    static stringifyNode(node: Attr|Element): string {
+        let stringified = '';
+
+        if (NodeHelper.isAttr(node)) {
+            let attr = <Attr>node;
+            stringified = `${attr.nodeName}="${attr.nodeValue}"`;
+        } else if (NodeHelper.isElement(node)) {
+            let element = <Element>node;
+            stringified = element.outerHTML;
+        }
+
+        return stringified;
     }
 }

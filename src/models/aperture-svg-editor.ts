@@ -1,6 +1,6 @@
 import IOption, { BooleanOption, IFromNode, NumberOption, StringOption } from "./ioption";
 import NodeHelper from '../helpers/node-helper';
-import SvgOperationsService from "../services/svg-operations-service";
+import SvgActionService from "../services/svg-action-service";
 import SvgTypeService from "../services/svg-type-service";
 import SvgUndoManagerService from "../services/svg-undo-manager-service";
 
@@ -204,7 +204,7 @@ export default class ApertureSvgEditor {
         
         // Init all services
         this.services = {
-            SvgOperationsService,
+            SvgActionService,
             SvgTypeService,
             SvgUndoManagerService
         };

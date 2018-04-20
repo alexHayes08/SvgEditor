@@ -8,6 +8,18 @@ import ISvgType from "./isvg-type";
 export default interface ISvgAction {
     
     /**
+     * A list of categories the action falls under. IE: An 'export' action
+     * might fall under a 'File' category while a 'scale' action might fall
+     * under a 'Transform' category.
+     */
+    readonly categories: string[];
+
+    /**
+     * A user friendly name of the action. IE: 'drag', 'cut', 'rotate', etc...
+     */
+    readonly name: string;
+
+    /**
      * Defines which ISvgTypes this operation can work on.
      */
     operatesOn: Array<ISvgType>;

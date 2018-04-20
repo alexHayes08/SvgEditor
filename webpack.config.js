@@ -1,6 +1,5 @@
 const path = require("path");
 const webpack = require("webpack");
-
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
@@ -43,8 +42,7 @@ module.exports = {
         )
     ],
     devServer: {
-        contentBase: [path.join(__dirname, "dist")],
-        compress: true,
+        contentBase: ["./dist"],
         index: "index.html",
         port: 8080
     }

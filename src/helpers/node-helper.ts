@@ -21,10 +21,10 @@ export default class NodeHelper {
         
         if (NodeHelper.isAttr(node)) {
             let attr = <Attr>node;
-            name = attr.nodeName;
+            name = attr.nodeName.toLowerCase();
         } else if (NodeHelper.isElement(node)) {
             let element = <Element>node;
-            name = element.tagName;
+            name = element.tagName.toLowerCase();
         }
     
         return name;

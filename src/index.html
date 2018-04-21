@@ -31,6 +31,19 @@
                 height: 100px;
                 width: 100%;
             }
+
+            /**
+             * [aperture-svg-editor]
+             */
+
+            aperture-svg-editor options {
+                display: none;
+            }
+
+            /**
+             * [End aperture-svg-editor]
+             */
+
         </style>
     </head>
     <body>
@@ -42,8 +55,9 @@
         </nav>
         <main>
             <div>This is the main</div>
+            <svg id="demo"></svg>
             <aperture-svg-editor>
-                <options cool-attribute="this is a string">
+                <options svg-element-selector="#demo">
                     <svg-element-css-options>
                         <height>50%</height>
                         <width>50%</width>

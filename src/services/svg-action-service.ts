@@ -64,8 +64,11 @@ export default class SvgActionService {
             return;
         }
 
-        // We're able to register
+        // We're able to register the action
         // Step 1: Add categories to cached_categories
+        this.cached_categories = this.cached_categories.concat(action.categories);
+
+        this.registeredActions.push(action);
     }
 
     // [End Functions]

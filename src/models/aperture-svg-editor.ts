@@ -88,8 +88,7 @@ export class ApertureSvgEditorOptions implements IFromNode {
                 
                 // Ignore if not element
                 if (NodeHelper.isElement(node)) {
-                    let element = <Element>node;
-                    let subNodes = NodeHelper.getChildNodesArray(element);
+                    let subNodes = NodeHelper.getChildNodesArray(node);
                     let editorOptions = new EditorCssOptions();
     
                     for (let subNode of subNodes) {
@@ -149,24 +148,23 @@ export class ApertureSvgEditorOptions implements IFromNode {
         
         // Ignore if node isn't an element
         if (NodeHelper.isElement(node)) {
-            let element = <Element>node;
             let allNodes = NodeHelper.getChildNodesArray(node);
             let svgElementCSSOptions = new SVGElementCSSOptions();
 
             for (let subNode of allNodes) {
                 let subNodeName = NodeHelper.getNameOfNode(subNode);
                 switch(subNodeName) {
-                    case svgElementCSSOptions.height.name:
-                        svgElementCSSOptions.height.parseNode(subNode);
+                    case this.allowMultiSelect.name:
+                        this.allowMultiSelect.parseNode(subNode);
                         break;
-                    case svgElementCSSOptions.width.name:
-                        svgElementCSSOptions.width.parseNode(subNode);
+                    case this.editorCssOptions.name:
+                        this.editorCssOptions.parseNode(subNode);
                         break;
-                    case svgElementCSSOptions.xOffset.name:
-                        svgElementCSSOptions.xOffset.parseNode(subNode);
+                    case this.svgElementCssOptions.name:
+                        this.svgElementCssOptions.parseNode(subNode);
                         break;
-                    case svgElementCSSOptions.yOffset.name:
-                        svgElementCSSOptions.yOffset.parseNode(subNode);
+                    case this.svgElementSelector.name:
+                        this.svgElementSelector.parseNode(subNode);
                         break;
                 }
             }

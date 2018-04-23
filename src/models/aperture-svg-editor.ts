@@ -1,8 +1,20 @@
+import {AutoWired, Inject} from "typescript-ioc";
+
 import IOption, { BooleanOption, IFromNode, NumberOption, StringOption } from "./ioption";
 import NodeHelper from '../helpers/node-helper';
 import SvgActionService from "../services/svg-action-service";
 import SvgTypeService from "../services/svg-type-service";
 import SvgUndoManagerService from "../services/svg-undo-manager-service";
+
+export const NS = {
+    HTML: 'http://www.w3.org/1999/xhtml',
+    MATH: 'http://www.w3.org/1998/Math/MathML',
+    SE: 'http://svg-edit.googlecode.com',
+    SVG: 'http://www.w3.org/2000/svg',
+    XLINK: 'http://www.w3.org/1999/xlink',
+    XML: 'http://www.w3.org/XML/1998/namespace',
+    XMLNS: 'http://www.w3.org/2000/xmlns/' // see http://www.w3.org/TR/REC-xml-names/#xmlReserved
+};
 
 class EditorCssOptions {
     
@@ -182,9 +194,10 @@ export default class ApertureSvgEditor {
 
     private nodes: Array<Attr|Element>;
 
-    private svgElement: SVGElement;
+    private svgElements: SVGElement[];
 
-    private services: object;
+    @Inject
+    public svgActionService: SvgActionService;
 
     /**
      * The settings of this class.
@@ -199,13 +212,8 @@ export default class ApertureSvgEditor {
         this.element = element;
         this.nodes = [];
         this.settings = new ApertureSvgEditorOptions();
-        
-        // Init all services
-        this.services = {
-            SvgActionService,
-            SvgTypeService,
-            SvgUndoManagerService
-        };
+        this.svgActionService = new SvgActionService();
+        this.svgElements = [];
 
         // Retrieve the options child element
         let optionEls = element.getElementsByTagName('options');
@@ -225,12 +233,15 @@ export default class ApertureSvgEditor {
            if (element == null) {
                 throw new Error(`Failed to locate an SVGElement using the css query: ${this.settings.svgElementSelector.value}`);
            } else {
-                this.svgElement = <SVGElement>element;
+                this.registerSvgAsEditor(<SVGElement>element);
            }
         } else {
-            let svgCanvas = document.createElement("svg");
+            let svgCanvas = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             this.element.appendChild(svgCanvas);
-            this.svgElement = element.getElementsByTagName('svg')[0];
+            let elements = element.getElementsByTagName('svg');
+            for (let i = 0; i < elements.length; i++) {
+                this.registerSvgAsEditor(elements[i]);
+            }
         }
 
         // TODO:  Finish implement settings
@@ -240,9 +251,17 @@ export default class ApertureSvgEditor {
 
     // [Properties]
 
+    public get editors() {
+        return this.svgElements;
+    }
+
     // [End Properties]
 
     // [Functions]
+
+    public registerSvgAsEditor(svgElement: SVGElement): void {
+        this.svgElements.push(svgElement);
+    }
 
     // [End Functions]
 }

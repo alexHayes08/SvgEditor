@@ -1,4 +1,5 @@
 import ISvgAction from '../models/isvg-action';
+import SvgTypeService from './svg-type-service';
 import SvgUndoManagerService from './svg-undo-manager-service';
 
 export default class SvgActionService {
@@ -6,6 +7,7 @@ export default class SvgActionService {
 
     private cached_categories: string[];
     private registeredActions: ISvgAction[];
+    private svgTypeService: SvgTypeService;
     private svgUndoManagerService: SvgUndoManagerService;
 
     // [End Fields]
@@ -15,6 +17,7 @@ export default class SvgActionService {
     constructor() {
         this.cached_categories = [];
         this.registeredActions = [];
+        this.svgTypeService = new SvgTypeService();
         this.svgUndoManagerService = new SvgUndoManagerService();
     }
 

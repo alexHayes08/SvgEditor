@@ -2,35 +2,138 @@
 <html>
     <head>
         <style>
+
+            /**
+             * [Layout]
+             */
+
             body {
+                display: grid;
                 font-family: sans-serif;
+                margin: 0;
             }
 
             header {
+                align-items: center;
                 background-color: dodgerblue;
                 color: white;
-                display: block;
-                height: 300px;
-                width: 100%;
+                display: flex;
+                grid-area: headerArea;
+                text-indent: 40px;
             }
 
             nav {
+                align-items: center;
                 background-color: darkslateblue;
                 color: white;
-                display: block;
+                display: flex;
+                grid-area: navArea;
+                justify-content: center;
             }
 
             main {
-                display: block;
-                min-height: calc(100vh - 400px);
+                box-sizing: border-box;
+                grid-area: mainArea;
+                padding: 1em;
             }
 
             footer {
+                align-items: center;
                 background-color: darkgray;
-                display: block;
-                height: 100px;
-                width: 100%;
+                display: flex;
+                grid-area: footerArea;
+                justify-content: center;
+                height: 300px;
             }
+
+            @media (min-width: 0px) {
+                body {
+                    grid-template-areas: 'headerArea headerArea headerArea headerArea'
+                        'navArea navArea navArea navArea'
+                        'mainArea mainArea mainArea mainArea'
+                        'footerArea footerArea footerArea footerArea';
+                }
+                
+                header {
+                    height: 100px;
+                    justify-content: center;
+                    text-indent: 0;
+                }
+
+                main {
+                    min-height: calc(100vh - 100px - 300px - 50px);
+                }
+
+                nav {
+                    height: 50px;
+                }
+            }
+
+            @media (min-width: 768px) {
+                body {
+                    grid-template-areas: 'headerArea headerArea headerArea headerArea'
+                        'navArea navArea navArea navArea'
+                        'mainArea mainArea mainArea mainArea'
+                        'footerArea footerArea footerArea footerArea';
+                }
+                
+                header {
+                    height: 100px;
+                }
+
+                main {
+                    min-height: calc(100vh - 100px - 300px - 50px);
+                }
+
+                nav {
+                    height: 50px;
+                }
+            }
+
+            @media (min-width: 1280px) {
+                body {
+                    grid-template-areas: 'headerArea headerArea headerArea headerArea'
+                        'navArea navArea navArea navArea'
+                        '. mainArea mainArea .'
+                        'footerArea footerArea footerArea footerArea';
+                }
+                
+                header {
+                    height: 300px;
+                }
+
+                main {
+                    min-height: calc(100vh - 300px - 300px - 50px);
+                }
+
+                nav {
+                    height: 50px;
+                }
+            }
+
+            @media (min-width: 1440px) {
+                body {
+                    grid-template-areas: 'headerArea headerArea headerArea headerArea'
+                        'navArea mainArea mainArea .'
+                        'footerArea footerArea footerArea footerArea';
+                }
+
+                main {
+                    min-height: calc(100vh - 300px - 300px);
+                }
+                
+                header {
+                    height: 300px;
+                }
+
+                nav {
+                    height: 100%;
+                }
+            }
+
+            /**
+             * [End Layout]
+             */
 
             /**
              * [aperture-svg-editor]
@@ -44,20 +147,64 @@
              * [End aperture-svg-editor]
              */
 
+            button {
+                margin: 1em 1em;
+            }
+
+            svg {
+                background-color: white;
+                display: none;
+                outline: 1px solid rgba(0,0,0,.25);
+                height: 500px;
+                width: 500px;
+            }
+
+            svg.active {
+                display: block;
+            }
+
+            #editor {
+                background-color: #efefef;
+                box-shadow: 2px 2px 4px rgba(0,0,0,.25);
+            }
+
+            #editorCavasContainer {
+                align-items: center;
+                display: flex;
+                justify-content: center;
+            }
+
+            #editorControlsContainer {
+                align-items: center;
+                display: flex;
+                justify-content: center;
+            }
         </style>
     </head>
     <body>
         <header>
-            <h1>This is the header</h1>
+            <h1>header</h1>
         </header>
         <nav>
-            <div>This is the nav</div>
+            <div>Nav</div>
         </nav>
         <main>
-            <div>This is the main</div>
-            <svg id="demo"></svg>
+            <div>Demo of the Svg Editor</div>
+            <div id="editor">
+                <div id="editorControlsContainer">
+                    <select id="changeEditor"></select>
+                    <button id="addSquare">Square+</button>
+                    <button id="addCircle">Circle+</button>
+                    <button id="addTriangle">Triangle+</button>
+                </div>
+                <hr>
+                <div id="editorCavasContainer">
+                    <svg id="demoA" class="active" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"></svg>
+                    <svg id="demoB" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"></svg>
+                </div>
+            </div>
             <aperture-svg-editor>
-                <options svg-element-selector="#demo">
+                <options svg-element-selector="#demoA,#demoB">
                     <svg-element-css-options>
                         <height>50%</height>
                         <width>50%</width>
@@ -69,8 +216,7 @@
             </aperture-svg-editor>
         </main>
         <footer>
-            <div>This is the footer</div>
+            <div>Footer</div>
         </footer>
-        <script src="main.js"></script>
     </body>
 </html>

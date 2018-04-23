@@ -1,4 +1,4 @@
-import { AutoWired, Singleton } from "typescript-ioc";
+// import { AutoWired, Singleton } from "typescript-ioc";
 
 import ISvgAction from "../models/isvg-action";
 import ISvgState from "../models/isvg-state";
@@ -12,7 +12,7 @@ export interface IStorableAction {
     }>
 }
 
-@Singleton
+// @Singleton
 export default class SvgUndoManagerService {
     // [Fields]
 
@@ -134,6 +134,10 @@ export default class SvgUndoManagerService {
         if (!this.canUndo) {
             return;
         }
+    }
+
+    private isOutOfBounds(svgElement: SVGElement): boolean {
+        return false;
     }
 
     // [End Functions]

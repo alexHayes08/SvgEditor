@@ -1,4 +1,4 @@
-import NodeHelper from '../helpers/node-helper';
+// import NodeHelper from '../helpers/node-helper';
 
 /**
  * All SVG types must be implement this interface.

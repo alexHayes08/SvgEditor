@@ -143,6 +143,10 @@
                 display: none;
             }
 
+            svg *:not(.editableAreaRect) {
+                cursor: pointer;
+            }
+
             /**
              * [End aperture-svg-editor]
              */
@@ -193,13 +197,35 @@
             <div id="editor">
                 <div id="editorControlsContainer">
                     <select id="changeEditor"></select>
+                    <select id="changeCurrentEditorMask">
+                        <option selected value="-1">No mask</option>
+                    </select>
                     <button id="addSquare">Square+</button>
                     <button id="addCircle">Circle+</button>
                     <button id="addTriangle">Triangle+</button>
                 </div>
                 <hr>
                 <div id="editorCavasContainer">
-                    <svg id="demoA" class="active" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"></svg>
+                    <svg id="demoA" class="active" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+                        <defs>
+                            <rect id="editableAreaRect" class="editableAreaRect" x="10" x="10" y="10" height="480" width="480" fill="inherit" stroke="inherit"></rect>
+                            <circle id="editableAreaRect2" class="editableAreaRect" cx="250" cy="250" r="250" fill="inherit" stroke="inherit"></circle>
+                            <clipPath id="editableArea">
+                                <!-- <circle cx="100" cy="100" r="5"></circle> -->
+                                <!-- <rect x="10" x="10" y="10" height="480" width="480"></rect> -->
+                                <use href="#editableAreaRect"></use>
+                            </clipPath>
+                        </defs>
+                        <use id="editAreaMask" class="editAreaMask" fill="rgba(0,0,0,0.125)" stroke="black" stroke-width="2" stroke-linejoin="miter" stroke-dasharray="5,5"></use>
+                        <!-- <rect href="url(#editableAreaRect)" x="10" y="10" height="480" width="480" fill="rgba(0,0,0,0.125)" stroke="black" stroke-width="2" stroke-linejoin="miter" stroke-dasharray="5,5"></rect> -->
+                        <g class="editor">
+                            <rect x="100" y="100" height="75" width="200" fill="red"></rect>
+                            <circle cx="15" cy="100" r="40" fill="orange"></circle>
+                        </g>
+                        <g class="handles">
+                            <rect x="0" y="0" height="75" width="100" fill="blue"></rect>
+                        </g>
+                    </svg>
                     <svg id="demoB" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500"></svg>
                 </div>
             </div>
@@ -218,5 +244,9 @@
         <footer>
             <div>Footer</div>
         </footer>
+        <script
+            src="http://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
     </body>
 </html>

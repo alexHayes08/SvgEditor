@@ -1,4 +1,4 @@
-import {AutoWired, Inject} from "typescript-ioc";
+// import {AutoWired, Inject} from "typescript-ioc";
 
 import IOption, { BooleanOption, IFromNode, NumberOption, StringOption } from "./ioption";
 import NodeHelper from '../helpers/node-helper';
@@ -196,7 +196,7 @@ export default class ApertureSvgEditor {
 
     private svgElements: SVGElement[];
 
-    @Inject
+    // @Inject
     public svgActionService: SvgActionService;
 
     /**
@@ -236,7 +236,32 @@ export default class ApertureSvgEditor {
                 this.registerSvgAsEditor(<SVGElement>element);
            }
         } else {
-            let svgCanvas = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+            // Move to mask service?
+
+            // Create canvas
+            let svgCanvas = document.createElementNS(NS.SVG, "svg");
+
+            // Create defs
+            let defsEl = document.createElementNS(NS.SVG, "defs");
+
+            // Create the editableAreaDef
+            let editableAreaDef = document.createElementNS(NS.SVG, "clipPath");
+            editableAreaDef.setAttribute("id", "editableArea"); // Move id to const
+
+            // Create default clipPath
+            let defaultClipPath = document.createElementNS(NS.SVG, "use");
+            defaultClipPath.setAttribute("href", "#editableAreaRect");
+
+            // Create mask
+            let maskEl = document.createElementNS(NS.SVG, "use");
+
+            // Create the editor
+            let editorEl = document.createElementNS(NS.SVG, "g");
+
+            // Create the handles
+            let handles = document.createElementNS(NS.SVG, "g");
+
             this.element.appendChild(svgCanvas);
             let elements = element.getElementsByTagName('svg');
             for (let i = 0; i < elements.length; i++) {
@@ -261,6 +286,47 @@ export default class ApertureSvgEditor {
 
     public registerSvgAsEditor(svgElement: SVGElement): void {
         this.svgElements.push(svgElement);
+    }
+
+    public switchMaskTo(maskId: string|null): void {
+        this.editors.map(editor => {
+            let $editor = $(editor);
+            if (maskId == null) {
+                $editor.find(".editAreaMask").removeAttr("href");
+                $editor.find(".editor").removeAttr("clip-path");
+            } else {
+                $editor.find(".editAreaMask").attr("href", `#${maskId}`);
+                $editor.find(".editor").attr("clip-path", "url(#editableArea)");
+                $editor.find("defs clipPath#editableArea use").attr("href", `#${maskId}`);
+            }
+        });
+    }
+
+    /**
+     * TODO: Implement function
+     * @param numbers 
+     */
+    public createMask(...numbers: number[]) {
+        console.log("TODO")
+    }
+
+    public addRectangle(x: number, y: number, width: number, height: number): void {
+        let rectEl = document.createElementNS(NS.SVG, "rect");
+        const colors = [
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "blue",
+            "indigo",
+            "violet"
+        ];
+        let fill = colors[Math.floor(Math.random() * colors.length)];
+        $(rectEl).attr({ x, y, width, height, fill });
+        this.editors.map(editor => {
+            let $editor = $(editor);
+            $editor.find(".editor").append(rectEl);
+        });
     }
 
     // [End Functions]

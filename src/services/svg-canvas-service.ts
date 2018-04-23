@@ -1,6 +1,6 @@
-import { AutoWired, Singleton } from 'typescript-ioc';
+// import { AutoWired, Singleton } from 'typescript-ioc';
 
-@Singleton
+// @Singleton
 export default class SvgCanvasService {
     private svgCanvases: SVGElement[];
 

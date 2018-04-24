@@ -1,11 +1,12 @@
 // import {AutoWired, Inject} from "typescript-ioc";
 
-import IOption, { BooleanOption, IFromNode, NumberOption, StringOption } from "./ioption";
-import { NS } from './namespaces';
-import NodeHelper from '../helpers/node-helper';
+import { BooleanOption, IFromNode, IOption, NumberOption, StringOption } from "./ioption";
+import { NS } from "../helpers/namespaces-helper";
+import * as NodeHelper from "../helpers/node-helper";
 import SvgActionService from "../services/svg-action-service";
-import SvgTypeService from "../services/svg-type-service";
-import SvgUndoManagerService from "../services/svg-undo-manager-service";
+import { SvgTypeService } from "../services/svg-type-service";
+import { SvgUndoManagerService } from "../services/svg-undo-manager-service";
+import { SvgCanvasService } from "../services/svg-canvas-service";
 
 class EditorCssOptions {
 
@@ -20,8 +21,8 @@ class EditorCssOptions {
     width: StringOption;
 
     constructor() {
-        this.height = new StringOption('height');
-        this.width = new StringOption('width');
+        this.height = new StringOption("height");
+        this.width = new StringOption("width");
     }
 }
 
@@ -47,10 +48,10 @@ class SVGElementCSSOptions {
     yOffset: StringOption;
 
     constructor() {
-        this.height = new StringOption('height');
-        this.width = new StringOption('width');
-        this.xOffset = new StringOption('x-offset');
-        this.yOffset = new StringOption('y-offset');
+        this.height = new StringOption("height");
+        this.width = new StringOption("width");
+        this.xOffset = new StringOption("x-offset");
+        this.yOffset = new StringOption("y-offset");
     }
 }
 
@@ -81,12 +82,12 @@ export class ApertureSvgEditorOptions implements IFromNode {
     public allowMultiSelect: BooleanOption;
 
     public constructor() {
-        this.allowMultiSelect = new BooleanOption('allow-multi-select');
-        this.svgElementSelector = new StringOption('svg-element-selector');
+        this.allowMultiSelect = new BooleanOption("allow-multi-select");
+        this.svgElementSelector = new StringOption("svg-element-selector");
         
         // Init editorCssOptions
         this.editorCssOptions = {
-            name: 'editor-options',
+            name: "editor-options",
             parseNode: function(node: Attr|Element): void {
                 
                 // Ignore if not element
@@ -113,7 +114,7 @@ export class ApertureSvgEditorOptions implements IFromNode {
 
         // Init svgElementOptions
         this.svgElementCssOptions = {
-            name: 'svg-element-options',
+            name: "svg-element-options",
             parseNode: function(node: Attr|Element): void {
                 
                 // Ignore if not an element
@@ -175,8 +176,10 @@ export class ApertureSvgEditorOptions implements IFromNode {
     }
 }
 
-export default class ApertureSvgEditor {
+export class ApertureSvgEditor {
     // [Fields]
+
+    public static INIT_FINISHED_EVT_NAME: string = "init_finished";
 
     /**
      * An element with a tag name of 'aperture-svg-editor'.
@@ -187,13 +190,14 @@ export default class ApertureSvgEditor {
 
     private svgElements: SVGElement[];
 
-    // @Inject
-    public svgActionService: SvgActionService;
-
     /**
      * The settings of this class.
      */
     private settings: ApertureSvgEditorOptions;
+
+    // @Inject
+    public svgActionService: SvgActionService;
+    public svgCanvasService: SvgCanvasService;
 
     // [End Fields]
 
@@ -204,10 +208,11 @@ export default class ApertureSvgEditor {
         this.nodes = [];
         this.settings = new ApertureSvgEditorOptions();
         this.svgActionService = new SvgActionService();
+        this.svgCanvasService = new SvgCanvasService();
         this.svgElements = [];
 
         // Retrieve the options child element
-        let optionEls = element.getElementsByTagName('options');
+        let optionEls = element.getElementsByTagName("options");
         if (optionEls.length > 0) {
 
             // Init settings from node
@@ -218,36 +223,37 @@ export default class ApertureSvgEditor {
         
         // Handle svgElementSelector
         if (this.settings.svgElementSelector.value != null) {
-            let element = document.querySelector(this.settings.svgElementSelector.value || '');
+            let elements = document.querySelectorAll(this.settings.svgElementSelector.value || "");
 
             // Verify the element exists
-           if (element == null) {
+            if (elements.length == 0) {
                 throw new Error(`Failed to locate an SVGElement using the css query: ${this.settings.svgElementSelector.value}`);
-           } else {
-                this.registerSvgAsEditor(<SVGElement>element);
-           }
+            } else {
+                for (let i = 0; i < elements.length; i++) {
+                    this.registerSvgAsEditor(<SVGElement>elements.item(i));
+                }
+            }
         } else {
 
-            // Move to mask service?
-
-            // Create canvas
-            let svgCanvas = document.createElementNS(NS.SVG, "svg");
-
+            let svgCanvas = this.svgCanvasService.createNewCanvas();
             this.element.appendChild(svgCanvas);
-            let elements = element.getElementsByTagName('svg');
+            let elements = element.getElementsByTagName("svg");
             for (let i = 0; i < elements.length; i++) {
                 this.registerSvgAsEditor(elements[i]);
             }
         }
 
         // TODO:  Finish implement settings
+
+        // Emit init_finished event
+        $(this.element).trigger(ApertureSvgEditor.INIT_FINISHED_EVT_NAME);
     }
 
     // [End Ctor]
 
     // [Properties]
 
-    public get editors() {
+    public get canvases() {
         return this.svgElements;
     }
 
@@ -260,7 +266,7 @@ export default class ApertureSvgEditor {
     }
 
     public switchMaskTo(maskId: string|null): void {
-        this.editors.map(editor => {
+        this.canvases.map(editor => {
             let $editor = $(editor);
             if (maskId == null) {
                 $editor.find(".editAreaMask").removeAttr("href");
@@ -294,7 +300,7 @@ export default class ApertureSvgEditor {
         ];
         let fill = colors[Math.floor(Math.random() * colors.length)];
         $(rectEl).attr({ x, y, width, height, fill });
-        this.editors.map(editor => {
+        this.canvases.map(editor => {
             let $editor = $(editor);
             $editor.find(".editor").append(rectEl);
         });

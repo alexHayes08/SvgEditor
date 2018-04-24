@@ -1,8 +1,8 @@
 // import { AutoWired, Singleton } from "typescript-ioc";
 
-import ISvgAction from "../models/isvg-action";
+import { ISvgAction } from "../models/isvg-action";
 import ISvgState from "../models/isvg-state";
-import NodeHelper from "../helpers/node-helper";
+import * as NodeHelper from "../helpers/node-helper";
 
 export interface IStorableAction {
     action: ISvgAction;

@@ -1,16 +1,106 @@
 (function(Aperture) {
+    var EVT_NAMES = Object.freeze({
+        LOADED_PROP
+    });
+
+    Aperture.resolve = function (name, timeoutMS) {
+        return new Promise(function(resolve, reject) {
+            var checkForObj = function (e) {
+                if (Aperture[name] != null) {
+                    resolve(Aperture);
+                    document.removeEventListener(checkForObj);
+                    return;
+                }
+            }
+
+            // Default wait is one minute for object to load.
+            timeout = timeout || 60 * 1000;
+            setTimeout(function() {
+                reject();
+                document.removeEventListener(checkForObj);
+            }, timout)
+            
+            document.addEventListener(EVT_NAMES.LOADED_PROP, checkForObj);
+        });
+    }
+
+    // Create proxy that returns Promises as new objects are added
+    var intercepter = {
+        set: function(target, property, value, receiver) {
+            $(document).trigger(EVT_NAMES.LOADED_PROP);
+            
+            return true;
+        }
+    }
+    Aperture = new Proxy(Aperture, intercepter);
+
     // Retrieve all control elements on the page
     Aperture.SvgEditorControls = {
         addRect: $("#addSquare"),
         changeEditorEl: $("#changeEditor"),
         maskSelectorEl: $("#changeCurrentEditorMask"),
+        modeSelectEl: $("#changeMode"),
+        mode: function(value) {
+            if (value) {
+                // Check that value is in range
+                if (lookupModeByNumber(value)) {
+                    Aperture.SvgEditorControls.modeSelectEl.val(value);
+                } else {
+                    throw new Error(`Value '${value}' wasn't in range.`);
+                }
+            } else {
+                return Aperture.SvgEditorControls.val();
+            }
+        }
     };
+
+    var MODES = Object.freeze({
+        SELECT: 1,
+        ZOOM: 2,
+        DRAW: 3
+    });
+
+    function lookupModeByNumber(num) {
+        var result = null;
+
+        for (var mode in MODES) {
+            var modeName = mode;
+            if (MODES[mode] == num) {
+                result = mode;
+            }
+        }
+
+        return result;
+    }
+
+    // 1 - Select
+    // 2 - Zoom
+    // 3 - Draw
+    Aperture.SvgEditorControls.mode = $("#editorControlsMode").val();
 
     // Init controls
     Aperture.SvgEditorControls.addRect.on("click", function(e) {
         Aperture.main.map(editor => {
             editor.addRectangle(50,50,50,50);
         });
+    });
+
+    Aperture.SvgEditorControls.modeSelectEl.on("change", )
+
+    var canvases = $("#demoA,#demoB");
+    setTimeout(function() {
+        Aperture.main[0].svgCanvasService.magnifyCanvas(canvases[0], {
+                minX: 100, 
+                minY: 100,
+                width: 100,
+                height: 100
+            }, 5000);
+    }, 5000);
+
+    Aperture.SvgEditorControls.changeEditorEl.on("change", function(e) {
+        var val = e.target.value;
+        for (var editor of Aperture.main) {
+        }
     });
 
     Aperture.SvgEditorControls.maskSelectorEl.on("change", function(e) {        
@@ -26,4 +116,6 @@
         optionEl.textContent = areaMask.id;
         Aperture.SvgEditorControls.maskSelectorEl.append(optionEl);
     }
+
+    // Add evt listener for when 
 })(window.Aperture = (window.Aperture || {}));

@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "webpack",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha -r ts-node/register tests/*spec.ts",
     "watch": "webpack --watch",
     "start:dev": "webpack-serve"
   },
@@ -23,19 +23,28 @@
   },
   "homepage": "https://github.com/alexHayes08/SvgEditor#readme",
   "devDependencies": {
+    "@types/chai": "^4.1.3",
+    "@types/mocha": "^5.2.0",
     "@types/node": "^9.6.5",
+    "chai": "^4.1.2",
     "html-webpack-plugin": "^3.2.0",
+    "mocha": "^5.1.1",
     "ts-loader": "^4.2.0",
+    "ts-node": "^6.0.0",
     "webpack": "^4.6.0",
     "webpack-cli": "^2.0.14",
     "webpack-dev-server": "^3.1.3",
     "webpack-serve": "^0.3.1"
   },
   "dependencies": {
+    "@types/d3": "^5.0.0",
     "@types/jquery": "^3.3.1",
     "d3": "^5.1.0",
+    "d3-transition": "^1.1.1",
+    "geometry-interfaces": "^1.1.4",
     "jquery": "^3.3.1",
     "typescript": "^2.8.1",
-    "typescript-ioc": "^1.2.3"
+    "typescript-ioc": "^1.2.3",
+    "uniqid": "^4.1.1"
   }
 }

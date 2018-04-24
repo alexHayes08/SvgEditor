@@ -196,10 +196,24 @@
             <div>Demo of the Svg Editor</div>
             <div id="editor">
                 <div id="editorControlsContainer">
-                    <select id="changeEditor"></select>
-                    <select id="changeCurrentEditorMask">
-                        <option selected value="-1">No mask</option>
-                    </select>
+                    <label>
+                        Change Mode
+                        <select id="changeMode">
+                            <option value="1" selected>Select</option>
+                            <option value="2">Zoom</option>
+                            <option value="3">Draw</option>
+                        </select>
+                    </label>
+                    <label>
+                        Change Editor
+                        <select id="changeEditor"></select>
+                    </label>
+                    <label>
+                        Change Current Mask
+                        <select id="changeCurrentEditorMask">
+                            <option selected value="-1">No mask</option>
+                        </select>
+                    </label>
                     <button id="addSquare">Square+</button>
                     <button id="addCircle">Circle+</button>
                     <button id="addTriangle">Triangle+</button>
@@ -248,5 +262,7 @@
             src="http://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
             crossorigin="anonymous"></script>
+        <script src="https://d3js.org/d3.v5.js"></script>
+        <!-- <script src="https://d3js.org/d3-color.v1.min.js"></script> -->
     </body>
 </html>

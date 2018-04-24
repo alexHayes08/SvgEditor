@@ -1,6 +1,8 @@
-import { Singleton } from 'typescript-ioc';
+const uniqid = require("uniqid");
 
-@Singleton
+// import { Singleton } from 'typescript-ioc';
+
+// @Singleton
 export default class SvgAddItemService {
     // private svgCanvas: SVGElement;
     private svgItems: SVGElement[];
@@ -11,6 +13,12 @@ export default class SvgAddItemService {
     }
 
     public addItem(item: SVGGraphicsElement) {
+
+        // Check for a uniqueId
+        if (item.id == null || item.id == "") {
+            item.id = uniqid();
+        }
+
         this.svgItems.push(item);
     }
 

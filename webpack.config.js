@@ -103,7 +103,12 @@ var clientConfig = {
         port: 8080
     },
     externals: {
-        jquery: 'jQuery'
+        jquery: "jQuery",
+        d3: "d3"
+    },
+    node: {
+        // This is a fix for ioc-container
+        fs:  "empty"
     }
 }
 

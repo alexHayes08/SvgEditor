@@ -1,9 +1,9 @@
-import NodeHelper from '../helpers/node-helper';
+import * as NodeHelper from '../helpers/node-helper';
 
 /**
  * All options must implement this interface.
  */
-export default interface IOption<T> extends IFromNode {
+export interface IOption<T> extends IFromNode {
     readonly name: string;
     value?: T;
 }

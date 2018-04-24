@@ -1,6 +1,6 @@
 ﻿import * as $ from 'jquery';
 
-import ApertureSvgEditor from './models/aperture-svg-editor';
+import { ApertureSvgEditor } from './models/aperture-svg-editor';
 
 // function getEditors(): ApertureSvgEditor[] {
 //     let editors: ApertureSvgEditor[] = [];
@@ -14,8 +14,8 @@ import ApertureSvgEditor from './models/aperture-svg-editor';
 //     return editors;
 // }
 
-var editors: ApertureSvgEditor[] = [];
-var editorEls = $('aperture-svg-editor').each(function() {
+let editors: ApertureSvgEditor[] = [];
+let editorEls = $('aperture-svg-editor').each(function() {
     editors.push(new ApertureSvgEditor(this));
 });
 

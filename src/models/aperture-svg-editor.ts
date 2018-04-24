@@ -1,23 +1,14 @@
 // import {AutoWired, Inject} from "typescript-ioc";
 
 import IOption, { BooleanOption, IFromNode, NumberOption, StringOption } from "./ioption";
+import { NS } from './namespaces';
 import NodeHelper from '../helpers/node-helper';
 import SvgActionService from "../services/svg-action-service";
 import SvgTypeService from "../services/svg-type-service";
 import SvgUndoManagerService from "../services/svg-undo-manager-service";
 
-export const NS = {
-    HTML: 'http://www.w3.org/1999/xhtml',
-    MATH: 'http://www.w3.org/1998/Math/MathML',
-    SE: 'http://svg-edit.googlecode.com',
-    SVG: 'http://www.w3.org/2000/svg',
-    XLINK: 'http://www.w3.org/1999/xlink',
-    XML: 'http://www.w3.org/XML/1998/namespace',
-    XMLNS: 'http://www.w3.org/2000/xmlns/' // see http://www.w3.org/TR/REC-xml-names/#xmlReserved
-};
-
 class EditorCssOptions {
-    
+
     /**
      * A css valid height string. Defines the height of the editor.
      */
@@ -241,26 +232,6 @@ export default class ApertureSvgEditor {
 
             // Create canvas
             let svgCanvas = document.createElementNS(NS.SVG, "svg");
-
-            // Create defs
-            let defsEl = document.createElementNS(NS.SVG, "defs");
-
-            // Create the editableAreaDef
-            let editableAreaDef = document.createElementNS(NS.SVG, "clipPath");
-            editableAreaDef.setAttribute("id", "editableArea"); // Move id to const
-
-            // Create default clipPath
-            let defaultClipPath = document.createElementNS(NS.SVG, "use");
-            defaultClipPath.setAttribute("href", "#editableAreaRect");
-
-            // Create mask
-            let maskEl = document.createElementNS(NS.SVG, "use");
-
-            // Create the editor
-            let editorEl = document.createElementNS(NS.SVG, "g");
-
-            // Create the handles
-            let handles = document.createElementNS(NS.SVG, "g");
 
             this.element.appendChild(svgCanvas);
             let elements = element.getElementsByTagName('svg');

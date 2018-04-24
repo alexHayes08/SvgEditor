@@ -1,7 +1,9 @@
-import ISvgAction from '../models/isvg-action';
-import SvgTypeService from './svg-type-service';
-import SvgUndoManagerService from './svg-undo-manager-service';
+import { ISvgAction } from '../models/isvg-action';
+import { SvgTypeService } from './svg-type-service';
+import { SvgUndoManagerService } from './svg-undo-manager-service';
+import { Singleton } from 'typescript-ioc';
 
+@Singleton
 export default class SvgActionService {
     // [Fields]
 
@@ -72,6 +74,12 @@ export default class SvgActionService {
         this.cached_categories = this.cached_categories.concat(action.categories);
 
         this.registeredActions.push(action);
+    }
+
+    private wrapAction(action: ISvgAction): void {
+        function wrappedFunc() {
+
+        }
     }
 
     // [End Functions]

@@ -5,7 +5,7 @@ import ISvgType from "./isvg-type";
  * listed in 'operatesOn'. These 'actions' can modify the nodes in any fashion,
  * such as removing the node, changing attributes, adding child nodes, etc...
  */
-export default interface ISvgAction {
+export interface ISvgAction {
     
     /**
      * A list of categories the action falls under. IE: An 'export' action

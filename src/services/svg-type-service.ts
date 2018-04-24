@@ -4,7 +4,7 @@ import ISvgType from "../models/isvg-type";
  * This service is both able register svg types and check to see if nodes
  * match those types. Checks svg elements to see if they are of a certain type.
  */
-export default class SvgTypeService {
+export class SvgTypeService {
     // [Fields]
 
     private _registeredTypes: { [key: string]: ISvgType };

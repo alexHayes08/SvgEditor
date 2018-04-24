@@ -13,7 +13,7 @@ export interface IStorableAction {
 }
 
 // @Singleton
-export default class SvgUndoManagerService {
+export class SvgUndoManagerService {
     // [Fields]
 
     private actions: IStorableAction[];

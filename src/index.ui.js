@@ -1,6 +1,6 @@
 (function(Aperture) {
     var EVT_NAMES = Object.freeze({
-        LOADED_PROP
+        LOADED_PROP: "loaded_prop"
     });
 
     Aperture.resolve = function (name, timeoutMS) {
@@ -36,7 +36,7 @@
 
     // Retrieve all control elements on the page
     Aperture.SvgEditorControls = {
-        addRect: $("#addSquare"),
+        addRectEl: $("#addSquare"),
         changeEditorEl: $("#changeEditor"),
         maskSelectorEl: $("#changeCurrentEditorMask"),
         modeSelectEl: $("#changeMode"),
@@ -73,13 +73,8 @@
         return result;
     }
 
-    // 1 - Select
-    // 2 - Zoom
-    // 3 - Draw
-    Aperture.SvgEditorControls.mode = $("#editorControlsMode").val();
-
     // Init controls
-    Aperture.SvgEditorControls.addRect.on("click", function(e) {
+    Aperture.SvgEditorControls.addRectEl.on("click", function(e) {
         Aperture.main.map(editor => {
             editor.addRectangle(50,50,50,50);
         });

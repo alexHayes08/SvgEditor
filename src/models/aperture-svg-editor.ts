@@ -1,4 +1,4 @@
-// import {AutoWired, Inject} from "typescript-ioc";
+import {AutoWired, Inject} from "typescript-ioc";
 
 import { BooleanOption, IFromNode, IOption, NumberOption, StringOption } from "./ioption";
 import { NS } from "../helpers/namespaces-helper";
@@ -8,7 +8,7 @@ import { SvgTypeService } from "../services/svg-type-service";
 import { SvgUndoManagerService } from "../services/svg-undo-manager-service";
 import { SvgCanvasService } from "../services/svg-canvas-service";
 
-class EditorCssOptions {
+export class EditorCssOptions {
 
     /**
      * A css valid height string. Defines the height of the editor.
@@ -26,7 +26,7 @@ class EditorCssOptions {
     }
 }
 
-class SVGElementCSSOptions {
+export class SVGElementCSSOptions {
     /**
      * A css valid height string. Defines the height of the SVGElement.
      */

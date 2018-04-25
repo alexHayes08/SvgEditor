@@ -151,6 +151,15 @@
              * [End aperture-svg-editor]
              */
 
+            @keyframes loading-spinner {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
             button {
                 margin: 1em 1em;
             }
@@ -165,6 +174,38 @@
 
             svg.active {
                 display: block;
+            }
+
+            .loading {
+                overflow: hidden;
+                position: relative;
+            }
+
+            .loading::before {
+                background-color: rgba(0,0,0,.75);
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+            }
+
+            .loading::after {
+                background-image: url("../assets/Aperture_Science.png");
+                background-position: center;
+                background-repeat: no-repeat;
+                background-size: contain;
+                content: "";
+                margin: auto;
+                position: absolute;
+                bottom: 25px;
+                right: 25px;
+                height: 250px;
+                width: 250px;
+
+                /* transform: rotate(0deg); */
+                animation: loading-spinner 4s linear infinite;
             }
 
             #editor {
@@ -194,7 +235,7 @@
         </nav>
         <main>
             <div>Demo of the Svg Editor</div>
-            <div id="editor">
+            <div id="editor" class="loading">
                 <div id="editorControlsContainer">
                     <label>
                         Change Mode

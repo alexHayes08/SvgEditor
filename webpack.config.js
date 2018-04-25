@@ -46,6 +46,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 var clientConfig = {
     entry: [
+        // "./src/aperture.main.js",
         "./src/index.ui.js",
         "./src/index.ts"
     ],
@@ -53,26 +54,41 @@ var clientConfig = {
         extensions: [
             ".js",
             ".ts"
+        ],
+        modules: [
+            path.resolve(__dirname, "src"),
+            "node_modules"
         ]
     },
     // target: "web",
     devtool: "source-map",
     mode: "development",
-    // this makes sure we include node_modules and other 3rd party libraries
-    // externals: [/(node_modules|main\..*\.js)/],
     output: {
-        library: [ "Aperture", "SvgEditors" ],
+        library: [ "SvgEditors" ],
         libraryTarget: "umd",
-        libraryExport: "default",
+        libraryExport: "SvgEditors",
         path: path.join(__dirname, "dist/"),
-        filename: "[name].lib.js"
+        filename: "SvgEditor.lib.js"
     },
     module: {
-        rules: [{ 
-            test: /\.ts$/, 
-            loader: "ts-loader", 
-            exclude: "/node_modules/" 
-        }]
+        rules: [
+            { 
+                test: /\.ts$/, 
+                loader: "ts-loader", 
+                exclude: "/node_modules/" 
+            },
+            {
+                test: /\.js$/,
+                exclude: "/node_modules/",
+                use: {
+                    loader: "babel-loader",
+                    options: {
+                        babelrc: true,
+                        presets: ["babel-preset-env"]
+                    }
+                }
+            }
+        ]
     },
     plugins: [
         new HtmlWebpackPlugin({
@@ -94,7 +110,10 @@ var clientConfig = {
         )
     ],
     resolve: {
-        modules: [path.resolve(__dirname, "./src"), "node_modules"],
+        modules: [
+            path.resolve(__dirname, "./src"), 
+            "node_modules"
+        ],
         extensions: [".ts", ".tsx", ".js"]
     },
     devServer: {
@@ -102,9 +121,12 @@ var clientConfig = {
         // index: "index.html",
         port: 8080
     },
+    // this makes sure we include node_modules and other 3rd party libraries
+    // externals: [/(node_modules|main\..*\.js)/],
     externals: {
-        jquery: "jQuery",
-        d3: "d3"
+        jquery: "$",
+        d3: "d3",
+        all: /(node_modules|main\..*\.js)/
     },
     node: {
         // This is a fix for ioc-container

@@ -6,7 +6,7 @@ import * as $ from "jquery";
 
 import { NS } from "../helpers/namespaces-helper";
 
-interface IViewBox {
+export interface IViewBox {
     minX: number;
     minY: number;
     width: number;
@@ -50,7 +50,7 @@ export class SvgCanvasService {
     }
 
     public showCanvas(canvas: SVGElement): void {
-
+        canvas.style.display = "unset";
     }
 
     public hideCanvas(canvas: SVGElement): void {

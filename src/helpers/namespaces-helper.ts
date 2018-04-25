@@ -1,4 +1,4 @@
-interface INS {
+export interface INS {
     readonly HTML: string,
     readonly MATH: string,
     readonly SE: string,

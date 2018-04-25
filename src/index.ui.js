@@ -1,122 +1,108 @@
-(function(Aperture) {
-    var EVT_NAMES = Object.freeze({
-        LOADED_PROP: "loaded_prop"
-    });
+import { Aperture, EVT_NAMES } from "./aperture.main";
+import { SvgEditors } from "./index";
 
-    Aperture.resolve = function (name, timeoutMS) {
-        return new Promise(function(resolve, reject) {
-            if (Aperture[name] != null) {
-                resolve();
-            }
-            
-            var checkForObj = function (e) {
-                if (Aperture[name] != null) {
-                    resolve();
-                    document.removeEventListener(checkForObj);
-                    return;
-                }
-            }
+// [Private]
 
-            // Default wait is one minute for object to load.
-            timeoutMS = timeoutMS || 60 * 1000;
-            var timeout = setTimeout(function() {
-                reject("The module wasn't loaded.");
-                document.removeEventListener(EVT_NAMES.LOADED_PROP, checkForObj);
-            }, timeoutMS)
-            
-            document.addEventListener(EVT_NAMES.LOADED_PROP, checkForObj);
-        });
-    }
+function lookupModeByNumber(num) {
+    var result = null;
 
-    // Create proxy that returns Promises as new objects are added
-    var intercepter = {
-        set: function(target, property, value, receiver) {
-            target[property] = value;
-            $(document).trigger(EVT_NAMES.LOADED_PROP);
-            return true;
+    for (var mode in MODES) {
+        var modeName = mode;
+        if (MODES[mode] == num) {
+            result = mode;
         }
     }
-    Aperture = new Proxy(Aperture, intercepter);
 
-    // Retrieve all control elements on the page
-    Aperture.SvgEditorControls = {
-        addRectEl: $("#addSquare"),
-        changeEditorEl: $("#changeEditor"),
-        maskSelectorEl: $("#changeCurrentEditorMask"),
-        modeSelectEl: $("#changeMode"),
-        mode: function(value) {
-            if (value) {
-                // Check that value is in range
-                if (lookupModeByNumber(value)) {
-                    Aperture.SvgEditorControls.modeSelectEl.val(value);
-                } else {
-                    throw new Error(`Value '${value}' wasn't in range.`);
-                }
+    return result;
+}
+
+// [End Private]
+
+// Define svg editors module
+Aperture.register("SvgEditors", SvgEditors);
+
+// Define Aperture.SvgEditorControls module
+Aperture.register("SvgEditorControls", {
+    addRectEl: $("#addSquare"),
+    changeCanvasEl: $("#changeEditor"),
+    editorEl: $("#editor"),
+    loading: function(value) {
+        if (value != null) {
+            if (value == true) {
+                Aperture
+                    .SvgEditorControls
+                    .editorEl[0]
+                    .classList
+                    .add("loading");
+            } else if (value == false) {
+                Aperture
+                    .SvgEditorControls
+                    .editorEl[0]
+                    .classList
+                    .remove("loading");
+            }
+
+            return;
+        } else {
+            return Aperture
+                .SvgEditorControls
+                .editorEl[0]
+                .classList
+                .contains("loading");
+        }
+    },
+    maskSelectorEl: $("#changeCurrentEditorMask"),
+    modeSelectEl: $("#changeMode"),
+    mode: function(value) {
+        if (value) {
+            // Check that value is in range
+            if (lookupModeByNumber(value)) {
+                Aperture.SvgEditorControls.modeSelectEl.val(value);
             } else {
-                return Aperture.SvgEditorControls.val();
+                throw new Error(`Value '${value}' wasn't in range.`);
             }
+        } else {
+            return Aperture.SvgEditorControls.val();
         }
-    };
-
-    var MODES = Object.freeze({
+    },
+    MODES: Object.freeze({
         SELECT: 1,
         ZOOM: 2,
         DRAW: 3
-    });
+    })
+});
 
-    function lookupModeByNumber(num) {
-        var result = null;
-
-        for (var mode in MODES) {
-            var modeName = mode;
-            if (MODES[mode] == num) {
-                result = mode;
-            }
-        }
-
-        return result;
-    }
-
-    // Init controls
+// Wait for the SvgEditors to be resolved
+Aperture.resolve(["SvgEditors"]).then(() => {
+        
+    // Init controls (add evt listeners, populate options, etc...)
     Aperture.SvgEditorControls.addRectEl.on("click", function(e) {
-        Aperture.main.map(editor => {
+        Aperture.SvgEditors.map(editor => {
             editor.addRectangle(50,50,50,50);
         });
     });
 
-    Aperture.SvgEditorControls.modeSelectEl.on("change", )
-
-    Aperture.resolve("main").then(resolved => {
-        Aperture.main[0].svgCanvasService.magnifyCanvas(canvases[0], {
-                minX: 100, 
-                minY: 100,
-                width: 100,
-                height: 100
-            }, 5000);
-    }).catch(e => console.error(e));
-    // var canvases = $("#demoA,#demoB");
-    // setTimeout(function() {
-    //     Aperture.main[0].svgCanvasService.magnifyCanvas(canvases[0], {
-    //             minX: 100, 
-    //             minY: 100,
-    //             width: 100,
-    //             height: 100
-    //         }, 5000);
-    // }, 5000);
-
-    Aperture.SvgEditorControls.changeEditorEl.on("change", function(e) {
-        var val = e.target.value;
-        for (var editor of Aperture.main) {
-        }
+    Aperture.SvgEditorControls.modeSelectEl.on("change", function() {
+        console.log("TODO");
     });
 
+    // var canvas = Aperture.SvgEditors[0].canvases[0];
+    // Aperture.SvgEditors[0].svgCanvasService.magnifyCanvas(canvas, {
+    //     minX: 10, 
+    //     minY: 10,
+    //     width: 480,
+    //     height: 480
+    // }, 500);
+
+    // Setup what happens on mask select el change evt
     Aperture.SvgEditorControls.maskSelectorEl.on("change", function(e) {        
         var val = Number(e.target.value) == -1 ? null : e.target.value;
-        for (var editor of Aperture.main) {
+        for (var editor of Aperture.SvgEditors) {
             editor.switchMaskTo(val);
         }
     });
     
+    // Populate mask select el
     var editableAreaMasks = $(".editableAreaRect");
     for (var areaMask of editableAreaMasks) {
         var optionEl = document.createElement("option");
@@ -124,5 +110,30 @@
         Aperture.SvgEditorControls.maskSelectorEl.append(optionEl);
     }
 
-    // Add evt listener for when 
-})(window.Aperture = (window.Aperture || {}));
+    // Setup what happens on canvas select el change evt
+    Aperture.SvgEditorControls.changeCanvasEl.on("change", function(e) {
+        var val = e.target.value;
+        for (var editor of Aperture.SvgEditors) {
+            $(editor.canvases).each(function(index, element) {
+                if (element.id == val) {
+                    element.classList.add("active");
+                } else {
+                    element.classList.remove("active");
+                }
+            });
+        }
+    });
+
+    // Populate canvas select el
+    for (var canvas of Aperture.SvgEditors[0].canvases) {
+        var optionEl = document.createElement("option");
+        optionEl.textContent = canvas.id;
+        Aperture.SvgEditorControls.changeCanvasEl.append(optionEl);
+    }
+
+    // Finished loading
+    Aperture.SvgEditorControls.loading(false);
+}).catch(e => {
+    console.error(e);
+    Aperture.SvgEditorControls.loading(false);
+});

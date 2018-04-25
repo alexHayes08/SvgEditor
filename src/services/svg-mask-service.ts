@@ -144,5 +144,13 @@ class SvgMaskService {
         }
     }
 
+    public getCenterOfMask(): void {
+
+    }
+
+    public checkIfAreaIsOutOfBounds(): boolean {
+        return true;
+    }
+
     // [End Functions]
 }

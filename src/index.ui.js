@@ -5,20 +5,24 @@
 
     Aperture.resolve = function (name, timeoutMS) {
         return new Promise(function(resolve, reject) {
+            if (Aperture[name] != null) {
+                resolve();
+            }
+            
             var checkForObj = function (e) {
                 if (Aperture[name] != null) {
-                    resolve(Aperture);
+                    resolve();
                     document.removeEventListener(checkForObj);
                     return;
                 }
             }
 
             // Default wait is one minute for object to load.
-            timeout = timeout || 60 * 1000;
-            setTimeout(function() {
-                reject();
-                document.removeEventListener(checkForObj);
-            }, timout)
+            timeoutMS = timeoutMS || 60 * 1000;
+            var timeout = setTimeout(function() {
+                reject("The module wasn't loaded.");
+                document.removeEventListener(EVT_NAMES.LOADED_PROP, checkForObj);
+            }, timeoutMS)
             
             document.addEventListener(EVT_NAMES.LOADED_PROP, checkForObj);
         });
@@ -27,8 +31,8 @@
     // Create proxy that returns Promises as new objects are added
     var intercepter = {
         set: function(target, property, value, receiver) {
+            target[property] = value;
             $(document).trigger(EVT_NAMES.LOADED_PROP);
-            
             return true;
         }
     }
@@ -82,15 +86,23 @@
 
     Aperture.SvgEditorControls.modeSelectEl.on("change", )
 
-    var canvases = $("#demoA,#demoB");
-    setTimeout(function() {
+    Aperture.resolve("main").then(resolved => {
         Aperture.main[0].svgCanvasService.magnifyCanvas(canvases[0], {
                 minX: 100, 
                 minY: 100,
                 width: 100,
                 height: 100
             }, 5000);
-    }, 5000);
+    }).catch(e => console.error(e));
+    // var canvases = $("#demoA,#demoB");
+    // setTimeout(function() {
+    //     Aperture.main[0].svgCanvasService.magnifyCanvas(canvases[0], {
+    //             minX: 100, 
+    //             minY: 100,
+    //             width: 100,
+    //             height: 100
+    //         }, 5000);
+    // }, 5000);
 
     Aperture.SvgEditorControls.changeEditorEl.on("change", function(e) {
         var val = e.target.value;

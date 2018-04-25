@@ -61,7 +61,7 @@ var clientConfig = {
     // this makes sure we include node_modules and other 3rd party libraries
     // externals: [/(node_modules|main\..*\.js)/],
     output: {
-        library: [ "Aperture", "[name]" ],
+        library: [ "Aperture", "SvgEditors" ],
         libraryTarget: "umd",
         libraryExport: "default",
         path: path.join(__dirname, "dist/"),

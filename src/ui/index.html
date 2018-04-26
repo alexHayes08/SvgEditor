@@ -220,12 +220,14 @@
             #editor {
                 background-color: #efefef;
                 box-shadow: 2px 2px 4px rgba(0,0,0,.25);
+                min-height: 500px;
             }
 
             #editorCavasContainer {
                 align-items: center;
                 display: flex;
                 justify-content: center;
+                padding: 8px;
             }
 
             #editorControlsContainer {
@@ -270,7 +272,7 @@
                 </div>
                 <hr>
                 <div id="editorCavasContainer">
-                    <svg id="demoA" class="active" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+                    <svg id="demoA" class="" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
                         <defs>
                             <rect id="editableAreaRect" class="editableAreaRect" x="10" x="10" y="10" height="480" width="480" fill="inherit" stroke="inherit"></rect>
                             <circle id="editableAreaRect2" class="editableAreaRect" cx="250" cy="250" r="250" fill="inherit" stroke="inherit"></circle>

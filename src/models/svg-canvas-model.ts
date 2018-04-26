@@ -2,14 +2,36 @@ const uniqid = require("uniqid");
 
 import * as $ from "jquery";
 import { AutoWired, Inject } from 'typescript-ioc';
+import * as d3 from "d3";
 
 import { IViewBox } from "../services/svg-canvas-service";
 import { NS } from "../helpers/namespaces-helper";
 import { SvgMaskService } from "../services/svg-mask-service";
+import { 
+    DefaultTransitionStartEvtData, 
+    DefaultTransitionEndEvtData, 
+    DefaultTransitionInterruptEvtData, 
+    TransitionStatus, 
+    ITransitionEventData 
+} from "./transition-status";
 
-const NAMES = {
-    symbolsContainer_Class: "symbols-container"
-};
+export const SVG_CANVAS_NAMES = {
+    
+    // [Class Names]
+    
+    EDITOR_CLASS: "editor",
+    SYMBOLS_CLASS: "symbol-container",
+
+    // [End Class Names]
+
+    // [Event Names]
+
+    ON_VIEWBOX_EVT_NAME: "canvas-viewbox-change",
+    ON_WIDTH_EVT_NAME: "canvas-width-change",
+    ON_HEIGHT_EVT_NAME: "canvas-height-change"
+
+    // [End Event Names]
+}
 
 /**
  * This is a replacement for the SvgCanvasService.
@@ -18,22 +40,19 @@ export class SvgCanvas {
     
     // [Fields]
 
-    // private readonly defs: any;
-    // private readonly symbols: any;
-    // private readonly editorMask: any;
-    // private readonly underEditor: any;
-    // private readonly editor: any;
-    // private readonly overEditor: any;
-    // private readonly handles: any;
-
-
-    private readonly svgCanvasElement: SVGElement;
-
-    // private readonly editorElement: SVGGraphicsElement;
-
-    private _includedItems: SVGGraphicsElement[];
-
-    private _exludedItems: SVGGraphicsElement[];
+    public readonly svgCanvas_el: SVGElement;
+    public readonly svgCanvas_id: string;
+    private defs_el: SVGDefsElement;
+    private symbols_el: SVGGElement;
+    private symbols_id: string;
+    private underEditor_el: SVGGElement;
+    private underEditor_id: string;
+    private editor_el: SVGGElement;
+    private editor_id: string;
+    private overEditor_el: SVGGElement;
+    private overEditor_id: string;
+    private handles_el: SVGGElement;
+    private handles_id: string;
 
     // @Inject
     // private maskService: SvgMaskService;
@@ -42,74 +61,297 @@ export class SvgCanvas {
 
     // [Ctor]
 
+    /**
+     * Creates an SvgCanvas object.
+     * @param width - Sets the width of the svg element.
+     * @param height - Sets the height of the svg element.
+     * @param viewbox - Sets the viewBox of the svg element.
+     * @param parentElement - The element the svg element will be appended to.
+     * @param importSvg - Optional string of the raw svg data.
+     */
     public constructor(width: number,
         height: number,
         viewbox: IViewBox,
-        private parentElement: HTMLElement,
-        private maskService: SvgMaskService)
-    {
-        
+        parentElement: HTMLElement,
+        importSvg: string|null = null)
+    {        
         // Create svg element
-        let svgEl = <SVGElement>document.createElementNS(NS.SVG, "svg");
+        this.svgCanvas_el = <SVGElement>document.createElementNS(NS.SVG, "svg");
 
         // Set attributes
-        let svgEl_id = uniqid();
-        svgEl.id = svgEl_id;
-        svgEl.setAttribute("viewBox", `${viewbox.minX}px ${viewbox.minY}px ${viewbox.width}px ${viewbox.height}px`);
-        svgEl.setAttribute("width", width.toString());
-        svgEl.setAttribute("height", height.toString());
+        this.svgCanvas_id = uniqid();
+        this.svgCanvas_el.id = this.svgCanvas_id;
+        this.svgCanvas_el.setAttribute("viewBox", `${viewbox.minX} ${viewbox.minY} ${viewbox.width} ${viewbox.height}`);
+        this.svgCanvas_el.setAttribute("width", width.toString());
+        this.svgCanvas_el.setAttribute("height", height.toString());
 
         // Create defs element & symbolsContainer element
-        let defsEl = document.createElementNS(NS.SVG, "defs");
-        let symbolsContainerEl = document.createElementNS(NS.SVG, "g");
+        this.defs_el = <SVGDefsElement>document.createElementNS(NS.SVG, "defs");
+        this.symbols_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
 
-        let symbolsContainerEl_id = uniqid();
-        symbolsContainerEl.id = symbolsContainerEl_id;
-        symbolsContainerEl.classList.add(NAMES.symbolsContainer_Class);
+        this.symbols_id = uniqid();
+        this.symbols_el.id = this.symbols_id;
+        this.symbols_el.classList.add(SVG_CANVAS_NAMES.SYMBOLS_CLASS);
 
         // Create underEditor element
-        let underEditor = document.createElementNS
+        this.underEditor_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
+        this.underEditor_id = uniqid();
+        this.underEditor_el.id = this.underEditor_id;
 
         // Create editor element
-        let editorEl = document.createElementNS(NS.SVG, "g");
+        this.editor_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
+        this.editor_id = uniqid();
+        this.editor_el.id = this.editor_id;
+        this.editor_el.classList.add(SVG_CANVAS_NAMES.EDITOR_CLASS);
 
-        // Set attributes
-        let editorEl_id = uniqid();
-        editorEl.id = editorEl_id;
-        editorEl.classList.add("editor");
+        // Create overEditor element
+        this.overEditor_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
+        this.overEditor_id = uniqid();
+        this.overEditor_el.id = this.overEditor_id;
 
-        this.svgCanvasElement = svgEl;
-        this._includedItems = [];
-        this._exludedItems = [];
+        // Create handles element
+        this.handles_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
+        this.handles_id = uniqid();
+        this.handles_el.id = this.handles_id;
+
+        // Compose elements together
+        this.svgCanvas_el.appendChild(this.defs_el);
+        this.svgCanvas_el.appendChild(this.symbols_el);
+        this.svgCanvas_el.appendChild(this.underEditor_el);
+        this.svgCanvas_el.appendChild(this.editor_el);
+        this.svgCanvas_el.appendChild(this.overEditor_el);
+        this.svgCanvas_el.appendChild(this.handles_el);
+
+        // And append the svg to the parent container
+        parentElement.appendChild(this.svgCanvas_el);
     }
 
     // [End Ctor]
 
     // [Properties]
 
-    /**
-     * Returns a copy of the svg items
-     */
-    public get items() {
-        return [ ...this._includedItems ];
+    get defs() {
+        return {};
     }
 
-    public get defs() {
-        return $(this
-            .svgCanvasElement
-            .getElementsByTagNameNS(NS.SVG, "defs"));
+    get symbols() {
+        return {};
+    }
+
+    get underEditor() {
+        return {};
+    }
+
+    get editor() {
+        return {};
+    }
+
+    get overEditor() {
+        return {};
+    }
+
+    get handles() {
+        return {};
     }
 
     // [End Properties]
 
     // [Functions]
 
-    public addItem(item: SVGGraphicsElement): void {
-        this._includedItems.push(item);
+    /**
+     * Used to get and set the height of the svg element.
+     * @param hx - The height of the svg element.
+     * @param transitionMS - The duration of the transition.
+     */
+    public height(hx?: number, transitionMS: number = 0): number|null {
+        
+        let result: number|null = null;
+
+        if (hx == null) {
+            let attrVal = this.svgCanvas_el.getAttribute("height");
+
+            if (attrVal == null) {
+                result = this.svgCanvas_el.getBoundingClientRect().height;
+            } else {
+                result = Number(attrVal);
+            } 
+        } else {
+
+            result = hx;
+            let $canvasEl = $(this.svgCanvas_el)
+
+            if (transitionMS == 0) {
+                $canvasEl.trigger(
+                    SVG_CANVAS_NAMES.ON_HEIGHT_EVT_NAME,
+                    DefaultTransitionStartEvtData
+                );
+                this.svgCanvas_el.setAttribute("height", hx.toString());
+                $canvasEl.trigger(
+                    SVG_CANVAS_NAMES.ON_HEIGHT_EVT_NAME,
+                    DefaultTransitionEndEvtData
+                );
+            } else {
+
+                // Don't need to remove evt listeners as they will be replaced
+                // when new evt listeners are added.
+                d3.select(this.svgCanvas_el)
+                    .transition()
+                    .attr("height", transitionMS)
+                    .ease(d3.easeCubic)
+                    .duration(transitionMS)
+                    .on("end", function(e) {
+                        $canvasEl.trigger(
+                            SVG_CANVAS_NAMES.ON_HEIGHT_EVT_NAME,
+                            DefaultTransitionEndEvtData
+                        );
+                    }).on("start", function(e) {
+                        $canvasEl.trigger(
+                            SVG_CANVAS_NAMES.ON_HEIGHT_EVT_NAME,
+                            DefaultTransitionStartEvtData
+                        );
+                    }).on("interrupt", function(e) {
+                        $canvasEl.trigger(
+                            SVG_CANVAS_NAMES.ON_HEIGHT_EVT_NAME,
+                            DefaultTransitionInterruptEvtData
+                        );
+                    });
+            }
+        }
+
+        return result;
     }
 
-    public removeItem(item: SVGGraphicsElement): void {
-        this._includedItems = this._includedItems.filter(_item => _item !== item);
+    /**
+     * Used to get and set the width of the svg element.
+     * @param wx - If a width is passed the svg canvas will be set to it.
+     * @param transitionMS - The duration of the transition.
+     * @returns - The width as defined in the attribute of the svg canvas
+     * element.
+     */
+    public width(wx?: number, transitionMS: number = 0): number|null {
+
+        let result: number|null = null;
+
+        if (wx == null) {
+            let attrVal = this.svgCanvas_el.getAttribute("width");
+
+            if (attrVal == null) {
+                result = this.svgCanvas_el.getBoundingClientRect().width;
+            }
+        } else {
+            result = wx;
+            let $canvas = $(this.svgCanvas_el);
+
+            if (transitionMS == 0) {
+                $canvas.trigger(
+                    SVG_CANVAS_NAMES.ON_WIDTH_EVT_NAME, 
+                    DefaultTransitionStartEvtData
+                );
+                this.svgCanvas_el.setAttribute("width", wx.toString());
+                $canvas.trigger(
+                    SVG_CANVAS_NAMES.ON_WIDTH_EVT_NAME, 
+                    DefaultTransitionEndEvtData
+                );
+            } else {
+                d3.select(this.svgCanvas_el)
+                    .transition()
+                    .attr("height", wx.toString())
+                    .ease(d3.easeCubic)
+                    .duration(transitionMS)
+                    .on("start", function(e) {
+                        $canvas.trigger(
+                            SVG_CANVAS_NAMES.ON_WIDTH_EVT_NAME,
+                            DefaultTransitionStartEvtData
+                        );
+                    }).on("end", function(e) {
+                        $canvas.trigger(
+                            SVG_CANVAS_NAMES.ON_WIDTH_EVT_NAME,
+                            DefaultTransitionEndEvtData
+                        );
+                    }).on("end", function(e) {
+                        $canvas.trigger(
+                            SVG_CANVAS_NAMES.ON_WIDTH_EVT_NAME,
+                            DefaultTransitionInterruptEvtData
+                        );
+                    });
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Used to get and set the viewBox attribute of the canvas.
+     * @param viewbox - If null then returns the values of the current viewBox.
+     * @param transitionMS - The number of milliseconds the transition takes
+     * place over.
+     * @returns IViewBox
+     */
+    public viewBox(viewbox?: IViewBox, transitionMS: number = 0): IViewBox|null {
+        
+        let result: IViewBox|null = null;
+        
+        if (viewbox == null) {
+
+            // Get the canvas attribute viewbox
+            let attrVal = this.svgCanvas_el.getAttribute("viewBox");
+            
+            if (attrVal != null) {
+                let parsedAttr = attrVal.split(" ").map(val => Number(val));
+
+                if (parsedAttr.length == 4) {
+                    result = { 
+                        minX: parsedAttr[0],
+                        minY: parsedAttr[1],
+                        width: parsedAttr[2],
+                        height: parsedAttr[3]
+                    };
+                }
+            }
+        } else {
+            result = viewbox;
+
+            let { minX, minY, width, height } = viewbox;
+            let attrStr = `${minX} ${minY} ${width} ${height}`;
+
+            let $canvas = $(this.svgCanvas_el);
+
+            if (transitionMS == 0) {
+                $canvas.trigger(
+                    SVG_CANVAS_NAMES.ON_VIEWBOX_EVT_NAME,
+                    DefaultTransitionStartEvtData
+                );
+                this.svgCanvas_el.setAttribute("viewBox", attrStr);
+                $canvas.trigger(
+                    SVG_CANVAS_NAMES.ON_VIEWBOX_EVT_NAME,
+                    DefaultTransitionEndEvtData
+                );
+            } else {
+                d3.select(this.svgCanvas_el)
+                    .transition()
+                    .attr("viewBox", attrStr)
+                    .ease(d3.easeCubic)
+                    .duration(transitionMS)
+                    .on("start", function(e) {
+                        $canvas.trigger(
+                            SVG_CANVAS_NAMES.ON_VIEWBOX_EVT_NAME,
+                            DefaultTransitionStartEvtData
+                        );
+                    }).on("end", function(e) {
+                        $canvas.trigger(
+                            SVG_CANVAS_NAMES.ON_VIEWBOX_EVT_NAME,
+                            DefaultTransitionEndEvtData
+                        );
+                    }).on("interrupt", function(e) {
+                        $canvas.trigger(
+                            SVG_CANVAS_NAMES.ON_VIEWBOX_EVT_NAME,
+                            DefaultTransitionInterruptEvtData
+                        );
+                    });
+            }
+        }
+
+        return result;
     }
 
     // [End Functions]

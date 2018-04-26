@@ -1,12 +1,14 @@
 import { Aperture, EVT_NAMES } from "./aperture.main";
 import { SvgEditors } from "../index";
 
+export { Aperture } from "./aperture.main";
+
 // [Private]
 
 function lookupModeByNumber(num) {
     var result = null;
 
-    for (var mode in MODES) {
+    for (var mode in Apreture.SvgEditorControls.MODES) {
         var modeName = mode;
         if (MODES[mode] == num) {
             result = mode;
@@ -46,6 +48,12 @@ Aperture.register("SvgEditorControls", {
          */
         LOADING: "loading"
     }),
+
+    /**
+     * This will contain a reference to the 'active' svg element. Inactive
+     * editors will be hidden from view.
+     */
+    activeEditor: null,
 
     addRectEl: $("#addSquare"),
 
@@ -114,6 +122,12 @@ Aperture.register("SvgEditorControls", {
 
 // Wait for the SvgEditors to be resolved
 Aperture.resolve(["SvgEditors"]).then(() => {
+
+    // Set the first SvgCanvas to be the active one
+    if (Aperture.SvgEditors.length > 0) {
+        Aperture.SvgEditorControls.activeEditor = Aperture.SvgEditors[0];
+        Aperture.SvgEditorControls.activeEditor.svgCanvas_el.classList.add("active");
+    }
         
     // Init controls (add evt listeners, populate options, etc...)
     Aperture.SvgEditorControls.addRectEl.on("click", function(e) {
@@ -154,20 +168,19 @@ Aperture.resolve(["SvgEditors"]).then(() => {
     Aperture.SvgEditorControls.changeCanvasEl.on("change", function(e) {
         var val = e.target.value;
         for (var editor of Aperture.SvgEditors) {
-            $(editor.canvases).each(function(index, element) {
-                if (element.id == val) {
-                    element.classList.add("active");
-                } else {
-                    element.classList.remove("active");
-                }
-            });
+            if (editor.svgCanvas_el.id == val) {
+                Aperture.SvgEditorControls.activeEditor = editor;
+                editor.svgCanvas_el.classList.add("active");
+            } else {
+                editor.svgCanvas_el.classList.remove("active");
+            }
         }
     });
 
     // Populate canvas select el
-    for (var canvas of Aperture.SvgEditors[0].canvases) {
+    for (var canvas of Aperture.SvgEditors) {
         var optionEl = document.createElement("option");
-        optionEl.textContent = canvas.id;
+        optionEl.textContent = canvas.svgCanvas_el.id;
         Aperture.SvgEditorControls.changeCanvasEl.append(optionEl);
     }
 
@@ -186,5 +199,3 @@ $("#editor").on(
     });
 
 // $("aperture-svg-editor").on("")
-
-export const Aperture;

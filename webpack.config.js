@@ -47,7 +47,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 var clientConfig = {
     entry: [
         // "./src/aperture.main.js",
-        "./src/index.ui.js",
+        "./src/ui/index.ui.js",
         "./src/index.ts"
     ],
     resolve: {
@@ -60,7 +60,7 @@ var clientConfig = {
             "node_modules"
         ]
     },
-    // target: "web",
+    target: "web",
     devtool: "source-map",
     mode: "development",
     output: {
@@ -93,7 +93,7 @@ var clientConfig = {
     plugins: [
         new HtmlWebpackPlugin({
             title: "Development",
-            template: "./src/index.html",
+            template: "./src/ui/index.html",
             inject: "body"
         }),
         // Temporary Fix for issue: https://github.com/angular/angular/issues/11580

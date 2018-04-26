@@ -5,11 +5,20 @@ const uniqid = require("uniqid");
 // @Singleton
 export default class SvgAddItemService {
     // private svgCanvas: SVGElement;
-    private svgItems: SVGElement[];
+    private svgItems: SVGGraphicsElement[];
 
     constructor() {
         // this.svgCanvas = new SVGElement();
         this.svgItems = [];
+    }
+
+    /**
+     * Returns all items on the canvas.
+     */
+    get items() {
+
+        // Returns a copy of the items
+        return [ ...this.svgItems ];
     }
 
     public addItem(item: SVGGraphicsElement) {

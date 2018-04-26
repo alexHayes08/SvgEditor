@@ -46,9 +46,8 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 var clientConfig = {
     entry: [
-        // "./src/aperture.main.js",
-        "./src/ui/index.ui.js",
-        "./src/index.ts"
+        "./src/index.ts",
+        "./src/ui/index.ui.js"
     ],
     resolve: {
         extensions: [
@@ -64,9 +63,9 @@ var clientConfig = {
     devtool: "source-map",
     mode: "development",
     output: {
-        library: [ "SvgEditors" ],
+        library: [ "Aperture" ],
         libraryTarget: "umd",
-        libraryExport: "SvgEditors",
+        libraryExport: "Aperture",
         path: path.join(__dirname, "dist/"),
         filename: "SvgEditor.lib.js"
     },

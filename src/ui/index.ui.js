@@ -177,3 +177,14 @@ Aperture.resolve(["SvgEditors"]).then(() => {
     console.error(e);
     Aperture.SvgEditorControls.loading(false);
 });
+
+// Testing event listeners
+$("#editor").on(
+    Aperture.SvgEditorControls.EVT_NAMES.MODE_CHANGED, 
+    function(e) {
+        console.log(e)
+    });
+
+// $("aperture-svg-editor").on("")
+
+export const Aperture;

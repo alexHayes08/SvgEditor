@@ -1,3 +1,5 @@
+import { AutoWired, Singleton } from "typescript-ioc";
+
 import * as $ from "jquery";
 
 import { NS } from "../helpers/namespaces-helper";
@@ -7,7 +9,8 @@ import { NS } from "../helpers/namespaces-helper";
  * from moving svg elements into the masked areas. This service is responsible
  * for adding/removing/creating/switching which mask is active for a 'Editor'.
  */
-class SvgMaskService {
+@Singleton
+export class SvgMaskService {
 
     // [Fields]
 

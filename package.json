@@ -46,6 +46,7 @@
     "@types/jquery": "^3.3.1",
     "custom-event-polyfill": "^0.3.0",
     "d3": "^5.1.0",
+    "d3-color": "^1.1.0",
     "d3-transition": "^1.1.1",
     "geometry-interfaces": "^1.1.4",
     "jquery": "^3.3.1",

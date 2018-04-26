@@ -1,4 +1,4 @@
-// import { AutoWired, Singleton } from 'typescript-ioc';
+import { AutoWired, Singleton } from "typescript-ioc";
 const uniqid = require("uniqid");
 
 import * as d3 from "d3";
@@ -13,7 +13,7 @@ export interface IViewBox {
     height: number;
 }
 
-// @Singleton
+@Singleton
 export class SvgCanvasService {
     private svgCanvases: SVGElement[];
 
@@ -21,14 +21,16 @@ export class SvgCanvasService {
         this.svgCanvases = [];
     }
 
-    get canvas() {
-        if (this.svgCanvases.length > 0) {
-            return this.svgCanvases[0];
-        } else {
-            return null;
-        }
+    get canvases() {
+
+        // This returns a copy of the list.
+        return [ ...this.svgCanvases ];
     }
 
+    /**
+     * Creates a new svg canvas and gives it a unique id. This doesn't register
+     * the canvas though.
+     */
     public createNewCanvas(): SVGElement {
         // Create canvas
         let svgCanvas = <SVGElement>document.createElementNS(NS.SVG, "svg");
@@ -41,20 +43,26 @@ export class SvgCanvasService {
         return svgCanvas;
     }
 
-    public registerCanvas(): void {
-
+    /**
+     * Stores a reference to a svg canvas. Will also add an id to the canvas
+     * if not present.
+     * @param canvas 
+     */
+    public registerCanvas(canvas: SVGElement): void {
+        
+        // Check if the canvas has an id.
+        if (canvas.id == "") {
+            canvas.id = uniqid();
+        }
+        this.svgCanvases.push(canvas);
     }
 
-    public unregisterCanvas(): void {
-
-    }
-
-    public showCanvas(canvas: SVGElement): void {
-        canvas.style.display = "unset";
-    }
-
-    public hideCanvas(canvas: SVGElement): void {
-
+    /**
+     * Removes a canvas from the 'registered' canvases list.
+     * @param canvas
+     */
+    public unregisterCanvas(canvas: SVGElement): void {
+        this.svgCanvases = this.svgCanvases.filter(c => c !== canvas);
     }
 
     public magnifyCanvas(canvas: SVGElement, focusOn: IViewBox, durationMS: number = 0): void {

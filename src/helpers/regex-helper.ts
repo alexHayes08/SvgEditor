@@ -4,7 +4,7 @@
  * @param str 
  */
 export function getAllGroups(regex: RegExp, str: string): string[][] {
-   let groups: Array<string[]> = [];
+   let groups: string[][] = [];
 
    for (let group: RegExpExecArray|null = regex.exec(str)
        ; group != null

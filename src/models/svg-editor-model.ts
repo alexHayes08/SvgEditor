@@ -1,3 +1,12 @@
+const uniqid = require("uniqid");
+
+import { ColorSpaceObject } from "d3";
+
+export interface ITotal {
+    colors: ColorSpaceObject[];
+    items: SVGElement[];
+}
+
 /**
  * Used for managing the underEditor, editor, and overEditor group elements
  * on a SvgCanvas object.
@@ -26,6 +35,27 @@ export class SvgEditor {
     // [End Ctor]
 
     // [Properties]
+
+    get items() {
+        let children = this.editor_el.childNodes;
+
+        return children;
+    }
+
+    get totals(): ITotal {
+        let colors: ColorSpaceObject[] = []
+        let items: SVGElement[] = [];
+
+        for (let i = 0; i < this.editor_el.childNodes.length; i++) {
+            let item = <SVGElement>this.editor_el.childNodes[i];
+            items.push(item);
+        }
+        
+        return {
+            colors: colors,
+            items: items
+        };
+    }
 
     // [End Properties]
 
@@ -65,8 +95,9 @@ export class SvgEditor {
      * @param svgString 
      */
     public import(svgString: string, 
-        replaceExistingContent: boolean = true): void 
+        replaceExistingContent: boolean = true): Error|null 
     {
+        let error: Error|null = null;
         let $editor = $(this.editor_el);
         let cleanedStr = this.cleanSvgString(svgString);
 
@@ -75,9 +106,46 @@ export class SvgEditor {
         }
 
         let parser = new DOMParser();
-        let newSvgFrag = parser.parseFromString(cleanedStr, "image/svg+xml");
+        try {
+            let newSvgFrag = parser.parseFromString(cleanedStr, "image/svg+xml");
+            this.add(newSvgFrag);
+        } catch (e) {
+            error = e;
+        }
 
-        $editor.append($(newSvgFrag));
+        return error;
+    }
+
+    /**
+     * Adds a DocumentFragment to the editor. WARNING: The DocumentFragment
+     * will be empty afterwards.
+     * @param items 
+     */
+    public add(items: DocumentFragment): void {
+
+        // This is also for IE9, would prefer to iterate over items.children but oh well
+        for (let i = 0; i < items.childNodes.length; i++) {
+            let el = <Element>items.childNodes[i];
+            if (el.id == "") {
+                el.id = uniqid();
+            }
+        }
+
+        this.editor_el.appendChild(items);
+    }
+
+    public remove(id: string): boolean {
+        let result = false;
+
+        for (let i = 0; i < this.editor_el.childNodes.length; i++) {
+            let el = <Element>this.editor_el.childNodes[i];
+            if (el.id == id) {
+                result = true;
+                this.editor_el.removeChild(el);
+            }
+        }
+
+        return result;
     }
 
     // [End Functions]

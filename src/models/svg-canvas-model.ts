@@ -7,6 +7,7 @@ import * as d3 from "d3";
 import { IViewBox } from "../services/svg-canvas-service";
 import { NS } from "../helpers/namespaces-helper";
 import { SvgMaskService } from "../services/svg-mask-service";
+import { SvgEditor } from "./svg-editor-model";
 import { 
     DefaultTransitionStartEvtData, 
     DefaultTransitionEndEvtData, 
@@ -54,6 +55,8 @@ export class SvgCanvas {
     private handles_el: SVGGElement;
     private handles_id: string;
 
+    private _editor: SvgEditor;
+    
     // @Inject
     // private maskService: SvgMaskService;
 
@@ -124,6 +127,10 @@ export class SvgCanvas {
 
         // And append the svg to the parent container
         parentElement.appendChild(this.svgCanvas_el);
+
+        this._editor = new SvgEditor(this.underEditor_el, 
+            this.editor_el, 
+            this.overEditor_el);
     }
 
     // [End Ctor]
@@ -143,7 +150,7 @@ export class SvgCanvas {
     }
 
     get editor() {
-        return {};
+        return this._editor;
     }
 
     get overEditor() {

@@ -75,12 +75,9 @@ export class SvgEditor {
         }
 
         let parser = new DOMParser();
-        parser.parseFromString(cleanedStr, "image/svg+xml");
+        let newSvgFrag = parser.parseFromString(cleanedStr, "image/svg+xml");
 
-        if ($xml.nodeName == "svg") {
-
-           let $xml = $.parseXML(svgString);
-        }
+        $editor.append($(newSvgFrag));
     }
 
     // [End Functions]

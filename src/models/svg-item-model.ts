@@ -25,18 +25,18 @@ export class SvgItem {
     /**
      * The element being wrapped.
      */
-    private element: SVGElement;
+    private element: SVGGraphicsElement;
 
     /**
      * Maps an element to a ColorMap.
      */
-    private mapToColors: Map<SVGElement, SvgColors>;
+    private mapToColors: Map<SVGGraphicsElement, SvgColors>;
 
     // [End Fields]
 
     // [Ctor]
 
-    public constructor(item: SVGElement) {
+    public constructor(item: SVGGraphicsElement) {
         let $el = $(item);
         this.element = item;
 
@@ -58,6 +58,19 @@ export class SvgItem {
     // [End Ctor]
 
     // [Properties]
+
+    /**
+     * Gets the center of the item (in respect to the upper left corner of the
+     * item).
+     */
+    get center() {
+        let bbox = this.element.getBoundingClientRect();
+
+        return {
+            x: bbox.width / 2,
+            y: bbox.height / 2
+        }
+    }
 
     /**
      * Retrieves a Map<Element, SvgColors> of itself and each child-element.
@@ -105,7 +118,7 @@ export class SvgItem {
             }
 
             let { element, colors: cs } = color;
-            this.mapToColors.set(element, cs);
+            this.mapToColors.set(<SVGGraphicsElement>element, cs);
         });
     }
 

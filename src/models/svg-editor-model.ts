@@ -1,9 +1,13 @@
 const uniqid = require("uniqid");
 
-import { ColorSpaceObject } from "d3";
+import * as d3 from "d3";
+import { isSvgGraphicsElement } from "./../helpers/svg-helpers";
+import { nodeListToArray } from "../helpers/node-helper";
+import { ICoords2D, SvgTransformService } from "./../services/svg-transform-service";
+import { isSvgElement } from "../helpers/svg-helpers";
 
 export interface ITotal {
-    colors: ColorSpaceObject[];
+    colors: d3.ColorSpaceObject[];
     items: SVGElement[];
 }
 
@@ -19,6 +23,8 @@ export class SvgEditor {
     private editor_el: SVGGElement;
     private overEditor_el: SVGGElement;
 
+    private readonly transformService: SvgTransformService;
+
     // [End Fields]
 
     // [Ctor]
@@ -27,6 +33,8 @@ export class SvgEditor {
         editor: SVGGElement,
         overEditor: SVGGElement)
     {
+        this.transformService = new SvgTransformService();
+
         this.underEditor_el = underEditor;
         this.editor_el = editor;
         this.overEditor_el = editor;
@@ -37,13 +45,21 @@ export class SvgEditor {
     // [Properties]
 
     get items() {
-        let children = this.editor_el.childNodes;
+        let children: SVGElement[] = [];
+        let childHtmlEls = nodeListToArray(this.editor_el.childNodes);
+
+        for (let item of childHtmlEls) {
+            if (isSvgElement(item)) {
+                let svgEl = <SVGElement>item;
+                children.push(svgEl);
+            }
+        }
 
         return children;
     }
 
     get totals(): ITotal {
-        let colors: ColorSpaceObject[] = []
+        let colors: d3.ColorSpaceObject[] = []
         let items: SVGElement[] = [];
 
         for (let i = 0; i < this.editor_el.childNodes.length; i++) {
@@ -71,6 +87,36 @@ export class SvgEditor {
         return svgString
             .replace(reg1, "")
             .replace(reg2, "");
+    }
+
+    /**
+     * Returns all child nodes of the editor that intersect a point.
+     * @param point - This is relative to the svg element.
+     */
+    public getItemsIntersectionPoint(point: ICoords2D): SVGElement[] {
+        let intersectingItems: SVGElement[] = [];
+        let items = this.items;
+
+        for (let item of items) {
+            let svgEl = <SVGElement>item;
+            let bbox = this.transformService.getBBox(item);
+
+            // Check to see if point lays outside bbox
+            if (bbox.x >= point.x) {
+                continue;
+            } else if ((bbox.x + bbox.width) <= point.x) {
+                continue;
+            } else if (bbox.y >= point.y) {
+                continue;
+            } else if ((bbox.y + bbox.height) <= point.y) {
+                continue;
+            }
+
+            // Point must lay inside bbox, add it to array
+            intersectingItems.push(svgEl);
+        }
+
+        return intersectingItems;
     }
 
     /**
@@ -117,8 +163,8 @@ export class SvgEditor {
     }
 
     /**
-     * Adds a DocumentFragment to the editor. WARNING: The DocumentFragment
-     * will be empty afterwards.
+     * Adds a DocumentFragment to the editor and centers each item. Any
+     * non-SVGGraphics will be ignored.
      * @param items 
      */
     public add(items: DocumentFragment): void {
@@ -129,9 +175,27 @@ export class SvgEditor {
             if (el.id == "") {
                 el.id = uniqid();
             }
-        }
 
-        this.editor_el.appendChild(items);
+            // Setup default transformations
+            if (isSvgGraphicsElement(el)) {
+                let svgEl = <SVGGraphicsElement>(el);
+                let svgCanvas = <SVGGElement>this.editor_el.ownerSVGElement;
+
+                this.transformService.standardizeTransforms(svgEl);
+
+                // Add item to editor
+                this.editor_el.appendChild(el);
+
+                // Attempt to center element
+                let centerOfSvg = this.transformService.getCenter(svgCanvas);
+                let centerOfItem = this.transformService.getCenter(svgEl);
+
+                this.transformService.setTranslation(el, {
+                    x: Math.abs(centerOfSvg.x - centerOfItem.y),
+                    y: Math.abs(centerOfSvg.y - centerOfItem.y)
+                });
+            }
+        }
     }
 
     public remove(id: string): boolean {

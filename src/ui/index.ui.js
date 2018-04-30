@@ -1,9 +1,13 @@
 import { Aperture, EVT_NAMES } from "./aperture.main";
+import { NS } from "../helpers/namespaces-helper";
+import { SvgColorService } from "../services/svg-color-service";
 import { SvgEditors } from "../index";
 
 export { Aperture } from "./aperture.main";
 
 // [Private]
+
+let colorService = new SvgColorService();
 
 function lookupModeByNumber(num) {
     var result = null;
@@ -131,8 +135,28 @@ Aperture.resolve(["SvgEditors"]).then(() => {
         
     // Init controls (add evt listeners, populate options, etc...)
     Aperture.SvgEditorControls.addRectEl.on("click", function(e) {
-        Aperture.SvgEditors.map(editor => {
-            editor.addRectangle(50,50,50,50);
+        Aperture.SvgEditors.map(canvas => {
+            
+            // Create doc fragment
+            let frag = document.createDocumentFragment();
+
+            // Create rectangle
+            let rect = document.createElementNS(NS.SVG, "rect");
+            $(rect).attr({
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                fill: colorService.randomColor,
+                stroke: colorService.randomColor,
+                strokeWidth: 1
+            });
+            
+            // Compose elements in frag
+            frag.appendChild(rect);
+
+            // Add the fragment to the editor
+            canvas.editor.add(frag);
         });
     });
 

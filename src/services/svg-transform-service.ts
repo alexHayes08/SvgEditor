@@ -4,6 +4,18 @@ import { toDegrees, toRadians } from "../helpers/math-helpers";
 import { getAllGroups } from "../helpers/regex-helper";
 import { getDOMMatrix } from "../helpers/node-helper";
 
+export interface IBBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+export interface ICoords2D {
+    x: number;
+    y: number;
+}
+
 export interface IScaleMatrix {
     x: number;
     y: number;
@@ -284,6 +296,150 @@ export class SvgTransformService {
     }
 
     /**
+     * A cross browser polyfill for SVGGraphicsElement.getBBox().
+     * @param element 
+     * @throws - Throws an error if the element has no parent svg element.
+     */
+    public getBBox(element: SVGElement) {
+        let parentSvg = $(element).closest("svg");
+
+        if (parentSvg.length == null) {
+            throw new Error("The element had no svg parent element.");
+        }
+
+        let elBBox = element.getBoundingClientRect();
+        let paBBox = parentSvg[0].getBoundingClientRect();
+
+        return {
+            x: elBBox.left - paBBox.left,
+            y: elBBox.top - paBBox.top,
+            width: elBBox.width,
+            height: elBBox.height
+        };
+    }
+
+    /**
+     * Gets the center of an element relative to it's parent svg element.
+     * @param elements 
+     * @return {ICoords2D}
+     */
+    public getCenter(...elements: SVGElement[]): ICoords2D {
+        let center = {
+            x: 0,
+            y: 0
+        };
+
+        for (let element of elements) {
+            let elBBox = this.getBBox(element);
+            center.x += (elBBox.x + (elBBox.width / 2));
+            center.y += (elBBox.y + (elBBox.height / 2));
+        }
+
+        return center;
+    }
+
+    /**
+     * Returns an array containing the bounding boxes of all intersections
+     * between the passed elements.
+     * @param elements 
+     */
+    public getIntersectionOfItems(...elements: SVGElement[]): IBBox[] {
+
+        // Store all intersections in bbox objects
+        let intersections: IBBox[] = [];
+
+        // Check that at least two elements were passed in
+        if (elements.length < 2) {
+            return intersections;
+        }
+
+        // Copy array to prevent any modifications to it.
+        let copyOfEls = [ ...elements ];
+
+        // Two nested for loops, compare each element against every other
+        // element and create
+        while (copyOfEls.length > 0) {
+
+            // No need for a null check here, just cast as SVGElement
+            let targetedEl = <SVGElement>copyOfEls.shift();
+            let targetBBox = this.getBBox(targetedEl);
+            
+            for (let otherEl of copyOfEls) {
+
+                // Get bbox of otherEl
+                let otherBBox: IBBox = this.getBBox(otherEl);
+
+                // Check for any height overlap
+                if ((targetBBox.y + targetBBox.height) >= otherBBox.y) {
+                    
+                    // Not possible for any overlap, ignore this one
+                    continue;
+                }
+
+                // Check for any width overlap
+                if ((targetBBox.x + targetBBox.width) <= otherBBox.x) {
+
+                    // Not possible for any overlap, ignore this one
+                    continue;
+                }
+
+                let overlapRect: IBBox = {
+                    x: 0,
+                    y: 0,
+                    width: 0,
+                    height: 0
+                };
+
+                // Check which one is more left
+                if (targetBBox.x >= otherBBox.x) {
+                    overlapRect.x = otherBBox.x;
+                } else {
+                    overlapRect.x = targetBBox.x;
+                }
+
+                // Check which one is more right
+                if ((targetBBox.x + targetBBox.width) 
+                    >= (otherBBox.x + otherBBox.width))
+                {
+                    overlapRect.width = otherBBox.x + otherBBox.width;
+                } else {
+                    overlapRect.width = targetBBox.x + targetBBox.width;
+                }
+
+                // Check which one is higher
+                if (targetBBox.y <= otherBBox.y) {
+                    overlapRect.y = otherBBox.y;
+                } else {
+                    overlapRect.y = targetBBox.y;
+                }
+
+                // Check which one is lower
+                if ((targetBBox.y + targetBBox.height) 
+                    <= (otherBBox.y + otherBBox.height))
+                {
+                    overlapRect.height = targetBBox.height;
+                } else {
+                    overlapRect.height = otherBBox.height;
+                }
+
+                // Store the intersection
+                intersections.push(overlapRect);
+            }
+        }
+
+        return intersections;
+    }
+
+    public convertScreenCoordsToSvgCoords(point: ICoords2D, svgEl: SVGSVGElement): ICoords2D {
+        let svgBBox = svgEl.getBoundingClientRect();
+
+        return {
+            x: point.x - svgBBox.left,
+            y: point.y - svgBBox.top
+        };
+    }
+
+    /**
      * Updates the transforms of an element to follow a more standard
      * approach. This allows for a smoother experience when applying multiple
      * transformations instead of dealing with the messes that occur when 
@@ -292,7 +448,7 @@ export class SvgTransformService {
      * @param element 
      */
     public standardizeTransforms(element: SVGGraphicsElement): void {
-        let transforms = element.getAttribute("transforms");
+        let transforms = element.getAttribute("transform");
         let xAttr = element.getAttribute("x");
         let yAttr = element.getAttribute("y");
         let cxAttr = element.getAttribute("cx");
@@ -301,25 +457,26 @@ export class SvgTransformService {
         let transformStr = this.defaultTransformString;
 
         // Set the x/y/cx/cy attributes to zero
-        if (xAttr != null) {
+        if (xAttr != null || yAttr != null) {
             element.setAttribute("x", "0");
-            transformStr = transformStr.replace(this.translateRegex, `translate(${xAttr})`)
-        }
-
-        if (yAttr != null) {
             element.setAttribute("y", "0");
+            transformStr = transformStr.replace(this.translateRegex,
+                `translate(${xAttr || "0"},${yAttr || "0"})`);
         }
 
-        if (cxAttr != null) {
+        if (cxAttr != null || cyAttr != null) {
             element.setAttribute("cx", "0");
-        }
-
-        if (cyAttr != null) {
             element.setAttribute("cy", "0");
+            transformStr = transformStr.replace(this.translateRegex,
+                `translate(${cxAttr || "0"},${cyAttr || "0"})`);
         }
 
         // If no transforms are applied setup standard transforms
         if (transforms == null || transforms.length == 0) {
+            let xOffset = Number(xAttr || 0) + Number(cxAttr || 0);
+            let yOffset = Number(yAttr || 0) + Number(cyAttr || 0);
+
+            transformStr = transformStr.replace(this.translateRegex, `translate(${xOffset},${yOffset})`);
             element.setAttribute("transform", transformStr);
         } else {
 
@@ -348,7 +505,9 @@ export class SvgTransformService {
     }
 
     public setScale(element: SVGGraphicsElement, matrix: IScaleMatrix): void {
-
+        let transformStr = element.getAttribute("transform") || "";
+        transformStr = transformStr.replace(this.rotateRegex, `rotate(${matrix.x},${matrix.y})`);
+        element.setAttribute("transform", transformStr);
     }
 
     public getScale(element: SVGGraphicsElement): IScaleMatrix {
@@ -368,7 +527,9 @@ export class SvgTransformService {
     }
 
     public setRotation(element: SVGGraphicsElement, matrix: IRotationMatrix): void {
-        
+        let transformStr = element.getAttribute("transform") || "";
+        transformStr = transformStr.replace(this.rotateRegex, `rotate(${matrix.a},${matrix.cx || 0},${matrix.cy || 0})`);
+        element.setAttribute("transform", transformStr);
     }
 
     public getRotation(element: SVGGraphicsElement): IRotationMatrix {
@@ -381,7 +542,9 @@ export class SvgTransformService {
     }
 
     public setTranslation(element: SVGGraphicsElement, matrix: ITranslationMatrix): void {
-
+        let transformStr = element.getAttribute("transform") || "";
+        transformStr = transformStr.replace(this.translateRegex, `translate(${matrix.x},${matrix.y})`);
+        element.setAttribute("transform", transformStr);
     }
 
     public getTranslation(element: SVGGraphicsElement): ITranslationMatrix {

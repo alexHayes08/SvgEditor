@@ -16,7 +16,7 @@ export function isNode(node: any): node is Element {
 export function isElement(node: any): node is Element {
     return (<Element>node).attributes !== undefined;
 }
-    
+
 /**
  * Retrieves the tagname of the element or the name of the attribute.
  * @param node
@@ -76,4 +76,21 @@ export function stringifyNode(node: Attr|Element): string {
     }
 
     return stringified;
+}
+
+/**
+ * Converts a NodeList into a more dev friendly array of elements.
+ * @param nodeList 
+ */
+export function nodeListToArray(nodeList: NodeList): Element[] {
+    let elements: Element[] = [];
+
+    for (let i = 0; i < nodeList.length; i++) {
+        let node = nodeList.item(i);
+        if (isElement(node)) {
+            elements.push(node);   
+        }
+    }
+
+    return elements;
 }

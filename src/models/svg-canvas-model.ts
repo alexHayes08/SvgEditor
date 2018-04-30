@@ -8,6 +8,7 @@ import { IViewBox } from "../services/svg-canvas-service";
 import { NS } from "../helpers/namespaces-helper";
 import { SvgMaskService } from "../services/svg-mask-service";
 import { SvgEditor } from "./svg-editor-model";
+import { SvgTransformService } from "../services/svg-transform-service";
 import { 
     DefaultTransitionStartEvtData, 
     DefaultTransitionEndEvtData, 
@@ -56,6 +57,8 @@ export class SvgCanvas {
     private handles_id: string;
 
     private _editor: SvgEditor;
+
+    private transformService: SvgTransformService;
     
     // @Inject
     // private maskService: SvgMaskService;
@@ -77,7 +80,9 @@ export class SvgCanvas {
         viewbox: IViewBox,
         parentElement: HTMLElement,
         importSvg: string|null = null)
-    {        
+    {
+        this.transformService = new SvgTransformService();
+
         // Create svg element
         this.svgCanvas_el = <SVGElement>document.createElementNS(NS.SVG, "svg");
 
@@ -128,6 +133,10 @@ export class SvgCanvas {
         // And append the svg to the parent container
         parentElement.appendChild(this.svgCanvas_el);
 
+        // Attach event listener to canvas
+        // this.svgCanvas_el.addEventListener("click", this.onSvgCanvasMouseDown);
+        $(this.svgCanvas_el).on("click", e => this.onSvgCanvasMouseDownV2(e));
+
         this._editor = new SvgEditor(this.underEditor_el, 
             this.editor_el, 
             this.overEditor_el);
@@ -164,6 +173,21 @@ export class SvgCanvas {
     // [End Properties]
 
     // [Functions]
+
+    // [Evt Handlers]
+
+    public onSvgCanvasMouseDownV2(event: JQuery.Event<HTMLElement, null>) {
+        let { pageX:x, pageY:y } = event;
+        
+        let point = this.transformService.convertScreenCoordsToSvgCoords(
+            { x, y }, 
+            <SVGSVGElement>this.svgCanvas_el);
+
+        let items = this.editor.getItemsIntersectionPoint(point);
+        console.log(items);
+    }
+
+    // [End Evt Handlers]
 
     /**
      * Used to get and set the height of the svg element.

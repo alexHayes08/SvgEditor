@@ -5,6 +5,7 @@ import { isSvgGraphicsElement } from "./../helpers/svg-helpers";
 import { nodeListToArray } from "../helpers/node-helper";
 import { ICoords2D, SvgTransformService } from "./../services/svg-transform-service";
 import { isSvgElement } from "../helpers/svg-helpers";
+import { SvgItem } from "./svg-item-model";
 
 export interface ITotal {
     colors: d3.ColorSpaceObject[];
@@ -22,6 +23,7 @@ export class SvgEditor {
     private underEditor_el: SVGGElement;
     private editor_el: SVGGElement;
     private overEditor_el: SVGGElement;
+    private editor_items: SvgItem[];
 
     private readonly transformService: SvgTransformService;
 
@@ -34,6 +36,7 @@ export class SvgEditor {
         overEditor: SVGGElement)
     {
         this.transformService = new SvgTransformService();
+        this.editor_items = [];
 
         this.underEditor_el = underEditor;
         this.editor_el = editor;
@@ -45,17 +48,7 @@ export class SvgEditor {
     // [Properties]
 
     get items() {
-        let children: SVGElement[] = [];
-        let childHtmlEls = nodeListToArray(this.editor_el.childNodes);
-
-        for (let item of childHtmlEls) {
-            if (isSvgElement(item)) {
-                let svgEl = <SVGElement>item;
-                children.push(svgEl);
-            }
-        }
-
-        return children;
+        return this.editor_items;
     }
 
     get totals(): ITotal {
@@ -93,13 +86,12 @@ export class SvgEditor {
      * Returns all child nodes of the editor that intersect a point.
      * @param point - This is relative to the svg element.
      */
-    public getItemsIntersectionPoint(point: ICoords2D): SVGElement[] {
-        let intersectingItems: SVGElement[] = [];
+    public getItemsIntersectionPoint(point: ICoords2D): SvgItem[] {
+        let intersectingItems: SvgItem[] = [];
         let items = this.items;
 
         for (let item of items) {
-            let svgEl = <SVGElement>item;
-            let bbox = this.transformService.getBBox(item);
+            let bbox = this.transformService.getBBox(item.element);
 
             // Check to see if point lays outside bbox
             if (bbox.x >= point.x) {
@@ -113,7 +105,7 @@ export class SvgEditor {
             }
 
             // Point must lay inside bbox, add it to array
-            intersectingItems.push(svgEl);
+            intersectingItems.push(item);
         }
 
         return intersectingItems;
@@ -178,17 +170,16 @@ export class SvgEditor {
 
             // Setup default transformations
             if (isSvgGraphicsElement(el)) {
-                let svgEl = <SVGGraphicsElement>(el);
+                let svgItem = new SvgItem(el);
                 let svgCanvas = <SVGGElement>this.editor_el.ownerSVGElement;
 
-                this.transformService.standardizeTransforms(svgEl);
-
-                // Add item to editor
+                // Add item to editor & editor_items
                 this.editor_el.appendChild(el);
+                this.editor_items.push(svgItem);
 
                 // Attempt to center element
                 let centerOfSvg = this.transformService.getCenter(svgCanvas);
-                let centerOfItem = this.transformService.getCenter(svgEl);
+                let centerOfItem = svgItem.center;
 
                 this.transformService.setTranslation(el, {
                     x: Math.abs(centerOfSvg.x - centerOfItem.y),

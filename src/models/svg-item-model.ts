@@ -4,6 +4,8 @@ import { color, ColorSpaceObject } from "d3";
 import * as $ from "jquery";
 
 import { ColorValue } from "./color-value";
+import { SvgTransformService, ICoords2D } from "../services/svg-transform-service";
+import { isSvgGraphicsElement } from "../helpers/svg-helpers";
 
 export interface ColorMap {
     element: SVGElement;
@@ -19,26 +21,36 @@ export const SVGITEM_EVT_NAMES = {
     COLOR_CHANGED: "color-changed"
 }
 
+/**
+ * This class is responsible for 'normalizing' the element passed in. This
+ * includes transforms, colors, etc...
+ */
 export class SvgItem {
     // [Fields]
 
     /**
      * The element being wrapped.
      */
-    private element: SVGGraphicsElement;
+    private _element: SVGGraphicsElement;
+    private transformService: SvgTransformService;
 
     /**
      * Maps an element to a ColorMap.
      */
-    private mapToColors: Map<SVGGraphicsElement, SvgColors>;
+    private mapToColors: Map<SVGElement, SvgColors>;
 
     // [End Fields]
 
     // [Ctor]
 
     public constructor(item: SVGGraphicsElement) {
+        this.transformService = new SvgTransformService();
+        
         let $el = $(item);
-        this.element = item;
+        this._element = item;
+
+        // Standardize the elements transforms
+        this.transformService.standardizeTransforms(item);
 
         // Check if this was already called on the element
         if ($el.data()) {
@@ -63,13 +75,8 @@ export class SvgItem {
      * Gets the center of the item (in respect to the upper left corner of the
      * item).
      */
-    get center() {
-        let bbox = this.element.getBoundingClientRect();
-
-        return {
-            x: bbox.width / 2,
-            y: bbox.height / 2
-        }
+    get center(): ICoords2D {
+        return this.transformService.getCenter(this._element);
     }
 
     /**
@@ -77,6 +84,10 @@ export class SvgItem {
      */
     get colors() {
         return this.mapToColors;
+    }
+
+    get element() {
+        return this._element;
     }
 
     // [End Properties]
@@ -87,25 +98,25 @@ export class SvgItem {
         let colors: ColorMap[] = [];
         this.mapToColors.clear();
 
-        switch(this.element.tagName.toLowerCase()) {
+        switch(this._element.tagName.toLowerCase()) {
             case "image": {
-                colors.concat(SvgItem._GetColorsFromImage(this.element));
+                colors.concat(SvgItem._GetColorsFromImage(this._element));
                 break;
             }
             case "g": {
-                colors.concat(SvgItem._GetColorsFromGroup(this.element))
+                colors.concat(SvgItem._GetColorsFromGroup(this._element))
                 break;
             }
             case "use": {
-                colors.concat(SvgItem._GetColorsFromUse(this.element));
+                colors.concat(SvgItem._GetColorsFromUse(this._element));
                 break;
             }
             case "svg": {
-                colors.concat(SvgItem._GetColorsFromUse(this.element));
+                colors.concat(SvgItem._GetColorsFromUse(this._element));
                 break;
             }
             default: {
-                colors.concat(SvgItem._GetColorsFromGroup(this.element));
+                colors.concat(SvgItem._GetColorsFromGroup(this._element));
                 break;
             }
         }

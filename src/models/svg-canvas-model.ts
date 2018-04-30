@@ -4,12 +4,15 @@ import * as $ from "jquery";
 import { AutoWired, Inject } from 'typescript-ioc';
 import * as d3 from "d3";
 
+import { ISvgHandles } from "./isvg-handles-model";
 import { IViewBox } from "../services/svg-canvas-service";
 import { NS } from "../helpers/namespaces-helper";
-import { SvgMaskService } from "../services/svg-mask-service";
+import { SvgDefs } from "./svg-defs-model";
 import { SvgEditor } from "./svg-editor-model";
+import { SvgHandles } from "./svg-handles-model";
+import { SvgMaskService } from "../services/svg-mask-service";
 import { SvgTransformService } from "../services/svg-transform-service";
-import { 
+import {
     DefaultTransitionStartEvtData, 
     DefaultTransitionEndEvtData, 
     DefaultTransitionInterruptEvtData, 
@@ -56,7 +59,9 @@ export class SvgCanvas {
     private handles_el: SVGGElement;
     private handles_id: string;
 
+    private _defs: SvgDefs;
     private _editor: SvgEditor;
+    private _handles: ISvgHandles;
 
     private transformService: SvgTransformService;
     
@@ -89,38 +94,64 @@ export class SvgCanvas {
         // Set attributes
         this.svgCanvas_id = uniqid();
         this.svgCanvas_el.id = this.svgCanvas_id;
-        this.svgCanvas_el.setAttribute("viewBox", `${viewbox.minX} ${viewbox.minY} ${viewbox.width} ${viewbox.height}`);
-        this.svgCanvas_el.setAttribute("width", width.toString());
-        this.svgCanvas_el.setAttribute("height", height.toString());
+        $(this.svgCanvas_el).attr({
+            "viewBox": `${viewbox.minX} ${viewbox.minY} ${viewbox.width} ${viewbox.height}`,
+            "width": width.toString(),
+            "height": height.toString(),
+            "data-name": "svg-canvas-editor"
+        });
 
         // Create defs element & symbolsContainer element
         this.defs_el = <SVGDefsElement>document.createElementNS(NS.SVG, "defs");
+        this.defs_el.setAttribute("data-name", "defs-container");
         this.symbols_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
 
         this.symbols_id = uniqid();
-        this.symbols_el.id = this.symbols_id;
-        this.symbols_el.classList.add(SVG_CANVAS_NAMES.SYMBOLS_CLASS);
+        $(this.symbols_el).attr({
+            id: this.svgCanvas_id,
+            "data-name": "symbols-container",
+            "class": SVG_CANVAS_NAMES.SYMBOLS_CLASS
+        });
 
         // Create underEditor element
         this.underEditor_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
         this.underEditor_id = uniqid();
-        this.underEditor_el.id = this.underEditor_id;
+        $(this.underEditor_el).attr({
+            id: this.underEditor_id,
+            "data-name": "under-editor-area"
+        });
 
         // Create editor element
         this.editor_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
         this.editor_id = uniqid();
-        this.editor_el.id = this.editor_id;
-        this.editor_el.classList.add(SVG_CANVAS_NAMES.EDITOR_CLASS);
+        $(this.editor_el).attr({
+            id: this.editor_id,
+            // viewBox: "0 0 500 500",
+            // x: 0,
+            // y: 0,
+            // width: 500,
+            // height: 500,
+            "class": SVG_CANVAS_NAMES.EDITOR_CLASS,
+            "data-name": "editor-area"
+        });
 
         // Create overEditor element
         this.overEditor_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
         this.overEditor_id = uniqid();
-        this.overEditor_el.id = this.overEditor_id;
+        $(this.overEditor_el).attr({
+            id: this.overEditor_id,
+            "data-name": "over-editor-area"
+        });
 
         // Create handles element
         this.handles_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
         this.handles_id = uniqid();
-        this.handles_el.id = this.handles_id;
+        $(this.handles_el).attr({
+            id: this.handles_id,
+            "data-name": "handles-area"
+        });
+
+        // Create handles
 
         // Compose elements together
         this.svgCanvas_el.appendChild(this.defs_el);
@@ -135,11 +166,15 @@ export class SvgCanvas {
 
         // Attach event listener to canvas
         // this.svgCanvas_el.addEventListener("click", this.onSvgCanvasMouseDown);
-        $(this.svgCanvas_el).on("click", e => this.onSvgCanvasMouseDownV2(e));
+        $(this.svgCanvas_el).on("mousedown", e => this.onSvgCanvasMouseDownV2(e));
+
+        this._defs = new SvgDefs(this.defs_el);
 
         this._editor = new SvgEditor(this.underEditor_el, 
             this.editor_el, 
             this.overEditor_el);
+
+        this._handles = new SvgHandles(this.handles_el, this._defs);
     }
 
     // [End Ctor]
@@ -147,7 +182,7 @@ export class SvgCanvas {
     // [Properties]
 
     get defs() {
-        return {};
+        return this._defs;
     }
 
     get symbols() {
@@ -184,6 +219,15 @@ export class SvgCanvas {
             <SVGSVGElement>this.svgCanvas_el);
 
         let items = this.editor.getItemsIntersectionPoint(point);
+        
+        // If ctrl is not down, deselect all objects and only select the
+        // topmost element clicked.
+        if (!event.ctrlKey) {
+            this._handles.deselectObjects();
+        }
+
+        this._handles.selectObjects(...items);
+        
         console.log(items);
     }
 

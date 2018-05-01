@@ -2,12 +2,15 @@ const uniqid = require("uniqid");
 
 import * as $ from "jquery";
 
+import * as d3 from "d3";
+
 import { NS } from "../helpers/namespaces-helper";
 import { ISvgHandles } from "./isvg-handles-model";
 import { SvgDefs } from "./svg-defs-model";
-import { drawCubicBezierArc, IDrawArcConfig } from "../helpers/svg-helpers";
+import { drawCubicBezierArc, IDrawArcConfig, ISliceV2 } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
 import { SvgTransformService, IBBox } from "../services/svg-transform-service";
+import { toRadians } from "../helpers/math-helpers";
 
 export class SvgHandles implements ISvgHandles {
     // [Fields]
@@ -26,7 +29,7 @@ export class SvgHandles implements ISvgHandles {
 
     // [Ctor]
 
-    constructor(handlesContainer: SVGElement, defs: SvgDefs) {
+    constructor(handlesContainer: SVGElement, defs: SvgDefs, data: ISliceV2[]) {
         this.defs = defs;
         this.handlesContainer = handlesContainer;
         this.selectedObjects = [];
@@ -85,6 +88,23 @@ export class SvgHandles implements ISvgHandles {
         for (let circlePath of circlePaths) {
             this.circleEl.appendChild(circlePath);
         }
+
+        // Create circle arcs
+        let arcData = [
+            toRadians(120/4),
+            toRadians(120/4),
+            toRadians(120/4),
+            toRadians(120/4),
+            toRadians(240)
+        ];
+        let arcPaths = d3.pie()(arcData);
+        arcPaths.map(path => {
+            d3.select(this.handlesContainer)
+                .selectAll("path")
+                .data(arcData)
+                .enter()
+                .append
+        });
 
         // Add event handlers
         $(this.deleteEl).on("click", e => this.onDeleteClicked(e));
@@ -196,6 +216,13 @@ export class SvgHandles implements ISvgHandles {
             x: circleBBox.x + circleBBox.width,
             y: circleBBox.y
         });
+    }
+
+    private updateHandlesV2(data: any): void {
+        d3.select(this.handlesContainer)
+            .selectAll("path")
+            .data(data)
+            .enter()
     }
 
     public selectObjects(...elements: SvgItem[]): void {

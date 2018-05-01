@@ -118,6 +118,18 @@ export function updateArcsV2(data: IDrawArcConfig, paths: SVGPathElement[]): voi
     }
 }
 
+export interface ISliceV2 {
+    radius: number;
+    
+}
+
+export interface ID3ArcConfig {
+    outerRadius: number;
+    innerRadius?: number;
+    startAngle?: number;
+    endAngle: number;
+}
+
 export interface IDrawArcConfig {
     radius: number;
     width?: number;

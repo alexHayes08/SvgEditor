@@ -1,6 +1,7 @@
 import { ICoords2D } from "../services/svg-transform-service";
 import { normalizeAngle, toDegrees, toRadians } from "../helpers/math-helpers";
 import { NS } from "../helpers/namespaces-helper";
+import { getAllGroups } from "../helpers/regex-helper";
 
 /**
  * https://www.w3.org/TR/SVG2/struct.html#TermGraphicsElement
@@ -87,6 +88,43 @@ export interface ISlice {
     color: string;
 }
 
+export function updateArcs(radius: number, paths: SVGPathElement[]): void {
+    for (let path of paths) {
+        let data = path.getAttribute("d") || "";
+        let reg = /[\d+\.]+/g;
+        let matches = getAllGroups(reg, data);
+
+        let start_pt_x = Number(matches[0][0] || 0);
+        let start_pt_y = Number(matches[1][0] || 0);
+        let rad_x = Number(matches[2][0] || 0);
+        let rad_y = Number(matches[3][0] || 0);
+        let x_axis_rot = Number(matches[4][0] || 0);
+        let large_arg = Number(matches[5][0] || 0);
+        let sweep_flag = Number(matches[6][0] || 0);
+        let end_pt_x = Number(matches[7][0] || 0);
+        let end_pt_y = Number(matches[8][0] || 0);
+
+        rad_x = radius;
+        rad_y = radius;
+    }
+}
+
+export function updateArcsV2(data: IDrawArcConfig, paths: SVGPathElement[]): void {
+    let { radius, width = 4, startAngle = 0, slices } = data;
+    
+    let currentPath: SVGPathElement|null = null;
+    for (let slice of slices) {
+
+    }
+}
+
+export interface IDrawArcConfig {
+    radius: number;
+    width?: number;
+    startAngle?: number;
+    slices: ISlice[];
+}
+
 /**
  * Creates a bunch of arcs to form a circle.
  * @param center 
@@ -95,11 +133,10 @@ export interface ISlice {
  * @param width 
  * @param startAngle 
  */
-export function drawCubicBezierArc(radius: number,
-    slices: ISlice[],
-    width: number = 4,
-    startAngle: number = 0): SVGPathElement[]
+export function drawCubicBezierArc(data: IDrawArcConfig): SVGPathElement[]
 {
+    let { radius, width = 4, startAngle = 0, slices } = data;
+
     if (slices.length <= 1) {
         throw new Error("Must have at least two slices.");
     }
@@ -127,7 +164,7 @@ export function drawCubicBezierArc(radius: number,
 
     for (let slice of slices) {
         let pathStr = `M${curPos.x.toFixed(3)},${curPos.y.toFixed(3)}`;
-        pathStr += ` A ${radius} ${radius} 0 0 0 ${curPos.x} ${curPos.y}`;
+        // pathStr += ` A ${radius} ${radius} 0 0 0 ${curPos.x} ${curPos.y}`;
 
         // Update the angle
         currentAngle += normalizeAngle(slice.degrees);
@@ -137,10 +174,16 @@ export function drawCubicBezierArc(radius: number,
         curPos.y = getYCircleCoord(currentAngle, radius);
 
         // A rx ry x-axis-rotation large-arc-flag sweep-flag x y
-        pathStr += ` ${radius} ${radius} 0 0 ${curPos.x.toFixed(3)},${curPos.y.toFixed(3)}`;
+        let largeFlag = getLargeFlagArc(slice.degrees);
+        pathStr += ` A ${radius} ${radius} 0 ${largeFlag} 0 ${curPos.x.toFixed(3)} ${curPos.y.toFixed(3)}`;
 
         let path = <SVGPathElement>document.createElementNS(NS.SVG, "path");
-        path.setAttribute("path", pathStr);
+        $(path).attr({
+            d: pathStr,
+            fill: "none",
+            stroke: slice.color,
+            "stroke-width": width
+        });
 
         circlePaths.push(path);
     }
@@ -152,24 +195,49 @@ export function drawCubicBezierArc(radius: number,
     });
     if (remainingDegrees > 0) {
         let pathStr = `M${curPos.x.toFixed(3)},${curPos.y.toFixed(3)}`;
-        pathStr += ` A ${radius} ${radius} 0 0 0 ${startPt.x.toFixed(3)} ${startPt.y.toFixed(3)}`;
+        let largeFlag = getLargeFlagArc(remainingDegrees);
+        pathStr += ` A ${radius} ${radius} 0 ${largeFlag} 0 ${startPt.x.toFixed(3)} ${startPt.y.toFixed(3)}`;
 
        let path = <SVGPathElement>document.createElementNS(NS.SVG, "path");
-       path.setAttribute("path", pathStr);
+       $(path).attr({
+           d: pathStr,
+           stroke: "black",
+           fill: "none",
+           "stroke-width": width
+       });
        circlePaths.push(path);
     }
 
     return circlePaths;
 }
 
-function getXCircleCoord(currentAngle: number, radius: number): number {
-    let x = Math.asin(toRadians(currentAngle)) * radius;
-
-    // Add x offset
-    return ((radius * 2) - x);
+function getLargeFlagArc(angle: number): number {
+    return angle > 180 ? 1 : 0;
 }
 
 function getYCircleCoord(currentAngle: number, radius: number): number {
-    let y = Math.acos(toRadians(currentAngle)) * radius;
-    return ((radius * 2) - y)
+    let y = Math.sin(toRadians(currentAngle)) * radius;
+
+    // Account for offsets
+    // if (currentAngle <= 180) {
+    //     y = radius - y;
+    // } else {
+    //     y = radius - y;
+    // }
+
+    return radius - y;
+}
+
+function getXCircleCoord(currentAngle: number, radius: number): number {
+    let x = Math.cos(toRadians(currentAngle)) * radius;
+
+    // if (currentAngle <= 90) {
+    //     x += radius;
+    // } else if (currentAngle <= 270) {
+    //     x = radius + x;
+    // } else if (currentAngle <= 360) {
+    //     x += radius;
+    // }
+
+    return radius + x;
 }

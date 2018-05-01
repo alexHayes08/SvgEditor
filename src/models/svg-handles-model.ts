@@ -5,7 +5,7 @@ import * as $ from "jquery";
 import { NS } from "../helpers/namespaces-helper";
 import { ISvgHandles } from "./isvg-handles-model";
 import { SvgDefs } from "./svg-defs-model";
-import { drawCubicBezierArc } from "../helpers/svg-helpers";
+import { drawCubicBezierArc, IDrawArcConfig } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
 import { SvgTransformService, IBBox } from "../services/svg-transform-service";
 
@@ -18,7 +18,7 @@ export class SvgHandles implements ISvgHandles {
     private transformService: SvgTransformService;
     private _lastSelectedSection: number;
 
-    private circleEl: SVGCircleElement;
+    private circleEl: SVGGElement;
     private deleteEl: SVGCircleElement;
     private optionEls: SVGPathElement[];
 
@@ -37,14 +37,8 @@ export class SvgHandles implements ISvgHandles {
         // Create handle elements
 
         // Circle which will contain the selected items
-        this.circleEl = <SVGCircleElement>document.createElementNS(NS.SVG, "circle");
-        $(this.circleEl).attr({
-            id: uniqid(),
-            fill: "none",
-            stroke: "blue",
-            "stroke-width": 4,
-            r: 100
-        });
+        this.circleEl = <SVGGElement>document.createElementNS(NS.SVG, "g");
+        $(this.circleEl).attr({ id: uniqid() });
         this.transformService.standardizeTransforms(this.circleEl);
 
         this.deleteEl = <SVGCircleElement>document.createElementNS(NS.SVG, "circle");
@@ -60,28 +54,36 @@ export class SvgHandles implements ISvgHandles {
         });
         this.transformService.standardizeTransforms(this.deleteEl);
 
-        let _10Per = <SVGPathElement>document.createElementNS(NS.SVG, "path");
-        $(_10Per).attr({
-            id: uniqid(),
-            path: "d Q "
-        });
+        let circlePathsData: IDrawArcConfig = {
+            radius: 50,
+            slices: [
+                {
+                    degrees: 240,
+                    color: "gray"
+                },
+                {
+                    degrees: 60,
+                    color: "green"
+                },
+                {
+                    degrees: 60,
+                    color: "blue"
+                }    
+            ],
+            width: 4,
+            startAngle: 60
+        };
+        let circlePaths = drawCubicBezierArc(circlePathsData);
 
-        let circlePaths = drawCubicBezierArc(50, [{
-                degrees: 45,
-                color: "blue"
-            },
-            {
-                degrees: 45,
-                color: "green"
-            }]
-        );
+        // Store init data in handles element
+        $(this.handlesContainer).data(circlePathsData);
 
         // Compose elements
         this.handlesContainer.appendChild(this.circleEl);
         this.handlesContainer.appendChild(this.deleteEl);
 
         for (let circlePath of circlePaths) {
-            this.handlesContainer.appendChild(circlePath);
+            this.circleEl.appendChild(circlePath);
         }
 
         // Add event handlers

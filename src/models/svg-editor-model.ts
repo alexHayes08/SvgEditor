@@ -1,6 +1,7 @@
 const uniqid = require("uniqid");
 
 import * as d3 from "d3";
+import { ActivatableServiceSingleton } from "../services/activatable-service";
 import { isSvgGraphicsElement } from "./../helpers/svg-helpers";
 import { nodeListToArray } from "../helpers/node-helper";
 import { ICoords2D, SvgTransformService } from "./../services/svg-transform-service";

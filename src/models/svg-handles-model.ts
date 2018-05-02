@@ -4,14 +4,44 @@ import * as $ from "jquery";
 
 import * as d3 from "d3";
 
+import { ActivatableServiceSingleton } from "../services/activatable-service";
 import { NS } from "../helpers/namespaces-helper";
 import { ISvgHandles } from "./isvg-handles-model";
 import { SvgDefs } from "./svg-defs-model";
-import { drawCubicBezierArc, IDrawArcConfig, ISliceV2 } from "../helpers/svg-helpers";
+import { drawCubicBezierArc, IDrawArcConfig, ISliceV2, getBBoxSums, isSvgElement, getNewPointAlongAngle, convertToSvgElement, convertToSvgGraphicsElement, getFurthestSvgOwner } from "../helpers/svg-helpers";
+import { ISlice, isISlice, DefaultCircleArc, ICircleArc } from "../models/islice";
 import { SvgItem } from "./svg-item-model";
 import { SvgTransformService, IBBox } from "../services/svg-transform-service";
 import { toRadians } from "../helpers/math-helpers";
 
+export const NAMES = {
+    BTN_HANDLE_CLASS: "btn-handle"
+};
+
+export enum SvgHandlesModes {
+    INACTIVE = 0,
+    ACTIVE = 1,
+    DELETE = 2,
+    MOVE = 3,
+    SCALE = 4,
+    ROTATE = 5
+};
+
+function dragStart(): void {
+    console.log("Drag started");
+}
+
+function dragged(): void {
+    console.log("Dragging...");
+}
+
+function dragEnd(): void {
+    console.log("Drag ended");
+}
+
+/**
+ * This should be moved out of here into the UI.
+ */
 export class SvgHandles implements ISvgHandles {
     // [Fields]
 
@@ -20,94 +50,96 @@ export class SvgHandles implements ISvgHandles {
     private selectedObjects: SvgItem[];
     private transformService: SvgTransformService;
     private _lastSelectedSection: number;
+    private handlesData: ICircleArc;
+    private dragBehavior: d3.DragBehavior<Element, {}, {} | d3.SubjectPosition>;
+    private cachedElementsWithEvts: Element[];
 
-    private circleEl: SVGGElement;
-    private deleteEl: SVGCircleElement;
+    private arcsContainer: SVGGElement;
+    private deleteEl: SVGGraphicsElement;
+    private moveEl: SVGGraphicsElement;
+    private scaleEl: SVGGraphicsElement;
+    private rotateEl: SVGGraphicsElement;
     private optionEls: SVGPathElement[];
 
     // [End Fields]
 
     // [Ctor]
 
-    constructor(handlesContainer: SVGElement, defs: SvgDefs, data: ISliceV2[]) {
+    constructor(handlesContainer: SVGElement, defs: SvgDefs, data: ICircleArc) {
         this.defs = defs;
         this.handlesContainer = handlesContainer;
         this.selectedObjects = [];
         this.optionEls = [];
         this.transformService = new SvgTransformService();
         this._lastSelectedSection = 0;
+        this.handlesData = data;
+        this.cachedElementsWithEvts = [];
+
+        // Make handles use the 'activatable' class. This will be used when
+        // showing/hiding the handles.
+        ActivatableServiceSingleton.register(this.handlesContainer);
+
+        // Assign drag behavior
+        this.dragBehavior = d3.drag()
+            .container(getFurthestSvgOwner(this.handlesContainer))
+            .on("start", dragStart)
+            .on("drag", dragged)
+            .on("end", dragEnd);
 
         // Create handle elements
 
-        // Circle which will contain the selected items
-        this.circleEl = <SVGGElement>document.createElementNS(NS.SVG, "g");
-        $(this.circleEl).attr({ id: uniqid() });
-        this.transformService.standardizeTransforms(this.circleEl);
+        // Group which will contain the arcs, which should surround the
+        // selected items.
+        let defaultTransformStr = this.transformService.defaultTransformString;
 
-        this.deleteEl = <SVGCircleElement>document.createElementNS(NS.SVG, "circle");
-        $(this.deleteEl).attr({
-            id: uniqid(),
-            "data-name": "handle-delete-btn",
-            fill: "red",
-            stroke: "rgb(100,100,100)",
-            "stroke-width": 2,
-            r: 20,
-            cx: 10,
-            cy: 10
+        d3.select(this.handlesContainer)
+            .append("g")
+            .attr("id", uniqid())
+            .attr("data-name", "handles-arc-container")
+            .attr("transform", defaultTransformStr);
+
+        this.arcsContainer = convertToSvgGraphicsElement(
+            $(this.handlesContainer)
+                .find("*[data-name='handles-arc-container']")[0]);
+
+        // TODO: Rewrite how handles are loaded using d3.
+        let handleBtnsData = [
+            { "data-name": "handle-delete" },
+            { "data-name": "handle-move" },
+            { "data-name": "handle-scale" },
+            { "data-name": "handle-rotate" }
+        ].map(btnData => {
+            return {
+                ...btnData,
+                id: uniqid(),
+                r: 20,
+                cx: 10,
+                cy: 10
+            };
         });
-        this.transformService.standardizeTransforms(this.deleteEl);
 
-        let circlePathsData: IDrawArcConfig = {
-            radius: 50,
-            slices: [
-                {
-                    degrees: 240,
-                    color: "gray"
-                },
-                {
-                    degrees: 60,
-                    color: "green"
-                },
-                {
-                    degrees: 60,
-                    color: "blue"
-                }    
-            ],
-            width: 4,
-            startAngle: 60
-        };
-        let circlePaths = drawCubicBezierArc(circlePathsData);
+        d3.select(this.handlesContainer)
+            .selectAll("circle")
+            .data(handleBtnsData)
+            .enter()
+            .append("circle")
+            .attr("id", function(d) { return uniqid() })
+            .attr("class", NAMES.BTN_HANDLE_CLASS)
+            .attr("data-name", function(d) { return d["data-name"] })
+            .attr("r", 20)
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("transform", defaultTransformStr);
 
-        // Store init data in handles element
-        $(this.handlesContainer).data(circlePathsData);
-
-        // Compose elements
-        this.handlesContainer.appendChild(this.circleEl);
-        this.handlesContainer.appendChild(this.deleteEl);
-
-        for (let circlePath of circlePaths) {
-            this.circleEl.appendChild(circlePath);
-        }
-
-        // Create circle arcs
-        let arcData = [
-            toRadians(120/4),
-            toRadians(120/4),
-            toRadians(120/4),
-            toRadians(120/4),
-            toRadians(240)
-        ];
-        let arcPaths = d3.pie()(arcData);
-        arcPaths.map(path => {
-            d3.select(this.handlesContainer)
-                .selectAll("path")
-                .data(arcData)
-                .enter()
-                .append
-        });
+        let $handlesContainer = $(this.handlesContainer);
+        this.deleteEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-delete']")[0]);
+        this.scaleEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-scale']")[0]);
+        this.moveEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-move']")[0]);
+        this.rotateEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-rotate']")[0]);
 
         // Add event handlers
-        $(this.deleteEl).on("click", e => this.onDeleteClicked(e));
+        // $(this.deleteEl).on("click", e => this.onDeleteClicked(e));
+        $(this.deleteEl).on("click", this.onDeleteClicked);
 
         // Hide handles
         this.displayHandles();
@@ -151,13 +183,19 @@ export class SvgHandles implements ISvgHandles {
      */
     private displayHandles(): void {
         if (this.selectedObjects.length == 0) {
-            $(this.handlesContainer).hide();
+            ActivatableServiceSingleton.deactivate(this.handlesContainer);
+            this.removeEvtListeners();
         } else {
-            $(this.handlesContainer).show();
+            ActivatableServiceSingleton.activate(this.handlesContainer);
             this.updateHandlesTransforms();
+            this.addEvtListeners();
         }
     }
 
+    /**
+     * This function will check for selected objects, no need to check if any
+     * are selected before calling this.
+     */
     private updateHandlesTransforms(): void {
         let items = this.getSelectedObjects();
         
@@ -167,62 +205,94 @@ export class SvgHandles implements ISvgHandles {
         }
 
         // Get bbox of all items
-        let bbox:IBBox|null = null
+        let bbox = 
+            getBBoxSums(...this.selectedObjects.map(so => so.element));
 
-        for (let item of this.getSelectedObjects()) {
-            let itemBBox = this.transformService.getBBox(item.element);
-
-            if (bbox == null) {
-                bbox = itemBBox;
-                continue;
-            }
-
-            // Check left
-            if (itemBBox.x < bbox.x) {
-                bbox.x = itemBBox.x;
-            }
-
-            // Check right
-            if ((itemBBox.x + itemBBox.width) > (bbox.x + bbox.width)) {
-                bbox.width = itemBBox.width;
-            }
-
-            // Check top
-            if (itemBBox.y < bbox.y) {
-                bbox.y = itemBBox.y;
-            }
-
-            // Check bottom
-            if ((itemBBox.y + itemBBox.height) > (bbox.y + bbox.height)) {
-                bbox.height = itemBBox.height;
-            }
-        }
-
+        // Cast to valid bbox (we know it's not null).
         bbox = <IBBox>bbox;
 
         // Update the handles to surround the bbox
-        this.transformService.setTranslation(this.circleEl, { 
+        this.transformService.setTranslation(this.arcsContainer, { 
             x: bbox.x + (bbox.width / 2), 
             y: bbox.y + (bbox.height / 2)
         });
         let hyp = Math.sqrt((bbox.width * bbox.width) + (bbox.height * bbox.height));
-        this.circleEl.setAttribute("r", hyp.toFixed(3));
+        this.handlesData.radius = hyp;
+        this.handlesData.draw(this.arcsContainer);
 
         // Get the updated circles bbox
-        let circleBBox = this.transformService.getBBox(this.circleEl);
+        let deleteArc = $(this.arcsContainer).find("*[data-name='close-arc']")[0];
+        let moveArc = $(this.arcsContainer).find("*[data-name='pan-arc']")[0];
+        let scaleArc = $(this.arcsContainer).find("*[data-name='scale-arc']")[0];
+        let rotateArc = $(this.arcsContainer).find("*[data-name='rotate-arc']")[0];
+
+        if (!isSvgElement(deleteArc) 
+            || !isSvgElement(moveArc)
+            || !isSvgElement(scaleArc)
+            || !isSvgElement(rotateArc))
+        {
+            throw new Error("Failed to find the delete arc.");
+        }
+
+        let deleteArcCenter = this.transformService.getCenter(deleteArc);
+        let moveArcCenter = this.transformService.getCenter(moveArc);
+        let scaleArcCenter = this.transformService.getCenter(scaleArc);
+        let rotateArcCenter = this.transformService.getCenter(rotateArc);
+        let centerOfArcs = this.transformService.getCenter(this.arcsContainer);
+
+        // TODO: Make these variables, not sure where to pass these in...
+        const PADDING_BETWEEN_ARC_AND_BTN = 10;
+        const BUTTON_RADIUS = 10;
+
+        // The distance between the arc and btn center.
+        let hyp_3 = PADDING_BETWEEN_ARC_AND_BTN + BUTTON_RADIUS + 20;
+        let deleteBtn_newCoords = getNewPointAlongAngle(centerOfArcs, deleteArcCenter, hyp_3);
+        let moveBtn_newCoords = getNewPointAlongAngle(centerOfArcs, moveArcCenter, hyp_3);
+        let scaleBtn_newCoords = getNewPointAlongAngle(centerOfArcs, scaleArcCenter, hyp_3);
+        let rotateBtn_newCoords = getNewPointAlongAngle(centerOfArcs, rotateArcCenter, hyp_3);
 
         // Update delete btn position
-        this.transformService.setTranslation(this.deleteEl, {
-            x: circleBBox.x + circleBBox.width,
-            y: circleBBox.y
-        });
+        this.transformService.setTranslation(this.deleteEl, deleteBtn_newCoords);
+
+        // Update move btn position
+        this.transformService.setTranslation(this.moveEl, moveBtn_newCoords);
+
+        // Update scale position
+        this.transformService.setTranslation(this.scaleEl, scaleBtn_newCoords);
+
+        // Update rotate position
+        this.transformService.setTranslation(this.rotateEl, rotateBtn_newCoords);
     }
 
-    private updateHandlesV2(data: any): void {
-        d3.select(this.handlesContainer)
-            .selectAll("path")
-            .data(data)
-            .enter()
+    private addEvtListeners(): void {
+        
+        // Retreive all elements without listeners
+        let elementsWithOutListeners = this.selectedObjects
+            .filter(so => this.cachedElementsWithEvts.indexOf(so.element) == -1)
+            .map(so => so.element);
+
+        d3.selectAll<Element, {}>(elementsWithOutListeners)
+            .call(d3.drag()
+                .on("start", dragStart)
+                .on("drag", dragged)
+                .on("end", dragEnd));
+
+        this.cachedElementsWithEvts = this.cachedElementsWithEvts
+            .concat(elementsWithOutListeners);
+    }
+
+    private removeEvtListeners(): void {
+
+        // Retreive all elements with listeners
+        let elementsWithListeners = this.cachedElementsWithEvts;
+
+        d3.selectAll<Element, {}>("*")
+            .call(d3.drag()
+                .on("start", null)
+                .on("drag", null)
+                .on("end", null));
+
+        this.cachedElementsWithEvts = [];
     }
 
     public selectObjects(...elements: SvgItem[]): void {

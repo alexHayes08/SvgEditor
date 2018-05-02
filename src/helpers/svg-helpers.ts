@@ -1,4 +1,4 @@
-import { ICoords2D } from "../services/svg-transform-service";
+import { ICoords2D, IBBox, SvgTransformService } from "../services/svg-transform-service";
 import { normalizeAngle, toDegrees, toRadians } from "../helpers/math-helpers";
 import { NS } from "../helpers/namespaces-helper";
 import { getAllGroups } from "../helpers/regex-helper";
@@ -26,12 +26,48 @@ export const GraphicsElements = [
     "video"
 ];
 
+/**
+ * Converts the element to an SVGElement. Will throw an error if the element
+ * isn't an svg element.
+ * @param element 
+ * @throws - Throws an error if the element isn't an SVGElement.
+ */
+export function convertToSvgElement(element: Element): SVGElement {
+    if (isSvgElement(element)) {
+        return <SVGElement>element;
+    } else {
+        throw new Error("Failed to convert the element to an SVGElement");
+    }
+}
+
+/**
+ * Converts an Element to an SVGGraphicsElement.
+ * @param element 
+ * @throws - Throws an error if the element isn't an SVGGraphicsElement.
+ */
+export function convertToSvgGraphicsElement(element: Element): SVGGraphicsElement {
+    if (isSvgGraphicsElement(element)) {
+        return <SVGGraphicsElement>element;
+    } else {
+        throw new Error("Failed to convert the element to an SVGGraphicsElement");
+    }
+}
+
 export function isSvgElement(element: any): element is SVGElement {
     return element!= undefined && element.ownerSVGElement;
 }
 
 export function isSvgGraphicsElement(element: any): element is SVGGraphicsElement {
-    return element.transform != undefined;
+    return element != undefined && element.transform != undefined;
+}
+
+export function isSvgSvgElement(element: any): element is SVGSVGElement {
+    return element != undefined 
+        && element.x != undefined
+        && element.y != undefined
+        && element.viewBox != undefined
+        && element.getCurrentTime != undefined
+        && element.tagName.toLowerCase() == "svg";
 }
 
 export function getAllSubElementWhichInheritColors(parentElement: SVGElement) {
@@ -74,15 +110,6 @@ export function getElementAttrPointsTo(element: JQuery<HTMLElement>, attr: strin
     return result;
 }
 
-
-export function drawCircle(): void {
-
-}
-
-export function updateCircle(): void {
-
-}
-
 export interface ISlice {
     degrees: number;
     color: string;
@@ -120,7 +147,10 @@ export function updateArcsV2(data: IDrawArcConfig, paths: SVGPathElement[]): voi
 
 export interface ISliceV2 {
     radius: number;
-    
+    endAngle: number;
+    startAngle: number;
+    width?: number;
+    color: string;
 }
 
 export interface ID3ArcConfig {
@@ -252,4 +282,94 @@ function getXCircleCoord(currentAngle: number, radius: number): number {
     // }
 
     return radius + x;
+}
+
+/**
+ * Retrieves a BBox that contains all elements.
+ * @param elements 
+ */
+export function getBBoxSums(...elements: SVGElement[]): IBBox|null {
+    let bbox:IBBox|null = null;
+    let transformService = new SvgTransformService();
+
+    for (let item of elements) {
+        let itemBBox = transformService.getBBox(item);
+
+        if (bbox == null) {
+            bbox = itemBBox;
+            continue;
+        }
+
+        // Check left
+        if (itemBBox.x < bbox.x) {
+            bbox.x = itemBBox.x;
+        }
+
+        // Check right
+        if ((itemBBox.x + itemBBox.width) > (bbox.x + bbox.width)) {
+            bbox.width = itemBBox.width;
+        }
+
+        // Check top
+        if (itemBBox.y < bbox.y) {
+            bbox.y = itemBBox.y;
+        }
+
+        // Check bottom
+        if ((itemBBox.y + itemBBox.height) > (bbox.y + bbox.height)) {
+            bbox.height = itemBBox.height;
+        }
+    }
+
+    return bbox;
+}
+
+/**
+ * Cross browser polyfill for 'ownerSvgDocument' which isn't avaiable on IE9.
+ * @param element 
+ */
+export function getFurthestSvgOwner(element: SVGElement): SVGSVGElement {
+    let parents: Element[] = [];
+
+    // Check if the current element is a svg
+    if (isSvgSvgElement(element)) {
+        parents.push(element);
+    }
+
+    let currentEl = element.parentElement;
+    while (currentEl != null) {
+        if (currentEl.tagName.toLowerCase() == "svg") {
+            parents.push(currentEl);
+        }
+
+        currentEl = currentEl.parentElement;
+    }
+
+    let lastSvgParent = parents.pop();
+
+    if (isSvgSvgElement(lastSvgParent)) {
+        return lastSvgParent;
+    } else {
+        throw new Error("Failed to cast the last svg parent element to the SVGSVGElement interface.")
+    }
+}
+
+/**
+ * Returns a new point along a line between two points that is a 'hyp' amount
+ * away from 'pt_b'.
+ * @param pt_a 
+ * @param pt_b 
+ * @param hyp 
+ */
+export function getNewPointAlongAngle(pt_a: ICoords2D, pt_b: ICoords2D, hyp: number): ICoords2D {
+    let result: ICoords2D = {
+        x: 0,
+        y: 0
+    };
+    
+    let angle = Math.atan((pt_b.y - pt_a.x) / (pt_b.x - pt_a.x));
+    result.x = pt_b.x + (Math.cos(angle) * hyp);
+    result.y = pt_b.y + (Math.sin(angle) * hyp);
+
+    return result;
 }

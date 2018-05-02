@@ -1,3 +1,4 @@
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const path = require("path");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
@@ -44,6 +45,10 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 //     ]
 // }
 
+const extractSass = new ExtractTextPlugin({
+    filename: "[name].[contenthash].css"
+});
+
 var clientConfig = {
     entry: [
         "./src/index.ts",
@@ -52,7 +57,8 @@ var clientConfig = {
     resolve: {
         extensions: [
             ".js",
-            ".ts"
+            ".ts",
+            ".scss"
         ],
         modules: [
             path.resolve(__dirname, "src"),
@@ -86,10 +92,36 @@ var clientConfig = {
                         presets: ["babel-preset-env"]
                     }
                 }
+            },
+            {
+                test: /\.scss$/,
+                // use: extractSass.extract({
+                //     use: [
+                //         { loader: "style-loader" },
+                //         { loader: "css-loader" },
+                //         { 
+                //             loader: "sass-loader",
+                //             options: {
+                //                 includePaths: [ "src/ui/scss" ]
+                //             }
+                //         }
+                //     ]
+                // })
+                use: [
+                    { loader: "style-loader" },
+                    { loader: "css-loader" },
+                    { 
+                        loader: "sass-loader",
+                        options: {
+                            includePaths: [ "src/ui/scss" ]
+                        }
+                    }
+                ]
             }
         ]
     },
     plugins: [
+        // extractSass,
         new HtmlWebpackPlugin({
             title: "Development",
             template: "./src/ui/index.html",

@@ -3,6 +3,7 @@ import { DOMMatrix } from "geometry-interfaces";
 import { toDegrees, toRadians } from "../helpers/math-helpers";
 import { getAllGroups } from "../helpers/regex-helper";
 import { getDOMMatrix } from "../helpers/node-helper";
+import { getFurthestSvgOwner } from "../helpers/svg-helpers";
 
 export interface IBBox {
     x: number;
@@ -90,7 +91,7 @@ export class SvgTransformService {
     private readonly matrixRegex: RegExp;
     private readonly skewXRegex: RegExp;
     private readonly skewYRegex: RegExp;
-    private readonly defaultTransformString: string;
+    private readonly _defaultTransformString: string;
 
     // [End Fields]
 
@@ -104,12 +105,16 @@ export class SvgTransformService {
         this.matrixRegex = /matrix\(\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*\)/g;
         this.skewXRegex = /skewX\(\s*([\d\.]+)\s*\)/g;
         this.skewYRegex = /skewY\(\s*([\d\.]+)\s*\)/g;
-        this.defaultTransformString = "translate(0,0) rotate(0,0,0) scale(1,1) skewX(0) skewY(0)";
+        this._defaultTransformString = "translate(0,0) rotate(0,0,0) scale(1,1) skewX(0) skewY(0)";
     }
 
     // [End Ctor]
 
     // [Properties]
+
+    get defaultTransformString() {
+        return this._defaultTransformString;
+    }
 
     // [End Properties]
 
@@ -301,14 +306,10 @@ export class SvgTransformService {
      * @throws - Throws an error if the element has no parent svg element.
      */
     public getBBox(element: SVGElement) {
-        let parentSvg = $(element).closest("svg");
-
-        if (parentSvg.length == null) {
-            throw new Error("The element had no svg parent element.");
-        }
+        let parentSvg = getFurthestSvgOwner(element);
 
         let elBBox = element.getBoundingClientRect();
-        let paBBox = parentSvg[0].getBoundingClientRect();
+        let paBBox = parentSvg.getBoundingClientRect();
 
         return {
             x: elBBox.left - paBBox.left,
@@ -454,7 +455,7 @@ export class SvgTransformService {
         let cxAttr = element.getAttribute("cx");
         let cyAttr = element.getAttribute("cy");
 
-        let transformStr = this.defaultTransformString;
+        let transformStr = this._defaultTransformString;
 
         // Set the x/y/cx/cy attributes to zero
         if (xAttr != null || yAttr != null) {

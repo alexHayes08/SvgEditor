@@ -4,6 +4,7 @@ import * as $ from "jquery";
 import { AutoWired, Inject } from 'typescript-ioc';
 import * as d3 from "d3";
 
+import { DefaultCircleArc } from "./islice";
 import { ISvgHandles } from "./isvg-handles-model";
 import { IViewBox } from "../services/svg-canvas-service";
 import { NS } from "../helpers/namespaces-helper";
@@ -98,7 +99,8 @@ export class SvgCanvas {
             "viewBox": `${viewbox.minX} ${viewbox.minY} ${viewbox.width} ${viewbox.height}`,
             "width": width.toString(),
             "height": height.toString(),
-            "data-name": "svg-canvas-editor"
+            "data-name": "svg-canvas-editor",
+            "overflow": "auto"
         });
 
         // Create defs element & symbolsContainer element
@@ -164,9 +166,30 @@ export class SvgCanvas {
         // And append the svg to the parent container
         parentElement.appendChild(this.svgCanvas_el);
 
+        /**
+         * [EVENT LISTENERS]
+         * 
+         * Ideally ALL event listeners will be added thru the ui instead of
+         * here. There should be only TWO event listeners, on for the handles
+         * and one for the editor area. The handle events must NOT be
+         * propagated to the editor.
+         */
+
         // Attach event listener to canvas
         // this.svgCanvas_el.addEventListener("click", this.onSvgCanvasMouseDown);
-        $(this.svgCanvas_el).on("mousedown", e => this.onSvgCanvasMouseDownV2(e));
+        $(this.svgCanvas_el).on("mousedown", this.onSvgCanvasMouseDownV2.bind(this));
+
+        $(this.handles_el).on("mousedown", function(e) {
+            
+            console.log("Handles evt occurred");
+
+            // Stop propagation, the editor must NOT recieve handle events.
+            return false;
+        });
+
+        /**
+         * [End EVENT LISTENERS]
+         */
 
         this._defs = new SvgDefs(this.defs_el);
 
@@ -174,7 +197,49 @@ export class SvgCanvas {
             this.editor_el, 
             this.overEditor_el);
 
-        this._handles = new SvgHandles(this.handles_el, this._defs);
+        // Handles data
+        // Handles should have five parts:
+        // 1) 30 deg red close arc
+        // 2) 30 deg yellow pan arc
+        // 3) 30 deg blue scale arc
+        // 4) 30 deg green rotate arc
+        // 5) 240 deg grey fill arc
+        let handlesData = new DefaultCircleArc({
+            startAngleOffset: 45,
+            defaultColor: "gray",
+            radius: 100,
+            defaultWidth: 8,
+            slices: [
+                {
+                    name: "fill",
+                    angle: 270
+                },
+                {
+                    name: "rotate-arc",
+                    angle: 30,
+                    color: "green"
+                },
+                {
+                    name: "scale-arc",
+                    angle: 30,
+                    color: "blue"
+                },
+                {
+                    name: "pan-arc",
+                    angle: 30,
+                    color: "yellow"
+                },
+                {
+                    name: "close-arc",
+                    angle: 30,
+                    color: "red"
+                }
+            ]
+        });
+
+        this._handles = new SvgHandles(this.handles_el, 
+            this._defs, 
+            handlesData);
     }
 
     // [End Ctor]
@@ -202,7 +267,7 @@ export class SvgCanvas {
     }
 
     get handles() {
-        return {};
+        return this._handles;
     }
 
     // [End Properties]

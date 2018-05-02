@@ -1,0 +1,80 @@
+/**
+ * [aperture-svg-editor]
+ */
+
+aperture-svg-editor options {
+    display: none;
+}
+
+svg *:not(.editableAreaRect):not(.editAreaMask) {
+    cursor: pointer;
+}
+
+*:not(svg) svg {
+    overflow: visible;
+}
+
+/**
+ * [Handles]
+ */
+
+.activatable {
+    opacity: 0;
+    transition: opacity .2s ease-in-out;
+}
+
+.activatable.deactivated {
+    display: none;
+}
+
+.activatable.activated {
+    display: block;
+    opacity: 1;
+}
+
+*[data-name="handles-area"] path {
+    stroke-width: 0;
+    transition: all .2s linear;
+    z-index: 0;
+}
+
+/* *[data-name="handles-area"] path:hover:not([data-name="fill"]),
+ [data-name="handles-area"] path.active:not([data-name="fill"]) {
+    stroke-width: 4;
+    z-index: 1;
+} */
+
+.btn-handle {
+    fill: gray;
+    opacity: .15;
+    stroke: none;
+    transition: opacity .2s ease-in-out;
+}
+
+*[data-name="handle-delete"]:hover {
+    fill: red;
+    opacity: 1;
+}
+
+*[data-name="handle-move"]:hover {
+    fill: yellow;
+    opacity: 1;
+}
+
+*[data-name="handle-scale"]:hover {
+    fill: blue;
+    opacity: 1;
+}
+
+*[data-name="handle-rotate"]:hover {
+    fill: green;
+    opacity: 1;
+}
+
+/**
+ * [End Handles]
+ */
+
+/**
+ * [End aperture-svg-editor]
+ */

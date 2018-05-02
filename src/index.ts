@@ -3,6 +3,9 @@
 import { ApertureSvgEditor } from "./models/aperture-svg-editor";
 import { SvgCanvas } from "./models/svg-canvas-model";
 
+// This is only temporary, should be moved elsewhere...
+import "./ui/scss/ui.styles.scss";
+
 // export const SvgEditors: ApertureSvgEditor[] = [];
 // let editorEls = $("aperture-svg-editor").each(function() {
 //     SvgEditors.push(new ApertureSvgEditor(this));

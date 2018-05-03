@@ -285,46 +285,6 @@ function getXCircleCoord(currentAngle: number, radius: number): number {
 }
 
 /**
- * Retrieves a BBox that contains all elements.
- * @param elements 
- */
-export function getBBoxSums(...elements: SVGElement[]): IBBox|null {
-    let bbox:IBBox|null = null;
-    let transformService = new SvgTransformService();
-
-    for (let item of elements) {
-        let itemBBox = transformService.getBBox(item);
-
-        if (bbox == null) {
-            bbox = itemBBox;
-            continue;
-        }
-
-        // Check left
-        if (itemBBox.x < bbox.x) {
-            bbox.x = itemBBox.x;
-        }
-
-        // Check right
-        if ((itemBBox.x + itemBBox.width) > (bbox.x + bbox.width)) {
-            bbox.width = itemBBox.width;
-        }
-
-        // Check top
-        if (itemBBox.y < bbox.y) {
-            bbox.y = itemBBox.y;
-        }
-
-        // Check bottom
-        if ((itemBBox.y + itemBBox.height) > (bbox.y + bbox.height)) {
-            bbox.height = itemBBox.height;
-        }
-    }
-
-    return bbox;
-}
-
-/**
  * Cross browser polyfill for 'ownerSvgDocument' which isn't avaiable on IE9.
  * @param element 
  */

@@ -12,7 +12,7 @@ import { SvgDefs } from "./svg-defs-model";
 import { SvgEditor } from "./svg-editor-model";
 import { SvgHandles } from "./svg-handles-model";
 import { SvgMaskService } from "../services/svg-mask-service";
-import { SvgTransformService } from "../services/svg-transform-service";
+import { SvgTransformService, SvgTransformServiceSingleton } from "../services/svg-transform-service";
 import {
     DefaultTransitionStartEvtData, 
     DefaultTransitionEndEvtData, 
@@ -87,7 +87,7 @@ export class SvgCanvas {
         parentElement: HTMLElement,
         importSvg: string|null = null)
     {
-        this.transformService = new SvgTransformService();
+        this.transformService = SvgTransformServiceSingleton;
 
         // Create svg element
         this.svgCanvas_el = <SVGElement>document.createElementNS(NS.SVG, "svg");
@@ -166,31 +166,6 @@ export class SvgCanvas {
         // And append the svg to the parent container
         parentElement.appendChild(this.svgCanvas_el);
 
-        /**
-         * [EVENT LISTENERS]
-         * 
-         * Ideally ALL event listeners will be added thru the ui instead of
-         * here. There should be only TWO event listeners, on for the handles
-         * and one for the editor area. The handle events must NOT be
-         * propagated to the editor.
-         */
-
-        // Attach event listener to canvas
-        // this.svgCanvas_el.addEventListener("click", this.onSvgCanvasMouseDown);
-        $(this.svgCanvas_el).on("mousedown", this.onSvgCanvasMouseDownV2.bind(this));
-
-        $(this.handles_el).on("mousedown", function(e) {
-            
-            console.log("Handles evt occurred");
-
-            // Stop propagation, the editor must NOT recieve handle events.
-            return false;
-        });
-
-        /**
-         * [End EVENT LISTENERS]
-         */
-
         this._defs = new SvgDefs(this.defs_el);
 
         this._editor = new SvgEditor(this.underEditor_el, 
@@ -240,6 +215,61 @@ export class SvgCanvas {
         this._handles = new SvgHandles(this.handles_el, 
             this._defs, 
             handlesData);
+
+        /**
+         * [EVENT LISTENERS]
+         * 
+         * Ideally ALL event listeners will be added thru the ui instead of
+         * here. There should be only TWO event listeners, on for the handles
+         * and one for the editor area. The handle events must NOT be
+         * propagated to the editor.
+         */
+
+        // Attach event listener to canvas
+        // this.svgCanvas_el.addEventListener("click", this.onSvgCanvasMouseDown);
+        // $(this.svgCanvas_el).on("mousedown", this.onSvgCanvasMouseDownV2.bind(this));
+
+        // Capture class vars
+        let editor = this.editor;
+        let handles = this.handles;
+        let svgCanvas_el = this.svgCanvas_el;
+        let transformService = this.transformService;
+        d3.select(this.svgCanvas_el).on("mousedown", function(d,i) {
+            let { pageX:x, pageY:y } = d3.event;
+            // let point = transformService.convertScreenCoordsToSvgCoords(
+            //     { x, y }, 
+            //     <SVGSVGElement>svgCanvas_el);
+
+            // let items = editor.getItemsIntersectionPoint(point);
+            
+            // If ctrl is not down, deselect all objects and only select the
+            // topmost element clicked.
+            // if (!d3.event.ctrlKey) {
+            //     handles.deselectObjects();
+            //     let topMostItem = items.pop();
+
+            //     if (topMostItem != undefined) {
+            //         handles.selectObjects(topMostItem);
+            //     }
+            // } else {
+            //     handles.selectObjects(...items);
+            // }
+            
+            // console.log(items);
+            handles.deselectObjects();     
+        });
+
+        // $(this.handles_el).on("mousedown", function(e) {
+            
+        //     console.log("Handles evt occurred");
+
+        //     // Stop propagation, the editor must NOT recieve handle events.
+        //     return false;
+        // });
+
+        /**
+         * [End EVENT LISTENERS]
+         */
     }
 
     // [End Ctor]
@@ -276,24 +306,24 @@ export class SvgCanvas {
 
     // [Evt Handlers]
 
-    public onSvgCanvasMouseDownV2(event: JQuery.Event<HTMLElement, null>) {
-        let { pageX:x, pageY:y } = event;
+    public onSvgCanvasMouseDownV2(data: {}, i: number) {
+        // let { pageX:x, pageY:y } = data;
         
-        let point = this.transformService.convertScreenCoordsToSvgCoords(
-            { x, y }, 
-            <SVGSVGElement>this.svgCanvas_el);
+        // let point = this.transformService.convertScreenCoordsToSvgCoords(
+        //     { x, y }, 
+        //     <SVGSVGElement>this.svgCanvas_el);
 
-        let items = this.editor.getItemsIntersectionPoint(point);
+        // let items = this.editor.getItemsIntersectionPoint(point);
         
         // If ctrl is not down, deselect all objects and only select the
         // topmost element clicked.
-        if (!event.ctrlKey) {
-            this._handles.deselectObjects();
-        }
+        // if (!data.ctrlKey) {
+        //     this._handles.deselectObjects();
+        // }
 
-        this._handles.selectObjects(...items);
+        // this._handles.selectObjects(...items);
         
-        console.log(items);
+        // console.log(items);
     }
 
     // [End Evt Handlers]

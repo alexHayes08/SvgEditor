@@ -301,21 +301,66 @@ export class SvgTransformService {
     }
 
     /**
-     * A cross browser polyfill for SVGGraphicsElement.getBBox().
-     * @param element 
+     * A cross browser polyfill for SVGGraphicsElement.getBBox(). This assumes
+     * that all elements passed in have the same furthest svg parent.
+     * @param elements 
      * @throws - Throws an error if the element has no parent svg element.
      */
-    public getBBox(element: SVGElement) {
-        let parentSvg = getFurthestSvgOwner(element);
+    public getBBox(...elements: SVGElement[]): IBBox {
+        
+        // Check for any elements.
+        if (elements.length == 0) {
+            throw new Error("No elements were passed in.");
+        }
 
-        let elBBox = element.getBoundingClientRect();
-        let paBBox = parentSvg.getBoundingClientRect();
+        let parentSvgBBox = getFurthestSvgOwner(elements[0])
+            .getBoundingClientRect();
+
+        let firstElBBox = elements[0].getBoundingClientRect();
+
+        let bbox = {
+            top: parentSvgBBox.left - firstElBBox.left,
+            left: parentSvgBBox.top - firstElBBox.top,
+            bottom: parentSvgBBox.bottom - firstElBBox.bottom,
+            right: parentSvgBBox.right - firstElBBox.right
+        };
+
+        for (let i = 1; i < elements.length; i++) {
+            let element = elements[i];
+            let elBBox = element.getBoundingClientRect();
+            
+            // Normalize bbox
+            let left = parentSvgBBox.left - elBBox.left;
+            let top = parentSvgBBox.top - elBBox.left;
+            let right = parentSvgBBox.right - elBBox.right;
+            let bottom = parentSvgBBox.bottom - elBBox.bottom;
+
+            // Check the top
+            if (top < bbox.top) {
+                bbox.top = top;
+            }
+
+            // Check the bottom
+            if (bottom > bbox.bottom) {
+                bbox.bottom = bottom;
+            }
+
+            // Check the left
+            if (left < bbox.left) {
+                bbox.left = left;
+            }
+
+            // Check right
+            if (right > bbox.right) {
+                bbox.right = right;
+            }
+        }
 
         return {
-            x: elBBox.left - paBBox.left,
-            y: elBBox.top - paBBox.top,
-            width: elBBox.width,
-            height: elBBox.height
+            x: bbox.left,
+            y: bbox.top,
+            width: bbox.right - bbox.left,
+            height: bbox.bottom - bbox.top
         };
     }
 
@@ -563,3 +608,7 @@ export class SvgTransformService {
 
     // [End Functions]
 }
+
+// Export singleton
+let SvgTransformServiceSingleton = new SvgTransformService();
+export { SvgTransformServiceSingleton };

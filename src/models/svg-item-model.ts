@@ -4,7 +4,7 @@ import { color, ColorSpaceObject } from "d3";
 import * as $ from "jquery";
 
 import { ColorValue } from "./color-value";
-import { SvgTransformService, ICoords2D } from "../services/svg-transform-service";
+import { SvgTransformService, SvgTransformServiceSingleton, ICoords2D } from "../services/svg-transform-service";
 import { isSvgGraphicsElement } from "../helpers/svg-helpers";
 
 export interface ColorMap {
@@ -44,7 +44,7 @@ export class SvgItem {
     // [Ctor]
 
     public constructor(item: SVGGraphicsElement) {
-        this.transformService = new SvgTransformService();
+        this.transformService = SvgTransformServiceSingleton;
         
         let $el = $(item);
         this._element = item;

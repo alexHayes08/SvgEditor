@@ -2,12 +2,12 @@ import { expect } from "chai";
 import { fail } from "assert";
 import "mocha";
 
-import { SvgTransformService } from "../src/services/svg-transform-service";
+import { SvgTransformServiceSingleton } from "../src/services/svg-transform-service";
 
 describe("SvgTransformService", () => {
     describe("#extractTransformProperties", () => {
         it ("Should extract a translation of x: 43.5 and y: 22 from a transform string..", () => {
-            let transformService = new SvgTransformService();
+            let transformService = SvgTransformServiceSingleton;
             let transformStr = "translate( 43.5 ,22) rotate(0) scale(1,1)";
             let transformProps = transformService.extractTransformProperties(transformStr);
 

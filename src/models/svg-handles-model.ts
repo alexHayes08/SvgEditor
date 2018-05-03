@@ -8,10 +8,10 @@ import { ActivatableServiceSingleton } from "../services/activatable-service";
 import { NS } from "../helpers/namespaces-helper";
 import { ISvgHandles } from "./isvg-handles-model";
 import { SvgDefs } from "./svg-defs-model";
-import { drawCubicBezierArc, IDrawArcConfig, ISliceV2, getBBoxSums, isSvgElement, getNewPointAlongAngle, convertToSvgElement, convertToSvgGraphicsElement, getFurthestSvgOwner, isSvgGraphicsElement } from "../helpers/svg-helpers";
+import { drawCubicBezierArc, IDrawArcConfig, ISliceV2, isSvgElement, getNewPointAlongAngle, convertToSvgElement, convertToSvgGraphicsElement, getFurthestSvgOwner, isSvgGraphicsElement } from "../helpers/svg-helpers";
 import { ISlice, isISlice, DefaultCircleArc, ICircleArc } from "../models/islice";
 import { SvgItem } from "./svg-item-model";
-import { SvgTransformService, IBBox } from "../services/svg-transform-service";
+import { SvgTransformService, SvgTransformServiceSingleton, IBBox } from "../services/svg-transform-service";
 import { toRadians } from "../helpers/math-helpers";
 
 export const NAMES = {
@@ -58,7 +58,7 @@ export class SvgHandles implements ISvgHandles {
         this.handlesContainer = handlesContainer;
         this.selectedObjects = [];
         this.optionEls = [];
-        this.transformService = new SvgTransformService();
+        this.transformService = SvgTransformServiceSingleton;
         this._lastSelectedSection = 0;
         this.handlesData = data;
         this.cachedElementsWithEvts = [];
@@ -175,16 +175,13 @@ export class SvgHandles implements ISvgHandles {
             this.removeEvtListeners();
         } else {
             ActivatableServiceSingleton.activate(this.handlesContainer);
-            this.updateHandlesTransforms();
+            this.drawHandles();
+            this.updateHandlesPosition();
             this.addEvtListeners();
         }
     }
 
-    /**
-     * This function will check for selected objects, no need to check if any
-     * are selected before calling this.
-     */
-    private updateHandlesTransforms(): void {
+    private updateHandlesPosition(): void {
         let items = this.getSelectedObjects();
         
         // Check if anything is selected.
@@ -193,17 +190,23 @@ export class SvgHandles implements ISvgHandles {
         }
 
         // Get bbox of all items
-        let bbox = 
-            getBBoxSums(...this.selectedObjects.map(so => so.element));
-
-        // Cast to valid bbox (we know it's not null).
-        bbox = <IBBox>bbox;
+        let centerOfSelectedItems = 
+            this.transformService.getCenter(...this.selectedObjects.map(so => so.element));
 
         // Update the handles to surround the bbox
         this.transformService.setTranslation(this.arcsContainer, { 
-            x: bbox.x + (bbox.width / 2), 
-            y: bbox.y + (bbox.height / 2)
+            x: centerOfSelectedItems.x, 
+            y: centerOfSelectedItems.y
         });
+    }
+
+    private drawHandles(): void {
+        let bbox = this.transformService.getBBox(...this.selectedObjects.map(so => so.element));
+
+        if (bbox == null) {
+            return;
+        }
+
         let hyp = Math.sqrt((bbox.width * bbox.width) + (bbox.height * bbox.height));
         this.handlesData.radius = hyp;
         this.handlesData.draw(this.arcsContainer);
@@ -276,9 +279,9 @@ export class SvgHandles implements ISvgHandles {
                     });
                     
                     // Update the handles after translating all the selected items.
-                    handlesModel.updateHandlesTransforms();
+                    handlesModel.updateHandlesPosition();
                 }).on("end", function() {
-                    console.log("drag start")
+                    console.log("drag end")
                 }));
 
         this.cachedElementsWithEvts = this.cachedElementsWithEvts

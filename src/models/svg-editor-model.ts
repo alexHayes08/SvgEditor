@@ -4,7 +4,7 @@ import * as d3 from "d3";
 import { ActivatableServiceSingleton } from "../services/activatable-service";
 import { isSvgGraphicsElement } from "./../helpers/svg-helpers";
 import { nodeListToArray } from "../helpers/node-helper";
-import { ICoords2D, SvgTransformService } from "./../services/svg-transform-service";
+import { ICoords2D, SvgTransformService, SvgTransformServiceSingleton } from "./../services/svg-transform-service";
 import { isSvgElement } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
 
@@ -36,7 +36,7 @@ export class SvgEditor {
         editor: SVGGElement,
         overEditor: SVGGElement)
     {
-        this.transformService = new SvgTransformService();
+        this.transformService = SvgTransformServiceSingleton;
         this.editor_items = [];
 
         this.underEditor_el = underEditor;
@@ -172,11 +172,18 @@ export class SvgEditor {
             // Setup default transformations
             if (isSvgGraphicsElement(el)) {
                 let svgItem = new SvgItem(el);
-                let svgCanvas = <SVGGElement>this.editor_el.ownerSVGElement;
+                let svgCanvas = <SVGSVGElement>this.editor_el.ownerSVGElement;
 
                 // Add item to editor & editor_items
                 this.editor_el.appendChild(el);
                 this.editor_items.push(svgItem);
+
+                // Capture els
+                let tmp = this;
+                d3.select(svgItem.element)
+                    .on("click", function(data: {}, i: number) {
+                        console.log('test');
+                    });
 
                 // Attempt to center element
                 let centerOfSvg = this.transformService.getCenter(svgCanvas);

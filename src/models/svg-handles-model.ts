@@ -8,7 +8,7 @@ import { ActivatableServiceSingleton } from "../services/activatable-service";
 import { NS } from "../helpers/namespaces-helper";
 import { ISvgHandles } from "./isvg-handles-model";
 import { SvgDefs } from "./svg-defs-model";
-import { drawCubicBezierArc, IDrawArcConfig, ISliceV2, getBBoxSums, isSvgElement, getNewPointAlongAngle, convertToSvgElement, convertToSvgGraphicsElement, getFurthestSvgOwner } from "../helpers/svg-helpers";
+import { drawCubicBezierArc, IDrawArcConfig, ISliceV2, getBBoxSums, isSvgElement, getNewPointAlongAngle, convertToSvgElement, convertToSvgGraphicsElement, getFurthestSvgOwner, isSvgGraphicsElement } from "../helpers/svg-helpers";
 import { ISlice, isISlice, DefaultCircleArc, ICircleArc } from "../models/islice";
 import { SvgItem } from "./svg-item-model";
 import { SvgTransformService, IBBox } from "../services/svg-transform-service";
@@ -27,18 +27,6 @@ export enum SvgHandlesModes {
     ROTATE = 5
 };
 
-function dragStart(): void {
-    console.log("Drag started");
-}
-
-function dragged(): void {
-    console.log("Dragging...");
-}
-
-function dragEnd(): void {
-    console.log("Drag ended");
-}
-
 /**
  * This should be moved out of here into the UI.
  */
@@ -51,7 +39,7 @@ export class SvgHandles implements ISvgHandles {
     private transformService: SvgTransformService;
     private _lastSelectedSection: number;
     private handlesData: ICircleArc;
-    private dragBehavior: d3.DragBehavior<Element, {}, {} | d3.SubjectPosition>;
+    // private dragBehavior: d3.DragBehavior<Element, {}, {} | d3.SubjectPosition>;
     private cachedElementsWithEvts: Element[];
 
     private arcsContainer: SVGGElement;
@@ -80,11 +68,11 @@ export class SvgHandles implements ISvgHandles {
         ActivatableServiceSingleton.register(this.handlesContainer);
 
         // Assign drag behavior
-        this.dragBehavior = d3.drag()
-            .container(getFurthestSvgOwner(this.handlesContainer))
-            .on("start", dragStart)
-            .on("drag", dragged)
-            .on("end", dragEnd);
+        // this.dragBehavior = d3.drag()
+        //     .container(getFurthestSvgOwner(this.handlesContainer))
+        //     .on("start", dragStart)
+        //     .on("drag", dragged)
+        //     .on("end", dragEnd);
 
         // Create handle elements
 
@@ -271,11 +259,27 @@ export class SvgHandles implements ISvgHandles {
             .filter(so => this.cachedElementsWithEvts.indexOf(so.element) == -1)
             .map(so => so.element);
 
+        let handlesModel = this;
+
         d3.selectAll<Element, {}>(elementsWithOutListeners)
-            .call(d3.drag()
-                .on("start", dragStart)
-                .on("drag", dragged)
-                .on("end", dragEnd));
+            .call(d3.drag().container(getFurthestSvgOwner(this.handlesContainer))
+                .on("start", function() {
+                    console.log("drag start")
+                }).on("drag", function() {
+                    handlesModel.selectedObjects.map(el => {
+                        if (isSvgGraphicsElement(this)) {
+                            let tr = handlesModel.transformService.getTranslation(this);
+                            tr.x += d3.event.dx;
+                            tr.y += d3.event.dy;
+                            handlesModel.transformService.setTranslation(this, tr);
+                        }
+                    });
+                    
+                    // Update the handles after translating all the selected items.
+                    handlesModel.updateHandlesTransforms();
+                }).on("end", function() {
+                    console.log("drag start")
+                }));
 
         this.cachedElementsWithEvts = this.cachedElementsWithEvts
             .concat(elementsWithOutListeners);

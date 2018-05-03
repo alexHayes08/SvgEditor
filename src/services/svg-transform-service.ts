@@ -99,12 +99,12 @@ export class SvgTransformService {
 
     constructor() {
         this.transformsRegex = /^translate[^a-z]+ rotate[^a-z]+ scale[^a-z/]+ skewX[^a-z]+ skewY[^a-z]+$/;
-        this.translateRegex = /translate\(\s*([\d\.]+)\s*,\s*([\d\.]+)\s*\)/g;
-        this.rotateRegex = /rotate\(\s*([\d\.]+)\s*,?([\d\.]+)?,?([\d\.]+)?\)/g;
-        this.scaleRegex = /scale\(\s*([\d\.]+)\s*,([\d\.]+)\)/g;
-        this.matrixRegex = /matrix\(\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*\)/g;
-        this.skewXRegex = /skewX\(\s*([\d\.]+)\s*\)/g;
-        this.skewYRegex = /skewY\(\s*([\d\.]+)\s*\)/g;
+        this.translateRegex = /translate\(\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*\)/g;
+        this.rotateRegex = /rotate\(\s*([\-\d\.]+)\s*,?([\-\d\.]+)?,?([\-\d\.]+)?\)/g;
+        this.scaleRegex = /scale\(\s*([\-\d\.]+)\s*,([\-\d\.]+)\)/g;
+        this.matrixRegex = /matrix\(\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*\)/g;
+        this.skewXRegex = /skewX\(\s*([\-\d\.]+)\s*\)/g;
+        this.skewYRegex = /skewY\(\s*([\-\d\.]+)\s*\)/g;
         this._defaultTransformString = "translate(0,0) rotate(0,0,0) scale(1,1) skewX(0) skewY(0)";
     }
 
@@ -544,7 +544,7 @@ export class SvgTransformService {
 
     public setTranslation(element: SVGGraphicsElement, matrix: ITranslationMatrix): void {
         let transformStr = element.getAttribute("transform") || "";
-        transformStr = transformStr.replace(this.translateRegex, `translate(${matrix.x},${matrix.y})`);
+        transformStr = transformStr.replace(this.translateRegex, `translate(${matrix.x.toFixed(3)},${matrix.y.toFixed(3)})`);
         element.setAttribute("transform", transformStr);
     }
 

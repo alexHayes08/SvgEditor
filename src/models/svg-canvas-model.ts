@@ -205,7 +205,7 @@ export class SvgCanvas {
         // 4) 30 deg green rotate arc
         // 5) 240 deg grey fill arc
         let handlesData = new DefaultCircleArc({
-            startAngleOffset: 45,
+            startAngleOffset: 0,
             defaultColor: "gray",
             radius: 100,
             defaultWidth: 8,

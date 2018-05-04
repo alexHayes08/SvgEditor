@@ -7,6 +7,7 @@ import * as d3 from "d3";
 import { DefaultCircleArc } from "./islice";
 import { ISvgHandles } from "./isvg-handles-model";
 import { IViewBox } from "../services/svg-canvas-service";
+import { Names } from "./names";
 import { NS } from "../helpers/namespaces-helper";
 import { SvgDefs } from "./svg-defs-model";
 import { SvgEditor } from "./svg-editor-model";
@@ -64,6 +65,8 @@ export class SvgCanvas {
     private _editor: SvgEditor;
     private _handles: ISvgHandles;
 
+    private svgCanvasSelection: d3.Selection<SVGSVGElement, {}, null, undefined>;
+
     private transformService: SvgTransformService;
     
     // @Inject
@@ -90,30 +93,24 @@ export class SvgCanvas {
         this.transformService = SvgTransformServiceSingleton;
 
         // Create svg element
-        this.svgCanvas_el = <SVGElement>document.createElementNS(NS.SVG, "svg");
+        this.svgCanvasSelection = d3.select(parentElement)
+            .append<SVGSVGElement>("svg")
+            .attr("viewBox", `${viewbox.minX} ${viewbox.minY} ${viewbox.width} ${viewbox.height}`)
+            .attr("width", width.toString())
+            .attr("height", height.toString())
+            .attr("data-name", Names.SvgCanvas.DATA_NAME)
+            .attr("class", Names.SvgCanvas.CLASS)
+            .attr("overflow", "auto")
+            .attr("id", uniqid());
 
-        // Set attributes
-        this.svgCanvas_id = uniqid();
-        this.svgCanvas_el.id = this.svgCanvas_id;
-        $(this.svgCanvas_el).attr({
-            "viewBox": `${viewbox.minX} ${viewbox.minY} ${viewbox.width} ${viewbox.height}`,
-            "width": width.toString(),
-            "height": height.toString(),
-            "data-name": "svg-canvas-editor",
-            "overflow": "auto"
-        });
+        let canvasNode = this.svgCanvasSelection.node();
+
+        if (canvasNode == null) {
+            throw new Error("Failed to create the canvas? Not sure how that happened...");
+        }
 
         // Create defs element & symbolsContainer element
-        this.defs_el = <SVGDefsElement>document.createElementNS(NS.SVG, "defs");
-        this.defs_el.setAttribute("data-name", "defs-container");
-        this.symbols_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
-
-        this.symbols_id = uniqid();
-        $(this.symbols_el).attr({
-            id: this.svgCanvas_id,
-            "data-name": "symbols-container",
-            "class": SVG_CANVAS_NAMES.SYMBOLS_CLASS
-        });
+        this._defs = new SvgDefs(canvasNode);
 
         // Create underEditor element
         this.underEditor_el = <SVGGElement>document.createElementNS(NS.SVG, "g");

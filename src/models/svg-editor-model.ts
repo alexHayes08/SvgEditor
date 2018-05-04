@@ -2,7 +2,7 @@ const uniqid = require("uniqid");
 
 import * as d3 from "d3";
 import { ActivatableServiceSingleton } from "../services/activatable-service";
-import { isSvgGraphicsElement } from "./../helpers/svg-helpers";
+import { isSvgGraphicsElement, getFurthestSvgOwner } from "./../helpers/svg-helpers";
 import { nodeListToArray } from "../helpers/node-helper";
 import { ICoords2D, SvgTransformService, SvgTransformServiceSingleton } from "./../services/svg-transform-service";
 import { isSvgElement } from "../helpers/svg-helpers";
@@ -21,9 +21,9 @@ export class SvgEditor {
 
     // [Fields]
 
-    private underEditor_el: SVGGElement;
-    private editor_el: SVGGElement;
-    private overEditor_el: SVGGElement;
+    private underEditor: d3.Selection<SVGGElement, {}, null, undefined>;
+    private editor: d3.Selection<SVGGElement, {}, null, undefined>;
+    private overEditor: d3.Selection<SVGGElement, {}, null, undefined>;
     private editor_items: SvgItem[];
 
     private readonly transformService: SvgTransformService;
@@ -32,16 +32,24 @@ export class SvgEditor {
 
     // [Ctor]
 
-    public constructor(underEditor: SVGGElement,
-        editor: SVGGElement,
-        overEditor: SVGGElement)
+    public constructor(parentElement: SVGSVGElement)
     {
         this.transformService = SvgTransformServiceSingleton;
         this.editor_items = [];
 
-        this.underEditor_el = underEditor;
-        this.editor_el = editor;
-        this.overEditor_el = editor;
+        let parentSelection = d3.select(parent);
+
+        this.underEditor = parentSelection
+            .append<SVGGElement>("g")
+            .attr("id", uniqid());
+
+        this.editor = d3.select(parentElement)
+            .append<SVGGElement>("g")
+            .attr("id", uniqid());
+
+        this.overEditor = parentSelection
+            .append<SVGGElement>("g")
+            .attr("id", uniqid());
     }
 
     // [End Ctor]
@@ -49,15 +57,28 @@ export class SvgEditor {
     // [Properties]
 
     get items() {
-        return this.editor_items;
+        let editorNode = this.getEditorNode();
+
+        let items: SVGGraphicsElement[] = [];
+
+        for (let i = 0; i < editorNode.childNodes.length; i++) {
+            let item = editorNode.childNodes[i];
+
+            if (isSvgGraphicsElement(item)) {
+                items.push(item);
+            }
+        }
+
+        return items;
     }
 
     get totals(): ITotal {
         let colors: d3.ColorSpaceObject[] = []
         let items: SVGElement[] = [];
 
-        for (let i = 0; i < this.editor_el.childNodes.length; i++) {
-            let item = <SVGElement>this.editor_el.childNodes[i];
+        let editorNode = this.getEditorNode();
+        for (let i = 0; i < editorNode.childNodes.length; i++) {
+            let item = <SVGElement>editorNode.childNodes[i];
             items.push(item);
         }
         
@@ -70,6 +91,16 @@ export class SvgEditor {
     // [End Properties]
 
     // [Functions]
+
+    private getEditorNode(): SVGGElement {
+        let editorNode = this.editor.node();
+
+        if (editorNode == null) {
+            throw new Error("The impossible happened...");
+        }
+        
+        return editorNode;
+    }
 
     private cleanSvgString(svgString: string): string {
 
@@ -87,12 +118,12 @@ export class SvgEditor {
      * Returns all child nodes of the editor that intersect a point.
      * @param point - This is relative to the svg element.
      */
-    public getItemsIntersectionPoint(point: ICoords2D): SvgItem[] {
-        let intersectingItems: SvgItem[] = [];
+    public getItemsIntersectionPoint(point: ICoords2D): d3.Selection<SVGGraphicsElement, {}, null, undefined> {
+        let intersectingItems: SVGGraphicsElement[] = [];
         let items = this.items;
 
         for (let item of items) {
-            let bbox = this.transformService.getBBox(item.element);
+            let bbox = this.transformService.getBBox(item);
 
             // Check to see if point lays outside bbox
             if (bbox.x >= point.x) {
@@ -109,7 +140,7 @@ export class SvgEditor {
             intersectingItems.push(item);
         }
 
-        return intersectingItems;
+        return d3.selectAll(intersectingItems);
     }
 
     /**
@@ -118,7 +149,7 @@ export class SvgEditor {
     public export(): string
     {
         let result = "";
-        let ownerSvg = this.editor_el.ownerSVGElement;
+        let ownerSvg = getFurthestSvgOwner(this.getEditorNode());
 
         // Since IE9 doesn't support outerHTML for svg elements, have to use
         // the innerHTML of the svg parents element.
@@ -137,7 +168,7 @@ export class SvgEditor {
         replaceExistingContent: boolean = true): Error|null 
     {
         let error: Error|null = null;
-        let $editor = $(this.editor_el);
+        let $editor = $(this.getEditorNode());
         let cleanedStr = this.cleanSvgString(svgString);
 
         if (replaceExistingContent) {
@@ -172,12 +203,13 @@ export class SvgEditor {
             // Setup default transformations
             if (isSvgGraphicsElement(el)) {
                 let svgItem = new SvgItem(el);
-                let svgCanvas = <SVGSVGElement>this.editor_el.ownerSVGElement;
+                let editorNode = this.getEditorNode();
+                let svgCanvas = getFurthestSvgOwner(editorNode);
 
                 // Add item to editor & editor_items
-                this.editor_el.appendChild(el);
-                this.editor_items.push(svgItem);
+                editorNode.appendChild(el);
 
+                // Add event handlers
                 // Capture els
                 let tmp = this;
                 d3.select(svgItem.element)
@@ -197,18 +229,8 @@ export class SvgEditor {
         }
     }
 
-    public remove(id: string): boolean {
-        let result = false;
-
-        for (let i = 0; i < this.editor_el.childNodes.length; i++) {
-            let el = <Element>this.editor_el.childNodes[i];
-            if (el.id == id) {
-                result = true;
-                this.editor_el.removeChild(el);
-            }
-        }
-
-        return result;
+    public remove(id: string): void {
+        this.editor.select(`#${id}`).remove();
     }
 
     // [End Functions]

@@ -39,6 +39,7 @@ export class SvgHandles implements ISvgHandles {
     // private dragBehavior: d3.DragBehavior<Element, {}, {} | d3.SubjectPosition>;
     private cachedElementsWithEvts: Element[];
 
+    private handlesContainer: SVGGElement;
     private arcsContainer: SVGGElement;
     private deleteEl: SVGGraphicsElement;
     private moveEl: SVGGraphicsElement;
@@ -60,10 +61,6 @@ export class SvgHandles implements ISvgHandles {
         this.handlesData = data;
         this.cachedElementsWithEvts = [];
 
-        // Make handles use the 'activatable' class. This will be used when
-        // showing/hiding the handles.
-        ActivatableServiceSingleton.register(this.parentNode);
-
         // Assign drag behavior
         // this.dragBehavior = d3.drag()
         //     .container(getFurthestSvgOwner(this.handlesContainer))
@@ -73,15 +70,27 @@ export class SvgHandles implements ISvgHandles {
 
         // Create handle elements
         let handleContainer = d3.select(parent)
-            .append("g")
+            .append<SVGGElement>("g")
             .attr("id", uniqid())
-            .attr("data-name", Names.Handles.DATA_NAME);
+            .attr("data-name", Names.Handles.DATA_NAME)
+            .node();
+
+        if (handleContainer == undefined) {
+            throw new Error("Failed to create the handles container element.");
+        }
+
+        this.handlesContainer = handleContainer;
+        this.transformService.standardizeTransforms(this.handlesContainer);
+
+        // Make handles use the 'activatable' class. This will be used when
+        // showing/hiding the handles.
+        ActivatableServiceSingleton.register(this.handlesContainer);
 
         // Group which will contain the arcs, which should surround the
         // selected items.
         let defaultTransformStr = this.transformService.defaultTransformString;
 
-        d3.select(this.parentNode)
+        d3.select(this.handlesContainer)
             .append("g")
             .attr("id", uniqid())
             .attr("data-name", "handles-arc-container")
@@ -107,7 +116,7 @@ export class SvgHandles implements ISvgHandles {
             };
         });
 
-        d3.select(this.parentNode)
+        d3.select(this.handlesContainer)
             .selectAll("circle")
             .data(handleBtnsData)
             .enter()
@@ -172,10 +181,10 @@ export class SvgHandles implements ISvgHandles {
      */
     private displayHandles(): void {
         if (this.selectedObjects.length == 0) {
-            ActivatableServiceSingleton.deactivate(this.parentNode);
+            ActivatableServiceSingleton.deactivate(this.handlesContainer);
             this.removeEvtListeners();
         } else {
-            ActivatableServiceSingleton.activate(this.parentNode);
+            ActivatableServiceSingleton.activate(this.handlesContainer);
             this.drawHandles();
             this.updateHandlesPosition();
             this.addEvtListeners();
@@ -195,13 +204,15 @@ export class SvgHandles implements ISvgHandles {
             this.transformService.getCenter(...this.selectedObjects.map(so => so.element));
 
         // Update the handles to surround the bbox
-        this.transformService.setTranslation(this.arcsContainer, { 
-            x: centerOfSelectedItems.x, 
-            y: centerOfSelectedItems.y
-        });
+        this.transformService
+            .setTranslation(this.handlesContainer, centerOfSelectedItems);
     }
 
     private drawHandles(): void {
+
+        // Reset the position of the handles at (0,0)
+        this.transformService.setTranslation(this.handlesContainer, { x: 0, y: 0 });
+
         let bbox = this.transformService.getBBox(...this.selectedObjects.map(so => so.element));
 
         if (bbox == null) {
@@ -226,11 +237,11 @@ export class SvgHandles implements ISvgHandles {
             throw new Error("Failed to find the delete arc.");
         }
 
-        let deleteArcCenter = this.transformService.getCenter(deleteArc);
-        let moveArcCenter = this.transformService.getCenter(moveArc);
-        let scaleArcCenter = this.transformService.getCenter(scaleArc);
-        let rotateArcCenter = this.transformService.getCenter(rotateArc);
-        let centerOfArcs = this.transformService.getCenter(this.arcsContainer);
+        let relativeTo = { x: 0, y: 0 };
+        let deleteArcCenter = this.transformService.getCenterRelativeToPoint(relativeTo, deleteArc);
+        let moveArcCenter = this.transformService.getCenterRelativeToPoint(relativeTo, moveArc);
+        let scaleArcCenter = this.transformService.getCenterRelativeToPoint(relativeTo, scaleArc);
+        let rotateArcCenter = this.transformService.getCenterRelativeToPoint(relativeTo, rotateArc);
 
         // TODO: Make these variables, not sure where to pass these in...
         const PADDING_BETWEEN_ARC_AND_BTN = 10;
@@ -238,10 +249,10 @@ export class SvgHandles implements ISvgHandles {
 
         // The distance between the arc and btn center.
         let hyp_3 = PADDING_BETWEEN_ARC_AND_BTN + BUTTON_RADIUS + 20;
-        let deleteBtn_newCoords = getNewPointAlongAngle(centerOfArcs, deleteArcCenter, hyp_3);
-        let moveBtn_newCoords = getNewPointAlongAngle(centerOfArcs, moveArcCenter, hyp_3);
-        let scaleBtn_newCoords = getNewPointAlongAngle(centerOfArcs, scaleArcCenter, hyp_3);
-        let rotateBtn_newCoords = getNewPointAlongAngle(centerOfArcs, rotateArcCenter, hyp_3);
+        let deleteBtn_newCoords = getNewPointAlongAngle(deleteArcCenter, hyp_3);
+        let moveBtn_newCoords = getNewPointAlongAngle(moveArcCenter, hyp_3);
+        let scaleBtn_newCoords = getNewPointAlongAngle(scaleArcCenter, hyp_3);
+        let rotateBtn_newCoords = getNewPointAlongAngle(rotateArcCenter, hyp_3);
 
         // Update delete btn position
         this.transformService.setTranslation(this.deleteEl, deleteBtn_newCoords);
@@ -275,7 +286,7 @@ export class SvgHandles implements ISvgHandles {
                             let tr = handlesModel.transformService.getTranslation(this);
                             tr.x += d3.event.dx;
                             tr.y += d3.event.dy;
-                            handlesModel.transformService.setTranslation(this, tr);
+                            handlesModel.transformService.setTranslation(el.element, tr);
                         }
                     });
                     
@@ -304,7 +315,11 @@ export class SvgHandles implements ISvgHandles {
     }
 
     public selectObjects(...elements: SvgItem[]): void {
-        this.selectedObjects = this.selectedObjects.concat(elements);
+        for (let el of elements) {
+            if (this.selectedObjects.indexOf(el) != -1) {
+                this.selectedObjects.push(el);
+            }
+        }
 
         this.displayHandles();
     }
@@ -324,6 +339,10 @@ export class SvgHandles implements ISvgHandles {
 
     public getSelectedObjects(): SvgItem[] {
         return [ ...this.selectedObjects ];
+    }
+
+    public handleEvent(): void {
+        console.log(d3.event);
     }
 
     // [End Functions]

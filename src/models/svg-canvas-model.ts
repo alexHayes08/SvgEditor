@@ -21,6 +21,7 @@ import {
     TransitionStatus, 
     ITransitionEventData 
 } from "./transition-status";
+import { ActivatableServiceSingleton } from "../services/activatable-service";
 
 export const SVG_CANVAS_NAMES = {
     
@@ -48,8 +49,6 @@ export class SvgCanvas {
     // [Fields]
 
     private svgCanvas_el: SVGSVGElement;
-    private handles_el: SVGGElement;
-    private handles_id: string;
 
     private _defs: SvgDefs;
     private _editor: SvgEditor;
@@ -93,27 +92,20 @@ export class SvgCanvas {
             .attr("overflow", "auto")
             .attr("id", uniqid());
 
-        let canvasNode = this.svgCanvasSelection.node();
+        let svgCanvas_el = this.svgCanvasSelection.node();
 
-        if (canvasNode == null) {
+        if (svgCanvas_el == null) {
             throw new Error("Failed to create the canvas? Not sure how that happened...");
         }
 
-        this.svgCanvas_el = canvasNode;
+        this.svgCanvas_el = svgCanvas_el;
+        ActivatableServiceSingleton.register(svgCanvas_el, true);
 
         // Create defs element & symbolsContainer element
-        this._defs = new SvgDefs(canvasNode);
+        this._defs = new SvgDefs(svgCanvas_el);
 
         // Create editor
-        this._editor = new SvgEditor(canvasNode);
-
-        // Create handles element
-        this.handles_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
-        this.handles_id = uniqid();
-        $(this.handles_el).attr({
-            id: this.handles_id,
-            "data-name": "handles-area"
-        });
+        this._editor = new SvgEditor(svgCanvas_el);
 
         // Handles data
         // Handles should have five parts:
@@ -155,9 +147,11 @@ export class SvgCanvas {
             ]
         });
 
-        this._handles = new SvgHandles(this.handles_el, 
+        this._handles = new SvgHandles(svgCanvas_el, 
             this._defs, 
             handlesData);
+
+        this.editor._handles = this._handles;
 
         /**
          * [EVENT LISTENERS]
@@ -176,31 +170,6 @@ export class SvgCanvas {
         let editor = this.editor;
         let handles = this.handles;
         let transformService = this.transformService;
-
-        d3.select(canvasNode).on("mousedown", function(d,i) {
-            let { pageX:x, pageY:y } = d3.event;
-            // let point = transformService.convertScreenCoordsToSvgCoords(
-            //     { x, y }, 
-            //     <SVGSVGElement>svgCanvas_el);
-
-            // let items = editor.getItemsIntersectionPoint(point);
-            
-            // If ctrl is not down, deselect all objects and only select the
-            // topmost element clicked.
-            // if (!d3.event.ctrlKey) {
-            //     handles.deselectObjects();
-            //     let topMostItem = items.pop();
-
-            //     if (topMostItem != undefined) {
-            //         handles.selectObjects(topMostItem);
-            //     }
-            // } else {
-            //     handles.selectObjects(...items);
-            // }
-            
-            // console.log(items);
-            handles.deselectObjects();     
-        });
 
         // $(this.handles_el).on("mousedown", function(e) {
             
@@ -246,30 +215,6 @@ export class SvgCanvas {
     // [End Properties]
 
     // [Functions]
-
-    // [Evt Handlers]
-
-    public onSvgCanvasMouseDownV2(data: {}, i: number) {
-        // let { pageX:x, pageY:y } = data;
-        
-        // let point = this.transformService.convertScreenCoordsToSvgCoords(
-        //     { x, y }, 
-        //     <SVGSVGElement>this.svgCanvas_el);
-
-        // let items = this.editor.getItemsIntersectionPoint(point);
-        
-        // If ctrl is not down, deselect all objects and only select the
-        // topmost element clicked.
-        // if (!data.ctrlKey) {
-        //     this._handles.deselectObjects();
-        // }
-
-        // this._handles.selectObjects(...items);
-        
-        // console.log(items);
-    }
-
-    // [End Evt Handlers]
 
     /**
      * Used to get and set the height of the svg element.

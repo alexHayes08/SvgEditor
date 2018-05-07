@@ -7,4 +7,6 @@ export interface ISvgHandles {
     selectObjects(...elements: SvgItem[]): void;
 
     deselectObjects(): void;
+
+    handleEvent(): void;
 }

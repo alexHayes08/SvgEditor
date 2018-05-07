@@ -7,7 +7,7 @@ import { nodeListToArray } from "../helpers/node-helper";
 import { ICoords2D, SvgTransformService, SvgTransformServiceSingleton } from "./../services/svg-transform-service";
 import { isSvgElement } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
-import { SvgHandles } from './svg-handles-model';
+import { ISvgHandles } from "./isvg-handles-model";
 
 export interface ITotal {
     colors: d3.ColorSpaceObject[];
@@ -29,13 +29,13 @@ export class SvgEditor {
 
     private readonly transformService: SvgTransformService;
 
-    public _handles?: SvgHandles;
+    public _handles?: ISvgHandles;
 
     // [End Fields]
 
     // [Ctor]
 
-    public constructor(parentElement: SVGSVGElement)
+    public constructor(parent: SVGSVGElement)
     {
         this.transformService = SvgTransformServiceSingleton;
         this.editor_items = [];
@@ -46,7 +46,7 @@ export class SvgEditor {
             .append<SVGGElement>("g")
             .attr("id", uniqid());
 
-        this.editor = d3.select(parentElement)
+        this.editor = parentSelection
             .append<SVGGElement>("g")
             .attr("id", uniqid());
 
@@ -217,19 +217,11 @@ export class SvgEditor {
                 // Capture els
                 let self = this;
                 d3.select(svgItem.element)
-                    .on("click", function(data: {}, i: number) {
-                        console.log(d3.event);
+                    .on("mousedown", function(data: {}, i: number) {
                         
                         // Check if the handles have been set
                         if (self._handles != null) {
-
-                            // Check if ctrl is pressed
-                            if (d3.event.ctrl) {
-                                self._handles.selectObjects(svgItem);
-                            } else {
-                                self._handles.deselectObjects();
-                                self._handles.selectObjects(svgItem);
-                            }
+                            self._handles.handleEvent();
                         }
                     });
 

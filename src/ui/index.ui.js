@@ -130,7 +130,7 @@ Aperture.resolve(["SvgEditors"]).then(() => {
     // Set the first SvgCanvas to be the active one
     if (Aperture.SvgEditors.length > 0) {
         Aperture.SvgEditorControls.activeEditor = Aperture.SvgEditors[0];
-        Aperture.SvgEditorControls.activeEditor.svgCanvas_el.classList.add("active");
+        // Aperture.SvgEditorControls.activeEditor.svgCanvas_el.classList.add("active");
     }
         
     // Init controls (add evt listeners, populate options, etc...)
@@ -194,9 +194,9 @@ Aperture.resolve(["SvgEditors"]).then(() => {
         for (var editor of Aperture.SvgEditors) {
             if (editor.svgCanvas_el.id == val) {
                 Aperture.SvgEditorControls.activeEditor = editor;
-                editor.svgCanvas_el.classList.add("active");
+                // editor.svgCanvas_el.classList.add("active");
             } else {
-                editor.svgCanvas_el.classList.remove("active");
+                // editor.svgCanvas_el.classList.remove("active");
             }
         }
     });

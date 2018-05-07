@@ -319,8 +319,8 @@ export class SvgTransformService {
         let firstElBBox = elements[0].getBoundingClientRect();
 
         let bbox = {
-            top: parentSvgBBox.left - firstElBBox.left,
-            left: parentSvgBBox.top - firstElBBox.top,
+            top: firstElBBox.top - parentSvgBBox.top,
+            left: firstElBBox.left - parentSvgBBox.left,
             bottom: parentSvgBBox.bottom - firstElBBox.bottom,
             right: parentSvgBBox.right - firstElBBox.right
         };
@@ -330,8 +330,8 @@ export class SvgTransformService {
             let elBBox = element.getBoundingClientRect();
             
             // Normalize bbox
-            let left = parentSvgBBox.left - elBBox.left;
-            let top = parentSvgBBox.top - elBBox.left;
+            let left = elBBox.left - parentSvgBBox.left;
+            let top = elBBox.left - parentSvgBBox.top;
             let right = parentSvgBBox.right - elBBox.right;
             let bottom = parentSvgBBox.bottom - elBBox.bottom;
 
@@ -359,9 +359,39 @@ export class SvgTransformService {
         return {
             x: bbox.left,
             y: bbox.top,
-            width: bbox.right - bbox.left,
-            height: bbox.bottom - bbox.top
+            width: parentSvgBBox.width - bbox.right - bbox.left,
+            height: parentSvgBBox.height - bbox.bottom - bbox.top
         };
+    }
+
+    /**
+     * Gets the center of an element relative to another element.
+     * @param relativeEl 
+     * @param elements 
+     */
+    public getBBoxRelativeTo(relativeEl: SVGElement, ...elements: SVGElement[]): IBBox {
+        let parentBCR = relativeEl.getBoundingClientRect();
+        let firstElBCR = elements[0].getBoundingClientRect();
+
+        let pointsRelativeTo = {
+            x: parentBCR.left,
+            y: parentBCR.top
+        };
+
+        let bbox = this.getBBox(...elements);
+        bbox.x -= pointsRelativeTo.x;
+        bbox.y -= pointsRelativeTo.y;
+
+        if (bbox == null) {
+            return {
+                x: 0,
+                y: 0,
+                width: 0,
+                height: 0
+            };
+        } else {
+            return bbox;
+        }
     }
 
     /**
@@ -382,6 +412,31 @@ export class SvgTransformService {
         }
 
         return center;
+    }
+
+    /**
+     * Gets the center of elements relative to the x and y coords of the
+     * relative element.
+     * @param relativeEl
+     * @param elements
+     */
+    public getCenterRelativeToElement(relativeEl: SVGElement, ...elements: SVGElement[]): ICoords2D {
+        let parentBBox = this.getBBox(relativeEl);
+        let centerOfEls = this.getCenter(...elements);
+
+        return {
+            x: centerOfEls.x - parentBBox.x,
+            y: centerOfEls.y - parentBBox.y
+        };
+    }
+
+    public getCenterRelativeToPoint(point: ICoords2D, ...elements: SVGElement[]): ICoords2D {
+        let centerOfEls = this.getCenter(...elements);
+
+        return {
+            x: centerOfEls.x - point.x,
+            y: centerOfEls.y - point.y
+        };
     }
 
     /**

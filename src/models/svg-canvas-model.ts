@@ -47,17 +47,7 @@ export class SvgCanvas {
     
     // [Fields]
 
-    public readonly svgCanvas_el: SVGElement;
-    public readonly svgCanvas_id: string;
-    private defs_el: SVGDefsElement;
-    private symbols_el: SVGGElement;
-    private symbols_id: string;
-    private underEditor_el: SVGGElement;
-    private underEditor_id: string;
-    private editor_el: SVGGElement;
-    private editor_id: string;
-    private overEditor_el: SVGGElement;
-    private overEditor_id: string;
+    private svgCanvas_el: SVGSVGElement;
     private handles_el: SVGGElement;
     private handles_id: string;
 
@@ -109,38 +99,13 @@ export class SvgCanvas {
             throw new Error("Failed to create the canvas? Not sure how that happened...");
         }
 
+        this.svgCanvas_el = canvasNode;
+
         // Create defs element & symbolsContainer element
         this._defs = new SvgDefs(canvasNode);
 
-        // Create underEditor element
-        this.underEditor_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
-        this.underEditor_id = uniqid();
-        $(this.underEditor_el).attr({
-            id: this.underEditor_id,
-            "data-name": "under-editor-area"
-        });
-
-        // Create editor element
-        this.editor_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
-        this.editor_id = uniqid();
-        $(this.editor_el).attr({
-            id: this.editor_id,
-            // viewBox: "0 0 500 500",
-            // x: 0,
-            // y: 0,
-            // width: 500,
-            // height: 500,
-            "class": SVG_CANVAS_NAMES.EDITOR_CLASS,
-            "data-name": "editor-area"
-        });
-
-        // Create overEditor element
-        this.overEditor_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
-        this.overEditor_id = uniqid();
-        $(this.overEditor_el).attr({
-            id: this.overEditor_id,
-            "data-name": "over-editor-area"
-        });
+        // Create editor
+        this._editor = new SvgEditor(canvasNode);
 
         // Create handles element
         this.handles_el = <SVGGElement>document.createElementNS(NS.SVG, "g");
@@ -149,25 +114,6 @@ export class SvgCanvas {
             id: this.handles_id,
             "data-name": "handles-area"
         });
-
-        // Create handles
-
-        // Compose elements together
-        this.svgCanvas_el.appendChild(this.defs_el);
-        this.svgCanvas_el.appendChild(this.symbols_el);
-        this.svgCanvas_el.appendChild(this.underEditor_el);
-        this.svgCanvas_el.appendChild(this.editor_el);
-        this.svgCanvas_el.appendChild(this.overEditor_el);
-        this.svgCanvas_el.appendChild(this.handles_el);
-
-        // And append the svg to the parent container
-        parentElement.appendChild(this.svgCanvas_el);
-
-        this._defs = new SvgDefs(this.defs_el);
-
-        this._editor = new SvgEditor(this.underEditor_el, 
-            this.editor_el, 
-            this.overEditor_el);
 
         // Handles data
         // Handles should have five parts:
@@ -229,9 +175,9 @@ export class SvgCanvas {
         // Capture class vars
         let editor = this.editor;
         let handles = this.handles;
-        let svgCanvas_el = this.svgCanvas_el;
         let transformService = this.transformService;
-        d3.select(this.svgCanvas_el).on("mousedown", function(d,i) {
+
+        d3.select(canvasNode).on("mousedown", function(d,i) {
             let { pageX:x, pageY:y } = d3.event;
             // let point = transformService.convertScreenCoordsToSvgCoords(
             //     { x, y }, 

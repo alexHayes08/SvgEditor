@@ -7,6 +7,7 @@ import { nodeListToArray } from "../helpers/node-helper";
 import { ICoords2D, SvgTransformService, SvgTransformServiceSingleton } from "./../services/svg-transform-service";
 import { isSvgElement } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
+import { SvgHandles } from './svg-handles-model';
 
 export interface ITotal {
     colors: d3.ColorSpaceObject[];
@@ -27,6 +28,8 @@ export class SvgEditor {
     private editor_items: SvgItem[];
 
     private readonly transformService: SvgTransformService;
+
+    public _handles?: SvgHandles;
 
     // [End Fields]
 
@@ -203,6 +206,7 @@ export class SvgEditor {
             // Setup default transformations
             if (isSvgGraphicsElement(el)) {
                 let svgItem = new SvgItem(el);
+                this.editor_items.push(svgItem);
                 let editorNode = this.getEditorNode();
                 let svgCanvas = getFurthestSvgOwner(editorNode);
 
@@ -211,10 +215,22 @@ export class SvgEditor {
 
                 // Add event handlers
                 // Capture els
-                let tmp = this;
+                let self = this;
                 d3.select(svgItem.element)
                     .on("click", function(data: {}, i: number) {
-                        console.log('test');
+                        console.log(d3.event);
+                        
+                        // Check if the handles have been set
+                        if (self._handles != null) {
+
+                            // Check if ctrl is pressed
+                            if (d3.event.ctrl) {
+                                self._handles.selectObjects(svgItem);
+                            } else {
+                                self._handles.deselectObjects();
+                                self._handles.selectObjects(svgItem);
+                            }
+                        }
                     });
 
                 // Attempt to center element

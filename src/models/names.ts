@@ -29,5 +29,9 @@ export const Names = {
                 DATA_NAME: "editor-only-defs"
             }
         }
+    },
+    Handles: {
+        DATA_NAME: "handles-area",
+        BTN_HANDLE_CLASS: "btn-handle"
     }
 };

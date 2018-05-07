@@ -5,6 +5,7 @@ import * as $ from "jquery";
 import * as d3 from "d3";
 
 import { ActivatableServiceSingleton } from "../services/activatable-service";
+import { Names } from "./names";
 import { NS } from "../helpers/namespaces-helper";
 import { ISvgHandles } from "./isvg-handles-model";
 import { SvgDefs } from "./svg-defs-model";
@@ -13,10 +14,6 @@ import { ISlice, isISlice, DefaultCircleArc, ICircleArc } from "../models/islice
 import { SvgItem } from "./svg-item-model";
 import { SvgTransformService, SvgTransformServiceSingleton, IBBox } from "../services/svg-transform-service";
 import { toRadians } from "../helpers/math-helpers";
-
-export const NAMES = {
-    BTN_HANDLE_CLASS: "btn-handle"
-};
 
 export enum SvgHandlesModes {
     INACTIVE = 0,
@@ -34,7 +31,7 @@ export class SvgHandles implements ISvgHandles {
     // [Fields]
 
     private defs: SvgDefs;
-    private handlesContainer: SVGElement;
+    private parentNode: SVGElement;
     private selectedObjects: SvgItem[];
     private transformService: SvgTransformService;
     private _lastSelectedSection: number;
@@ -53,9 +50,9 @@ export class SvgHandles implements ISvgHandles {
 
     // [Ctor]
 
-    constructor(handlesContainer: SVGElement, defs: SvgDefs, data: ICircleArc) {
+    constructor(parent: SVGElement, defs: SvgDefs, data: ICircleArc) {
         this.defs = defs;
-        this.handlesContainer = handlesContainer;
+        this.parentNode = parent;
         this.selectedObjects = [];
         this.optionEls = [];
         this.transformService = SvgTransformServiceSingleton;
@@ -65,7 +62,7 @@ export class SvgHandles implements ISvgHandles {
 
         // Make handles use the 'activatable' class. This will be used when
         // showing/hiding the handles.
-        ActivatableServiceSingleton.register(this.handlesContainer);
+        ActivatableServiceSingleton.register(this.parentNode);
 
         // Assign drag behavior
         // this.dragBehavior = d3.drag()
@@ -75,19 +72,23 @@ export class SvgHandles implements ISvgHandles {
         //     .on("end", dragEnd);
 
         // Create handle elements
+        let handleContainer = d3.select(parent)
+            .append("g")
+            .attr("id", uniqid())
+            .attr("data-name", Names.Handles.DATA_NAME);
 
         // Group which will contain the arcs, which should surround the
         // selected items.
         let defaultTransformStr = this.transformService.defaultTransformString;
 
-        d3.select(this.handlesContainer)
+        d3.select(this.parentNode)
             .append("g")
             .attr("id", uniqid())
             .attr("data-name", "handles-arc-container")
             .attr("transform", defaultTransformStr);
 
         this.arcsContainer = convertToSvgGraphicsElement(
-            $(this.handlesContainer)
+            $(this.parentNode)
                 .find("*[data-name='handles-arc-container']")[0]);
 
         // TODO: Rewrite how handles are loaded using d3.
@@ -106,20 +107,20 @@ export class SvgHandles implements ISvgHandles {
             };
         });
 
-        d3.select(this.handlesContainer)
+        d3.select(this.parentNode)
             .selectAll("circle")
             .data(handleBtnsData)
             .enter()
             .append("circle")
             .attr("id", function(d) { return uniqid() })
-            .attr("class", NAMES.BTN_HANDLE_CLASS)
+            .attr("class", Names.Handles.BTN_HANDLE_CLASS)
             .attr("data-name", function(d) { return d["data-name"] })
             .attr("r", 20)
             .attr("cx", 0)
             .attr("cy", 0)
             .attr("transform", defaultTransformStr);
 
-        let $handlesContainer = $(this.handlesContainer);
+        let $handlesContainer = $(this.parentNode);
         this.deleteEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-delete']")[0]);
         this.scaleEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-scale']")[0]);
         this.moveEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-move']")[0]);
@@ -171,10 +172,10 @@ export class SvgHandles implements ISvgHandles {
      */
     private displayHandles(): void {
         if (this.selectedObjects.length == 0) {
-            ActivatableServiceSingleton.deactivate(this.handlesContainer);
+            ActivatableServiceSingleton.deactivate(this.parentNode);
             this.removeEvtListeners();
         } else {
-            ActivatableServiceSingleton.activate(this.handlesContainer);
+            ActivatableServiceSingleton.activate(this.parentNode);
             this.drawHandles();
             this.updateHandlesPosition();
             this.addEvtListeners();
@@ -265,7 +266,7 @@ export class SvgHandles implements ISvgHandles {
         let handlesModel = this;
 
         d3.selectAll<Element, {}>(elementsWithOutListeners)
-            .call(d3.drag().container(getFurthestSvgOwner(this.handlesContainer))
+            .call(d3.drag().container(getFurthestSvgOwner(this.parentNode))
                 .on("start", function() {
                     console.log("drag start")
                 }).on("drag", function() {

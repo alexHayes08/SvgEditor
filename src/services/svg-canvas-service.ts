@@ -15,7 +15,7 @@ export interface IViewBox {
 
 @Singleton
 export class SvgCanvasService {
-    private svgCanvases: SVGElement[];
+    private svgCanvases: SVGGraphicsElement[];
 
     constructor() {
         this.svgCanvases = [];
@@ -31,9 +31,9 @@ export class SvgCanvasService {
      * Creates a new svg canvas and gives it a unique id. This doesn't register
      * the canvas though.
      */
-    public createNewCanvas(): SVGElement {
+    public createNewCanvas(): SVGGraphicsElement {
         // Create canvas
-        let svgCanvas = <SVGElement>document.createElementNS(NS.SVG, "svg");
+        let svgCanvas = <SVGGraphicsElement>document.createElementNS(NS.SVG, "svg");
         $(svgCanvas).attr({
             id: uniqid(),
             height: 500,
@@ -48,7 +48,7 @@ export class SvgCanvasService {
      * if not present.
      * @param canvas 
      */
-    public registerCanvas(canvas: SVGElement): void {
+    public registerCanvas(canvas: SVGGraphicsElement): void {
         
         // Check if the canvas has an id.
         if (canvas.id == "") {
@@ -61,11 +61,11 @@ export class SvgCanvasService {
      * Removes a canvas from the 'registered' canvases list.
      * @param canvas
      */
-    public unregisterCanvas(canvas: SVGElement): void {
+    public unregisterCanvas(canvas: SVGGraphicsElement): void {
         this.svgCanvases = this.svgCanvases.filter(c => c !== canvas);
     }
 
-    public magnifyCanvas(canvas: SVGElement, focusOn: IViewBox, durationMS: number = 0): void {
+    public magnifyCanvas(canvas: SVGGraphicsElement, focusOn: IViewBox, durationMS: number = 0): void {
 
         // Verify that the canvas has an id
         if (canvas.id == null || canvas.id == "") {

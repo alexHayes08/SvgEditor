@@ -306,7 +306,7 @@ export class SvgTransformService {
      * @param elements 
      * @throws - Throws an error if the element has no parent svg element.
      */
-    public getBBox(...elements: SVGElement[]): IBBox {
+    public getBBox(...elements: SVGGraphicsElement[]): IBBox {
         
         // Check for any elements.
         if (elements.length == 0) {
@@ -319,48 +319,42 @@ export class SvgTransformService {
         let firstElBBox = elements[0].getBoundingClientRect();
 
         let bbox = {
-            top: firstElBBox.top - parentSvgBBox.top,
-            left: firstElBBox.left - parentSvgBBox.left,
-            bottom: parentSvgBBox.bottom - firstElBBox.bottom,
-            right: parentSvgBBox.right - firstElBBox.right
+            top: firstElBBox.top,
+            bottom: firstElBBox.bottom,
+            left: firstElBBox.left,
+            right: firstElBBox.right
         };
 
         for (let i = 1; i < elements.length; i++) {
             let element = elements[i];
             let elBBox = element.getBoundingClientRect();
-            
-            // Normalize bbox
-            let left = elBBox.left - parentSvgBBox.left;
-            let top = elBBox.left - parentSvgBBox.top;
-            let right = parentSvgBBox.right - elBBox.right;
-            let bottom = parentSvgBBox.bottom - elBBox.bottom;
 
             // Check the top
-            if (top < bbox.top) {
-                bbox.top = top;
+            if (elBBox.top < bbox.top) {
+                bbox.top = elBBox.top;
             }
 
             // Check the bottom
-            if (bottom > bbox.bottom) {
-                bbox.bottom = bottom;
+            if (elBBox.bottom > bbox.bottom) {
+                bbox.bottom = elBBox.bottom;
             }
 
             // Check the left
-            if (left < bbox.left) {
-                bbox.left = left;
+            if (elBBox.left < bbox.left) {
+                bbox.left = elBBox.left;
             }
 
             // Check right
-            if (right > bbox.right) {
-                bbox.right = right;
+            if (elBBox.right > bbox.right) {
+                bbox.right = elBBox.right;
             }
         }
 
         return {
-            x: bbox.left,
-            y: bbox.top,
-            width: parentSvgBBox.width - bbox.right - bbox.left,
-            height: parentSvgBBox.height - bbox.bottom - bbox.top
+            x: bbox.left - parentSvgBBox.left,
+            y: bbox.top - parentSvgBBox.top,
+            width: (bbox.right - parentSvgBBox.left) - (bbox.left - parentSvgBBox.left),
+            height: (bbox.bottom - parentSvgBBox.top) - (bbox.top - parentSvgBBox.top)
         };
     }
 
@@ -369,7 +363,7 @@ export class SvgTransformService {
      * @param relativeEl 
      * @param elements 
      */
-    public getBBoxRelativeTo(relativeEl: SVGElement, ...elements: SVGElement[]): IBBox {
+    public getBBoxRelativeTo(relativeEl: SVGGraphicsElement, ...elements: SVGGraphicsElement[]): IBBox {
         let parentBCR = relativeEl.getBoundingClientRect();
         let firstElBCR = elements[0].getBoundingClientRect();
 
@@ -399,19 +393,13 @@ export class SvgTransformService {
      * @param elements 
      * @return {ICoords2D}
      */
-    public getCenter(...elements: SVGElement[]): ICoords2D {
-        let center = {
-            x: 0,
-            y: 0
+    public getCenter(...elements: SVGGraphicsElement[]): ICoords2D {
+        let bbox = this.getBBox(...elements);
+
+        return {
+            x: bbox.x + (bbox.width / 2),
+            y: bbox.y + (bbox.height / 2)
         };
-
-        for (let element of elements) {
-            let elBBox = this.getBBox(element);
-            center.x += (elBBox.x + (elBBox.width / 2));
-            center.y += (elBBox.y + (elBBox.height / 2));
-        }
-
-        return center;
     }
 
     /**
@@ -420,7 +408,7 @@ export class SvgTransformService {
      * @param relativeEl
      * @param elements
      */
-    public getCenterRelativeToElement(relativeEl: SVGElement, ...elements: SVGElement[]): ICoords2D {
+    public getCenterRelativeToElement(relativeEl: SVGGraphicsElement, ...elements: SVGGraphicsElement[]): ICoords2D {
         let parentBBox = this.getBBox(relativeEl);
         let centerOfEls = this.getCenter(...elements);
 
@@ -430,7 +418,7 @@ export class SvgTransformService {
         };
     }
 
-    public getCenterRelativeToPoint(point: ICoords2D, ...elements: SVGElement[]): ICoords2D {
+    public getCenterRelativeToPoint(point: ICoords2D, ...elements: SVGGraphicsElement[]): ICoords2D {
         let centerOfEls = this.getCenter(...elements);
 
         return {
@@ -444,7 +432,7 @@ export class SvgTransformService {
      * between the passed elements.
      * @param elements 
      */
-    public getIntersectionOfItems(...elements: SVGElement[]): IBBox[] {
+    public getIntersectionOfItems(...elements: SVGGraphicsElement[]): IBBox[] {
 
         // Store all intersections in bbox objects
         let intersections: IBBox[] = [];
@@ -462,7 +450,7 @@ export class SvgTransformService {
         while (copyOfEls.length > 0) {
 
             // No need for a null check here, just cast as SVGElement
-            let targetedEl = <SVGElement>copyOfEls.shift();
+            let targetedEl = <SVGGraphicsElement>copyOfEls.shift();
             let targetBBox = this.getBBox(targetedEl);
             
             for (let otherEl of copyOfEls) {
@@ -627,6 +615,14 @@ export class SvgTransformService {
         return result;
     }
 
+    public incrementScale(element: SVGGraphicsElement, matrix: IScaleMatrix): void {
+        let scale = this.getScale(element);
+        this.setScale(element, {
+            x: scale.x + matrix.x,
+            y: scale.y + matrix.y
+        });
+    }
+
     public setRotation(element: SVGGraphicsElement, matrix: IRotationMatrix): void {
         let transformStr = element.getAttribute("transform") || "";
         transformStr = transformStr.replace(this.rotateRegex, `rotate(${matrix.a},${matrix.cx || 0},${matrix.cy || 0})`);
@@ -640,6 +636,15 @@ export class SvgTransformService {
         } else {
             throw new Error();
         }
+    }
+
+    public incrementRotation(element: SVGGraphicsElement, matrix: IRotationMatrix): void {
+        let rot = this.getRotation(element);
+        this.setRotation(element, {
+            cx: (rot.cx || 0) + (matrix.cx || 0),
+            cy: (rot.cy || 0) + (matrix.cy || 0),
+            a: rot.a + matrix.a
+        });
     }
 
     public setTranslation(element: SVGGraphicsElement, matrix: ITranslationMatrix): void {
@@ -657,8 +662,23 @@ export class SvgTransformService {
         }
     }
 
-    public setTransform(element: SVGGraphicsElement, transform: ITransformMatrix): void {
+    public incrementTranslation(element: SVGGraphicsElement, matrix: ITranslationMatrix): void {
+        let translate = this.getTranslation(element);
+        this.setTranslation(element, {
+            x: translate.x + matrix.x,
+            y: translate.y + matrix.y
+        });
+    }
 
+    public setTransform(element: SVGGraphicsElement, transform: ITransformMatrix): void {
+        if (transform.scale)
+            this.setScale(element, transform.scale)
+
+        if (transform.rotation)
+            this.setRotation(element, transform.rotation);
+
+        if (transform.translation)
+            this.setTranslation(element, transform.translation);
     }
 
     // [End Functions]

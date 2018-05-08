@@ -32,9 +32,9 @@ export const GraphicsElements = [
  * @param element 
  * @throws - Throws an error if the element isn't an SVGElement.
  */
-export function convertToSvgElement(element: Element): SVGElement {
+export function convertToSvgElement(element: Element): SVGGraphicsElement {
     if (isSvgElement(element)) {
-        return <SVGElement>element;
+        return <SVGGraphicsElement>element;
     } else {
         throw new Error("Failed to convert the element to an SVGElement");
     }
@@ -53,7 +53,7 @@ export function convertToSvgGraphicsElement(element: Element): SVGGraphicsElemen
     }
 }
 
-export function isSvgElement(element: any): element is SVGElement {
+export function isSvgElement(element: any): element is SVGGraphicsElement {
     return element!= undefined && element.ownerSVGElement;
 }
 
@@ -70,10 +70,10 @@ export function isSvgSvgElement(element: any): element is SVGSVGElement {
         && element.tagName.toLowerCase() == "svg";
 }
 
-export function getAllSubElementWhichInheritColors(parentElement: SVGElement) {
+export function getAllSubElementWhichInheritColors(parentElement: SVGGraphicsElement) {
 
     // Get all child nodes
-    let sub_elements: SVGElement[] = [];
+    let sub_elements: SVGGraphicsElement[] = [];
 
     // First check if the parent element has a fill/stroke
 
@@ -288,7 +288,7 @@ function getXCircleCoord(currentAngle: number, radius: number): number {
  * Cross browser polyfill for 'ownerSvgDocument' which isn't avaiable on IE9.
  * @param element 
  */
-export function getFurthestSvgOwner(element: SVGElement): SVGSVGElement {
+export function getFurthestSvgOwner(element: SVGGraphicsElement): SVGSVGElement {
     let parents: Element[] = [];
 
     // Check if the current element is a svg
@@ -316,7 +316,7 @@ export function getFurthestSvgOwner(element: SVGElement): SVGSVGElement {
 
 /**
  * Returns a new point along a line between two points that is a 'hyp' amount
- * away from 'pt'. The center of the circle is assumed to be (0,0).
+ * away from (0,0). The center of the circle is assumed to be (0,0).
  * @param pt 
  * @param hyp 
  */
@@ -326,9 +326,9 @@ export function getNewPointAlongAngle(pt: ICoords2D, hyp: number): ICoords2D {
         y: 0
     };
     
-    let angle = Math.atan(pt.y / pt.x);
-    result.x = pt.x + (Math.cos(angle) * hyp);
-    result.y = pt.y + (Math.sin(angle) * hyp);
+    let angle = Math.atan2(pt.y, pt.x);
+    result.x = (Math.cos(angle) * hyp);
+    result.y = (Math.sin(angle) * hyp);
 
     return result;
 }

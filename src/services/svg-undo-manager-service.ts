@@ -136,7 +136,7 @@ export class SvgUndoManagerService {
         }
     }
 
-    private isOutOfBounds(svgElement: SVGElement): boolean {
+    private isOutOfBounds(svgElement: SVGGraphicsElement): boolean {
         return false;
     }
 

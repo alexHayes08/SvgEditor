@@ -51,23 +51,39 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     transition: opacity .2s ease-in-out;
 }
 
+*[data-name="close-arc"],
 *[data-name="handle-delete"]:hover {
     fill: red;
     opacity: 1;
 }
 
+*[data-name="pan-arc"],
 *[data-name="handle-move"]:hover {
     fill: yellow;
     opacity: 1;
 }
 
+*[data-name="scale-arc"],
 *[data-name="handle-scale"]:hover {
     fill: blue;
     opacity: 1;
 }
 
+*[data-name="rotate-arc"],
 *[data-name="handle-rotate"]:hover {
     fill: green;
+    opacity: 1;
+}
+
+*[data-name="color-arc"],
+*[data-name="handle-colors"]:hover {
+    fill: rebeccapurple;
+    opacity: 1;
+}
+
+*[data-name="edit-arc"],
+*[data-name="handle-edit"]:hover {
+    fill: orange;
     opacity: 1;
 }
 

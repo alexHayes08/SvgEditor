@@ -8,7 +8,7 @@ import { SvgTransformService, SvgTransformServiceSingleton, ICoords2D } from "..
 import { isSvgGraphicsElement } from "../helpers/svg-helpers";
 
 export interface ColorMap {
-    element: SVGElement;
+    element: SVGGraphicsElement;
     colors: SvgColors;
 }
 
@@ -37,7 +37,7 @@ export class SvgItem {
     /**
      * Maps an element to a ColorMap.
      */
-    private mapToColors: Map<SVGElement, SvgColors>;
+    private mapToColors: Map<SVGGraphicsElement, SvgColors>;
 
     // [End Fields]
 
@@ -133,7 +133,7 @@ export class SvgItem {
         });
     }
 
-    private static _GetColorsFromImage(element: SVGElement): ColorMap[] {
+    private static _GetColorsFromImage(element: SVGGraphicsElement): ColorMap[] {
         // TODO: Handle scenario where the image points to another svg. Though
         // I'm not sure how to detect if the image being pointed to is a svg.
         
@@ -148,19 +148,19 @@ export class SvgItem {
         ];
     }
 
-    private static _GetColorsFromUse(element: SVGElement): ColorMap[] {
+    private static _GetColorsFromUse(element: SVGGraphicsElement): ColorMap[] {
         let colors: ColorMap[] = [];
 
         return colors;
     }
 
-    private static _GetColorsFromGroup(element: SVGElement): ColorMap[] {
+    private static _GetColorsFromGroup(element: SVGGraphicsElement): ColorMap[] {
         let colors: ColorMap[] = [];
 
         return colors;
     }
 
-    private static _GetColorsFromPathEl(element: SVGElement): ColorMap[] {
+    private static _GetColorsFromPathEl(element: SVGGraphicsElement): ColorMap[] {
         let colors: ColorMap[] = [];
         let c = {
             element: element,
@@ -197,7 +197,7 @@ export class SvgItem {
         return colors;
     }
     
-    private static _GetColorsFromSvg(element: SVGElement): ColorMap[] {
+    private static _GetColorsFromSvg(element: SVGGraphicsElement): ColorMap[] {
         let colors: ColorMap[] = [];
 
         return colors;

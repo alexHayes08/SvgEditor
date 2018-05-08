@@ -30,8 +30,38 @@ export const Names = {
             }
         }
     },
+    SvgEditor: {
+        Editor: {
+            DATA_NAME: "editor-container"
+        },
+        OverEditor: {
+            DATA_NAME: "over-editor-container"
+        },
+        UnderEditor: {
+            DATA_NAME: "under-editor-container"
+        }
+    },
     Handles: {
         DATA_NAME: "handles-area",
-        BTN_HANDLE_CLASS: "btn-handle"
+        BTN_HANDLE_CLASS: "btn-handle",
+        SubElements: {
+            HightlightRect: {
+                DATA_NAME: "highlight-area"
+            },
+            RotationHelpersContainer: {
+                DATA_NAME: "rotation-helpers-container",
+                SubElements: {
+                    DialLine: {
+                        DATA_NAME: "dial-line"
+                    },
+                    DashedOuterCircle: {
+                        DATA_NAME: "dashed-outer-circle"
+                    },
+                    PivotPoint: {
+                        DATA_NAME: "pivot-point"
+                    }
+                }
+            }
+        }
     }
 };

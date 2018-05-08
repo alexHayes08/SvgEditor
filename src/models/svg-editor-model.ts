@@ -8,10 +8,11 @@ import { ICoords2D, SvgTransformService, SvgTransformServiceSingleton } from "./
 import { isSvgElement } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
 import { ISvgHandles } from "./isvg-handles-model";
+import { Names } from "./names";
 
 export interface ITotal {
     colors: d3.ColorSpaceObject[];
-    items: SVGElement[];
+    items: SVGGraphicsElement[];
 }
 
 /**
@@ -29,7 +30,7 @@ export class SvgEditor {
 
     private readonly transformService: SvgTransformService;
 
-    public _handles?: ISvgHandles;
+    public handles?: ISvgHandles;
 
     // [End Fields]
 
@@ -44,15 +45,18 @@ export class SvgEditor {
 
         this.underEditor = parentSelection
             .append<SVGGElement>("g")
-            .attr("id", uniqid());
+            .attr("id", uniqid())
+            .attr("data-name", Names.SvgEditor.UnderEditor.DATA_NAME);
 
         this.editor = parentSelection
             .append<SVGGElement>("g")
-            .attr("id", uniqid());
+            .attr("id", uniqid())
+            .attr("data-name", Names.SvgEditor.Editor.DATA_NAME);
 
         this.overEditor = parentSelection
             .append<SVGGElement>("g")
-            .attr("id", uniqid());
+            .attr("id", uniqid())
+            .attr("data-name", Names.SvgEditor.OverEditor.DATA_NAME);
     }
 
     // [End Ctor]
@@ -77,11 +81,11 @@ export class SvgEditor {
 
     get totals(): ITotal {
         let colors: d3.ColorSpaceObject[] = []
-        let items: SVGElement[] = [];
+        let items: SVGGraphicsElement[] = [];
 
         let editorNode = this.getEditorNode();
         for (let i = 0; i < editorNode.childNodes.length; i++) {
-            let item = <SVGElement>editorNode.childNodes[i];
+            let item = <SVGGraphicsElement>editorNode.childNodes[i];
             items.push(item);
         }
         
@@ -206,24 +210,17 @@ export class SvgEditor {
             // Setup default transformations
             if (isSvgGraphicsElement(el)) {
                 let svgItem = new SvgItem(el);
+
+                if (this.handles != undefined) {
+                    this.handles.onBeforeItemAdded(svgItem)
+                }
+
                 this.editor_items.push(svgItem);
                 let editorNode = this.getEditorNode();
                 let svgCanvas = getFurthestSvgOwner(editorNode);
 
                 // Add item to editor & editor_items
                 editorNode.appendChild(el);
-
-                // Add event handlers
-                // Capture els
-                let self = this;
-                d3.select(svgItem.element)
-                    .on("mousedown", function(data: {}, i: number) {
-                        
-                        // Check if the handles have been set
-                        if (self._handles != null) {
-                            self._handles.handleEvent();
-                        }
-                    });
 
                 // Attempt to center element
                 let centerOfSvg = this.transformService.getCenter(svgCanvas);
@@ -233,12 +230,31 @@ export class SvgEditor {
                     x: Math.abs(centerOfSvg.x - centerOfItem.y),
                     y: Math.abs(centerOfSvg.y - centerOfItem.y)
                 });
+
+                if (this.handles != undefined) {
+                    this.handles.onAfterItemAdded(svgItem)
+                }
             }
         }
     }
 
     public remove(id: string): void {
+        let svgItem = this.editor_items.find(el => el.element.id == id);
+
+        // Check that the element does exist
+        if (svgItem == null) {
+            return;
+        }
+
+        if (this.handles != undefined) {
+            this.handles.onBeforeItemRemoved(svgItem)
+        }
+
         this.editor.select(`#${id}`).remove();
+
+        if (this.handles != undefined) {
+            this.handles.onAfterItemRemoved(svgItem)
+        }
     }
 
     // [End Functions]

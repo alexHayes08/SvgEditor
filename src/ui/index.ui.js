@@ -61,6 +61,10 @@ Aperture.register("SvgEditorControls", {
 
     addRectEl: $("#addSquare"),
 
+    addCircleEl: $("#addCircle"),
+
+    addTriangleEl: $("#addTriangle"),
+
     changeCanvasEl: $("#changeEditor"),
 
     loading: function(value) {
@@ -159,6 +163,50 @@ Aperture.resolve(["SvgEditors"]).then(() => {
             canvas.editor.add(frag);
         });
     });
+
+    Aperture.SvgEditorControls.addCircleEl.on("click", function(e) {
+        Aperture.SvgEditors.map(canvas => {
+
+            // Create doc frag
+            let frag = document.createDocumentFragment();
+
+            // Create circle
+            let circle = document.createElementNS(NS.SVG, "circle");
+            $(circle).attr({
+                cx: 0,
+                cy: 0,
+                r: 50,
+                fill: colorService.randomColor,
+                stroke: colorService.randomColor,
+                strokeWidth: 1
+            });
+
+            frag.appendChild(circle);
+
+            // Add fragment to the editor
+            canvas.editor.add(frag);
+        });
+    });
+
+    Aperture.SvgEditorControls.addTriangleEl.on("click", function(e) {
+
+        // Create doc frag
+        let frag = document.createDocumentFragment();
+
+        // Create circle
+        let path = document.createElementNS(NS.SVG, "path");
+        $(path).attr({
+            d: "M0 100 L100 100 50 0 Z",
+            fill: colorService.randomColor,
+            stroke: colorService.randomColor,
+            strokeWidth: 1
+        });
+
+        frag.appendChild(path);
+
+        // Add fragment to the editor
+        canvas.editor.add(frag);
+    })
 
     Aperture.SvgEditorControls.modeSelectEl.on("change", function() {
         console.log("TODO");

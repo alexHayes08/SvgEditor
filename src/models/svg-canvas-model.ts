@@ -52,7 +52,7 @@ export class SvgCanvas {
 
     private _defs: SvgDefs;
     private _editor: SvgEditor;
-    private _handles: ISvgHandles;
+    private _handles?: ISvgHandles;
 
     private svgCanvasSelection: d3.Selection<SVGSVGElement, {}, null, undefined>;
 
@@ -107,52 +107,6 @@ export class SvgCanvas {
         // Create editor
         this._editor = new SvgEditor(svgCanvas_el);
 
-        // Handles data
-        // Handles should have five parts:
-        // 1) 30 deg red close arc
-        // 2) 30 deg yellow pan arc
-        // 3) 30 deg blue scale arc
-        // 4) 30 deg green rotate arc
-        // 5) 240 deg grey fill arc
-        let handlesData = new DefaultCircleArc({
-            startAngleOffset: 0,
-            defaultColor: "gray",
-            radius: 100,
-            defaultWidth: 8,
-            slices: [
-                {
-                    name: "fill",
-                    angle: 270
-                },
-                {
-                    name: "rotate-arc",
-                    angle: 30,
-                    color: "green"
-                },
-                {
-                    name: "scale-arc",
-                    angle: 30,
-                    color: "blue"
-                },
-                {
-                    name: "pan-arc",
-                    angle: 30,
-                    color: "yellow"
-                },
-                {
-                    name: "close-arc",
-                    angle: 30,
-                    color: "red"
-                }
-            ]
-        });
-
-        this._handles = new SvgHandles(svgCanvas_el, 
-            this._defs, 
-            handlesData);
-
-        this.editor._handles = this._handles;
-
         /**
          * [EVENT LISTENERS]
          * 
@@ -188,6 +142,10 @@ export class SvgCanvas {
 
     // [Properties]
 
+    get canvasEl() {
+        return this.svgCanvas_el;
+    }
+
     get defs() {
         return this._defs;
     }
@@ -210,6 +168,21 @@ export class SvgCanvas {
 
     get handles() {
         return this._handles;
+    }
+
+    set handles(value: ISvgHandles|undefined) {
+        
+        if (this.handles != undefined) {
+            this.handles.onRemovedFromEditor();
+            this.editor.handles = undefined;
+        }
+
+        this._handles = value;
+
+        if (this.handles != undefined) {
+            this.editor.handles = this.handles;
+            this.handles.onAddedToEditor();
+        }
     }
 
     // [End Properties]

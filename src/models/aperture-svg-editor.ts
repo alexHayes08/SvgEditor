@@ -188,7 +188,7 @@ export class ApertureSvgEditor {
 
     private nodes: Array<Attr|Element>;
 
-    private svgElements: SVGElement[];
+    private svgElements: SVGGraphicsElement[];
 
     /**
      * The settings of this class.
@@ -230,7 +230,7 @@ export class ApertureSvgEditor {
                 throw new Error(`Failed to locate an SVGElement using the css query: ${this.settings.svgElementSelector.value}`);
             } else {
                 for (let i = 0; i < elements.length; i++) {
-                    this.registerSvgAsEditor(<SVGElement>elements.item(i));
+                    this.registerSvgAsEditor(<SVGGraphicsElement>elements.item(i));
                 }
             }
         } else {
@@ -261,7 +261,7 @@ export class ApertureSvgEditor {
 
     // [Functions]
 
-    public registerSvgAsEditor(svgElement: SVGElement): void {
+    public registerSvgAsEditor(svgElement: SVGGraphicsElement): void {
         this.svgElements.push(svgElement);
     }
 

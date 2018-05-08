@@ -28,7 +28,7 @@ export class SvgMaskService {
 
     // [Ctor]
 
-    constructor(private parentSvgElement: SVGElement) {
+    constructor(private parentSvgElement: SVGGraphicsElement) {
 
         // Assign a css class that will be assigned to the mask when it's active
         this._activeMaskClass = "active";
@@ -100,18 +100,18 @@ export class SvgMaskService {
         this._activeMaskClass = value;
     }
 
-    get activeMask(): SVGElement|null {
+    get activeMask(): SVGGraphicsElement|null {
         return this.defsElement.querySelector(this.activeMaskClass);
     }
 
     /**
      * Retrieves all mask elements that use the defsClassSelector.
      */
-    get masks(): SVGElement[] {
-        let maskEls: SVGElement[] = [];
+    get masks(): SVGGraphicsElement[] {
+        let maskEls: SVGGraphicsElement[] = [];
         let els = this.parentSvgElement.querySelectorAll(`defs .${this.masksClassSelector}`);
         for (let i = 0; i < els.length; i++) {
-            maskEls.push(els.item(i) as SVGElement);
+            maskEls.push(els.item(i) as SVGGraphicsElement);
         }
 
         return maskEls;
@@ -121,7 +121,7 @@ export class SvgMaskService {
 
     // [Functions]
 
-    public createMask(mask: SVGElement): void {
+    public createMask(mask: SVGGraphicsElement): void {
 
     }
 

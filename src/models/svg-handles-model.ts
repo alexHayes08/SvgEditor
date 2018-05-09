@@ -1,3 +1,4 @@
+import { HandlesRotation } from './handles-rotation-model';
 const uniqid = require("uniqid");
 
 import * as $ from "jquery";
@@ -108,6 +109,7 @@ export class SvgHandles implements ISvgHandles {
     private transformService: SvgTransformService;
     private _lastSelectedSection: number;
     private cachedElementsWithEvts: Element[];
+    private _mode: SvgHandlesModes;
 
     private handlesContainer: SVGGElement;
     private arcsContainer: SVGGElement;
@@ -123,6 +125,7 @@ export class SvgHandles implements ISvgHandles {
 
     // Setup the rotate elements
     private rotateHelpersContainer: SVGGElement;
+    private handle_rotationOverlay: HandlesRotation;
 
     // [End Fields]
 
@@ -136,6 +139,7 @@ export class SvgHandles implements ISvgHandles {
         this.transformService = SvgTransformServiceSingleton;
         this._lastSelectedSection = 0;
         this.cachedElementsWithEvts = [];
+        this._mode = SvgHandlesModes.PAN;
 
         // Create the highlight rect
         let highlightRectEl = d3.select(this.parentNode)
@@ -177,6 +181,8 @@ export class SvgHandles implements ISvgHandles {
         }
 
         this.rotateHelpersContainer = rotateHelpersContainer;
+
+        this.handle_rotationOverlay = new HandlesRotation(this.handlesContainer);
 
         // Make handles use the 'activatable' class. This will be used when
         // showing/hiding the handles.
@@ -244,6 +250,18 @@ export class SvgHandles implements ISvgHandles {
     set lastSelectedSection(value: number) {
         if (value >= 0 && value < 100) {
             this._lastSelectedSection = value;
+        }
+    }
+
+    get mode() {
+        return this._mode;
+    }
+
+    set mode(value: SvgHandlesModes) {
+        if (this.mode != value) {
+            this._mode = value;
+
+            // Emit event on mode change?
         }
     }
 

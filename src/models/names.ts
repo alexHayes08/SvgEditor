@@ -59,6 +59,9 @@ export const Names = {
                     },
                     PivotPoint: {
                         DATA_NAME: "pivot-point"
+                    },
+                    DialPivot: {
+                        DATA_NAME: "dial-pivot-point"
                     }
                 }
             }

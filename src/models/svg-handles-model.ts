@@ -1,4 +1,3 @@
-import { HandlesRotation } from './handles-rotation-model';
 const uniqid = require("uniqid");
 
 import * as $ from "jquery";
@@ -6,6 +5,7 @@ import * as $ from "jquery";
 import * as d3 from "d3";
 
 import { ActivatableServiceSingleton } from "../services/activatable-service";
+import { HandlesRotationOverlay } from "./handles-rotation";
 import { Names } from "./names";
 import { NS } from "../helpers/namespaces-helper";
 import { ISvgHandles } from "./isvg-handles-model";
@@ -27,6 +27,7 @@ import {
     getFurthestSvgOwner, 
     isSvgGraphicsElement 
 } from "../helpers/svg-helpers";
+import { HandlesMain } from "./handles-main";
 
 export enum SvgHandlesModes {
     INACTIVE = 0,
@@ -109,23 +110,22 @@ export class SvgHandles implements ISvgHandles {
     private transformService: SvgTransformService;
     private _lastSelectedSection: number;
     private cachedElementsWithEvts: Element[];
-    private _mode: SvgHandlesModes;
 
     private handlesContainer: SVGGElement;
-    private arcsContainer: SVGGElement;
-    private deleteEl: SVGGraphicsElement;
-    private moveEl: SVGGraphicsElement;
-    private scaleEl: SVGGraphicsElement;
-    private rotateEl: SVGGraphicsElement;
-    private colorsEl: SVGGraphicsElement;
-    private editEl: SVGGraphicsElement;
-    private optionEls: SVGPathElement[];
+    // private arcsContainer: SVGGElement;
+    // private deleteEl: SVGGraphicsElement;
+    // private moveEl: SVGGraphicsElement;
+    // private scaleEl: SVGGraphicsElement;
+    // private rotateEl: SVGGraphicsElement;
+    // private colorsEl: SVGGraphicsElement;
+    // private editEl: SVGGraphicsElement;
+    // private optionEls: SVGPathElement[];
 
     private highlightRectEl: SVGRectElement;
 
     // Setup the rotate elements
-    private rotateHelpersContainer: SVGGElement;
-    private handle_rotationOverlay: HandlesRotation;
+    // private rotateHelpersContainer: SVGGElement;
+    // private handle_rotationOverlay: HandlesRotationOverlay;
 
     // [End Fields]
 
@@ -135,11 +135,11 @@ export class SvgHandles implements ISvgHandles {
         this.canvas = editor;
         this.parentNode = editor.canvasEl;
         this.selectedObjects = [];
-        this.optionEls = [];
+        // this.optionEls = [];
         this.transformService = SvgTransformServiceSingleton;
         this._lastSelectedSection = 0;
         this.cachedElementsWithEvts = [];
-        this._mode = SvgHandlesModes.PAN;
+        // this._mode = SvgHandlesModes.PAN;
 
         // Create the highlight rect
         let highlightRectEl = d3.select(this.parentNode)
@@ -169,6 +169,10 @@ export class SvgHandles implements ISvgHandles {
         this.handlesContainer = handleContainer;
         this.transformService.standardizeTransforms(this.handlesContainer);
 
+        // Create main handles overlay
+        let mainOverlay = new HandlesMain(d3.select(handleContainer));
+        mainOverlay.draw();
+
         // Create the rotation helpers container
         let rotateHelpersContainer = d3.select(this.parentNode)
             .append<SVGGElement>("g")
@@ -180,57 +184,58 @@ export class SvgHandles implements ISvgHandles {
             throw new Error("Failed to create the rotation helpers container element.");
         }
 
-        this.rotateHelpersContainer = rotateHelpersContainer;
+        // this.rotateHelpersContainer = rotateHelpersContainer;
 
-        this.handle_rotationOverlay = new HandlesRotation(this.handlesContainer);
+        // this.handle_rotationOverlay = new HandlesRotationOverlay(this.handlesContainer);
+        // this.handle_rotationOverlay.draw();
 
         // Make handles use the 'activatable' class. This will be used when
         // showing/hiding the handles.
-        ActivatableServiceSingleton.register(this.handlesContainer);
+        // ActivatableServiceSingleton.register(this.handlesContainer);
 
         // Group which will contain the arcs, which should surround the
         // selected items.
         let defaultTransformStr = this.transformService.defaultTransformString;
 
-        d3.select(this.handlesContainer)
-            .append("g")
-            .attr("id", uniqid())
-            .attr("data-name", "handles-arc-container")
-            .attr("transform", defaultTransformStr);
+        // d3.select(this.handlesContainer)
+        //     .append("g")
+        //     .attr("id", uniqid())
+        //     .attr("data-name", "handles-arc-container")
+        //     .attr("transform", defaultTransformStr);
 
-        this.arcsContainer = convertToSvgGraphicsElement(
-            $(this.parentNode)
-                .find("*[data-name='handles-arc-container']")[0]);
+        // this.arcsContainer = convertToSvgGraphicsElement(
+        //     $(this.parentNode)
+        //         .find("*[data-name='handles-arc-container']")[0]);
 
-        // Draw handles
-        handlesData.draw(this.arcsContainer);
+        // // Draw handles
+        // handlesData.draw(this.arcsContainer);
 
-        // Now set the rest of the elements
-        let $handlesContainer = $(this.parentNode);
-        this.deleteEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-delete']")[0]);
-        this.scaleEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-scale']")[0]);
-        this.moveEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-move']")[0]);
-        this.rotateEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-rotate']")[0]);
-        this.colorsEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-colors']")[0]);
-        this.editEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-edit']")[0]);
+        // // Now set the rest of the elements
+        // let $handlesContainer = $(this.parentNode);
+        // this.deleteEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-delete']")[0]);
+        // this.scaleEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-scale']")[0]);
+        // this.moveEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-move']")[0]);
+        // this.rotateEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-rotate']")[0]);
+        // this.colorsEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-colors']")[0]);
+        // this.editEl = convertToSvgGraphicsElement($handlesContainer.find("[data-name='handle-edit']")[0]);
 
-        // Add event handlers
-        let self = this;
-        d3.select(this.deleteEl).on("click", function({}, i: number) {
-            self.onDeleteClicked();
-        });
+        // // Add event handlers
+        // let self = this;
+        // d3.select(this.deleteEl).on("click", function({}, i: number) {
+        //     self.onDeleteClicked();
+        // });
 
-        d3.select<Element, {}>(this.rotateEl).call(d3.drag()
-            .on("start", function({}, i: number) {
-                console.log("Drag start on rotate handle btn");
-            }).on("drag", function({}, i: number) {
+        // d3.select<Element, {}>(this.rotateEl).call(d3.drag()
+        //     .on("start", function({}, i: number) {
+        //         console.log("Drag start on rotate handle btn");
+        //     }).on("drag", function({}, i: number) {
                 
-            }).on("end", function({}, i: number) {
-                console.log("Drag end on rotate handle btn")
-            }));
+        //     }).on("end", function({}, i: number) {
+        //         console.log("Drag end on rotate handle btn")
+        //     }));
 
-        // Hide the handles
-        this.displayHandles();
+        // // Hide the handles
+        // this.displayHandles();
     }
 
     // [End Ctor]
@@ -250,18 +255,6 @@ export class SvgHandles implements ISvgHandles {
     set lastSelectedSection(value: number) {
         if (value >= 0 && value < 100) {
             this._lastSelectedSection = value;
-        }
-    }
-
-    get mode() {
-        return this._mode;
-    }
-
-    set mode(value: SvgHandlesModes) {
-        if (this.mode != value) {
-            this._mode = value;
-
-            // Emit event on mode change?
         }
     }
 
@@ -287,15 +280,15 @@ export class SvgHandles implements ISvgHandles {
      * @param show 
      */
     private displayHandles(): void {
-        if (this.selectedObjects.length == 0) {
-            ActivatableServiceSingleton.deactivate(this.handlesContainer);
-            this.removeEvtListeners();
-        } else {
-            ActivatableServiceSingleton.activate(this.handlesContainer);
-            this.drawHandles();
-            this.updateHandlesPosition();
-            this.addEvtListeners();
-        }
+        // if (this.selectedObjects.length == 0) {
+        //     ActivatableServiceSingleton.deactivate(this.handlesContainer);
+        //     this.removeEvtListeners();
+        // } else {
+        //     ActivatableServiceSingleton.activate(this.handlesContainer);
+        //     this.drawHandles();
+        //     this.updateHandlesPosition();
+        //     this.addEvtListeners();
+        // }
     }
 
     private updateHandlesPosition(): void {
@@ -311,30 +304,30 @@ export class SvgHandles implements ISvgHandles {
             this.transformService.getCenter(...this.selectedObjects.map(so => so.element));
 
         // Update the handles to surround the bbox
-        this.transformService
-            .setTranslation(this.handlesContainer, centerOfSelectedItems);
+        // this.transformService
+        //     .setTranslation(this.handlesContainer, centerOfSelectedItems);
     }
 
     private drawHandles(): void {
 
-        // Reset the position of the handles at (0,0)
-        this.transformService.setTranslation(this.handlesContainer, { x: 0, y: 0 });
+        // // Reset the position of the handles at (0,0)
+        // this.transformService.setTranslation(this.handlesContainer, { x: 0, y: 0 });
 
-        let bbox = this.transformService.getBBox(...this.selectedObjects.map(so => so.element));
+        // let bbox = this.transformService.getBBox(...this.selectedObjects.map(so => so.element));
 
-        if (bbox == null) {
-            return;
-        }
+        // if (bbox == null) {
+        //     return;
+        // }
 
-        let hyp = (Math.sqrt((bbox.width * bbox.width) + (bbox.height * bbox.height)) / 2) + 10;
+        // let hyp = (Math.sqrt((bbox.width * bbox.width) + (bbox.height * bbox.height)) / 2) + 10;
 
-        // Min-width for hyp
-        if (hyp < 50) {
-            hyp = 50;
-        }
+        // // Min-width for hyp
+        // if (hyp < 50) {
+        //     hyp = 50;
+        // }
 
-        handlesData.radius = hyp;
-        handlesData.draw(this.arcsContainer);
+        // handlesData.radius = hyp;
+        // handlesData.draw(this.arcsContainer);
     }
 
     private addEvtListeners(): void {
@@ -449,7 +442,7 @@ export class SvgHandles implements ISvgHandles {
                     self.selectedObjects.map(item => {
                         self.transformService.incrementTranslation(item.element, increment);
                     });
-                    self.transformService.incrementTranslation(self.handlesContainer, increment);
+                    // self.transformService.incrementTranslation(self.handlesContainer, increment);
                 }).on("end", function() {
                     console.log("Drag end.")
                 }));

@@ -45,8 +45,60 @@ export const Names = {
         DATA_NAME: "handles-area",
         BTN_HANDLE_CLASS: "btn-handle",
         SubElements: {
+            ArcsContainer: {
+                DATA_NAME: "arcs-container",
+                SubElements: {
+                    FillArc: {
+                        DATA_NAME: "handles-fill-arc"
+                    },
+                    ColorsArc: {
+                        DATA_NAME: "handles-colors-arc"
+                    },
+                    EditArc: {
+                        DATA_NAME: "handles-edit-arc"
+                    },
+                    DeleteArc: {
+                        DATA_NAME: "handles-delete-arc"
+                    },
+                    PanArc: {
+                        DATA_NAME: "handles-pan-arc"
+                    },
+                    RotateArc: {
+                        DATA_NAME: "handles-rotate-arc"
+                    },
+                    ScaleArc: {
+                        DATA_NAME: "handles-scale-arc"
+                    }
+                }
+            },
+            ButtonsContainer: {
+                DATA_NAME: "handles-button-container",
+                SubElements: {
+                    ColorsBtn: {
+                        DATA_NAME: "handles-colors-btn"
+                    },
+                    EditBtn: {
+                        DATA_NAME: "handles-edit-btn"
+                    },
+                    DeleteBtn: {
+                        DATA_NAME: "handles-delete-btn"
+                    },
+                    PanBtn: {
+                        DATA_NAME: "handles-pan-btn"
+                    },
+                    RotateBtn: {
+                        DATA_NAME: "handles-rotate-btn"
+                    },
+                    ScaleBtn: {
+                        DATA_NAME: "handles-scale-btn"
+                    }
+                }
+            },
             HightlightRect: {
                 DATA_NAME: "highlight-area"
+            },
+            ColorsHelperContainer: {
+                DATA_NAME: "colors-helpers-container"
             },
             RotationHelpersContainer: {
                 DATA_NAME: "rotation-helpers-container",
@@ -62,8 +114,14 @@ export const Names = {
                     },
                     DialPivot: {
                         DATA_NAME: "dial-pivot-point"
+                    },
+                    DialPivotToPivotPointLine: {
+                        DATA_NAME: "dial-pivot-to-pivot-point-line"
                     }
                 }
+            },
+            ScaleHelpersContainer: {
+                DATA_NAME: "scale-helpers-container"
             }
         }
     }

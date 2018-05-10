@@ -51,6 +51,7 @@ const extractSass = new ExtractTextPlugin({
 
 var clientConfig = {
     entry: [
+        "./src/ui/scss/ui.styles.scss",
         "./src/index.ts",
         "./src/ui/index.ui.js"
     ],
@@ -95,6 +96,18 @@ var clientConfig = {
             },
             {
                 test: /\.scss$/,
+                // loader: ExtractTextPlugin.extract(['css-loader', 'sass-loader'])
+                use: [
+                    {
+                        loader: "style-loader"
+                    },
+                    {
+                        loader: "css-loader"
+                    },
+                    {
+                        loader: "sass-loader"
+                    }
+                ]
                 // use: extractSass.extract({
                 //     use: [
                 //         { loader: "style-loader" },
@@ -107,21 +120,24 @@ var clientConfig = {
                 //         }
                 //     ]
                 // })
-                use: [
-                    { loader: "style-loader" },
-                    { loader: "css-loader" },
-                    { 
-                        loader: "sass-loader",
-                        options: {
-                            includePaths: [ "src/ui/scss" ]
-                        }
-                    }
-                ]
+                // use: [
+                //     { loader: "style-loader" },
+                //     { loader: "css-loader" },
+                //     { 
+                //         loader: "sass-loader",
+                //         // options: {
+                //         //     includePaths: [ "src/ui/scss" ]
+                //         // }
+                //     }
+                // ]
             }
         ]
     },
     plugins: [
-        // extractSass,
+        // new ExtractTextPlugin({
+        //     filename: "ui.styles.css",
+        //     allChunks: true
+        // }),
         new HtmlWebpackPlugin({
             title: "Development",
             template: "./src/ui/index.html",

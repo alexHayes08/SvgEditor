@@ -1,5 +1,6 @@
 export interface IMode {
-    label: string
+    label: string;
+    selected: boolean;
 }
 
 export interface IHandleButton {

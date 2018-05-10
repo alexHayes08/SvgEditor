@@ -38,6 +38,46 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     z-index: 0;
 }
 
+*[data-name="handles-fill-arc"] {
+    fill: rgba(0,0,0,0.25);
+}
+
+*[data-name="handles-delete-arc"],
+*[data-name="handles-delete-btn"] circle.selected {
+    fill: red;
+    opacity: 1;
+}
+
+*[data-name="handles-pan-arc"],
+*[data-name="handles-pan-btn"] circle.selected {
+    fill: yellow;
+    opacity: 1;
+}
+
+*[data-name="handles-scale-arc"],
+*[data-name="handles-scale-btn"] circle.selected {
+    fill: blue;
+    opacity: 1;
+}
+
+*[data-name="handles-rotate-arc"],
+*[data-name="handles-rotate-btn"] circle.selected {
+    fill: green;
+    opacity: 1;
+}
+
+*[data-name="handles-colors-arc"],
+*[data-name="handles-colors-btn"] circle.selected {
+    fill: rebeccapurple;
+    opacity: 1;
+}
+
+*[data-name="handles-edit-arc"],
+*[data-name="handles-edit-btn"] circle.selected {
+    fill: orange;
+    opacity: 1;
+}
+
 /* *[data-name="handles-area"] path:hover:not([data-name="fill"]),
  [data-name="handles-area"] path.active:not([data-name="fill"]) {
     stroke-width: 4;
@@ -45,46 +85,48 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
 } */
 
 .btn-handle {
-    fill: gray;
-    opacity: .15;
-    stroke: none;
-    transition: opacity .2s ease-in-out;
+    circle {
+        opacity: 0;
+        fill: gray;
+        transition: .2s ease-in-out;
+    }
+
+    circle.selected {
+        opacity: .15;
+    }
+
+    rect {
+        opacity: 0;
+        fill: gray;
+    }
 }
 
-*[data-name="close-arc"],
-*[data-name="handle-delete"]:hover {
-    fill: red;
-    opacity: 1;
+.btn-handle.active {
+    circle.selected {
+        opacity: 1
+    }
 }
 
-*[data-name="pan-arc"],
-*[data-name="handle-move"]:hover {
-    fill: yellow;
-    opacity: 1;
-}
+.btn-handle:hover {
+    circle {
+        opacity: .15;
+    }
 
-*[data-name="scale-arc"],
-*[data-name="handle-scale"]:hover {
-    fill: blue;
-    opacity: 1;
-}
+    circle.selected {
+        opacity: .5;
+    }
 
-*[data-name="rotate-arc"],
-*[data-name="handle-rotate"]:hover {
-    fill: green;
-    opacity: 1;
-}
+    circle:hover {
+        opacity: 1;
+    }
 
-*[data-name="color-arc"],
-*[data-name="handle-colors"]:hover {
-    fill: rebeccapurple;
-    opacity: 1;
-}
+    circle:hover:not(.selected) {
+        color: unset;
+    }
 
-*[data-name="edit-arc"],
-*[data-name="handle-edit"]:hover {
-    fill: orange;
-    opacity: 1;
+    rect {
+        opacity: .25;
+    }
 }
 
 /**

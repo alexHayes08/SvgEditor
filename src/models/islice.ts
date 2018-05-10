@@ -182,12 +182,12 @@ export class DefaultCircleArc implements ICircleArc {
 
         // The distance between the arc and btn center.
         let hyp_3 = (PADDING_BETWEEN_ARC_AND_BTN + BUTTON_RADIUS + 20) + radius;
-        let deleteBtn_newCoords = getNewPointAlongAngle(deleteArcCenter, hyp_3);
-        let moveBtn_newCoords = getNewPointAlongAngle(moveArcCenter, hyp_3);
-        let scaleBtn_newCoords = getNewPointAlongAngle(scaleArcCenter, hyp_3);
-        let rotateBtn_newCoords = getNewPointAlongAngle(rotateArcCenter, hyp_3);
-        let colorBtn_newCoords = getNewPointAlongAngle(colorArcCenter, hyp_3);
-        let editBtn_newCoords = getNewPointAlongAngle(editArcCenter, hyp_3);
+        let deleteBtn_newCoords = getNewPointAlongAngle(relativeTo, deleteArcCenter, hyp_3);
+        let moveBtn_newCoords = getNewPointAlongAngle(relativeTo, moveArcCenter, hyp_3);
+        let scaleBtn_newCoords = getNewPointAlongAngle(relativeTo, scaleArcCenter, hyp_3);
+        let rotateBtn_newCoords = getNewPointAlongAngle(relativeTo, rotateArcCenter, hyp_3);
+        let colorBtn_newCoords = getNewPointAlongAngle(relativeTo, colorArcCenter, hyp_3);
+        let editBtn_newCoords = getNewPointAlongAngle(relativeTo, editArcCenter, hyp_3);
 
         // Update btn positions
         SvgTransformServiceSingleton.setTranslation(deleteEl, deleteBtn_newCoords);

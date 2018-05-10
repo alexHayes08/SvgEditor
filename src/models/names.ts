@@ -91,6 +91,9 @@ export const Names = {
                     },
                     ScaleBtn: {
                         DATA_NAME: "handles-scale-btn"
+                    },
+                    ToggleControlsBtn: {
+                        DATA_NAME: "handles-toggle-controls-btn"
                     }
                 }
             },

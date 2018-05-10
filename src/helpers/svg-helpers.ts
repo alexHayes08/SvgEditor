@@ -316,19 +316,20 @@ export function getFurthestSvgOwner(element: SVGGraphicsElement): SVGSVGElement 
 
 /**
  * Returns a new point along a line between two points that is a 'hyp' amount
- * away from (0,0). The center of the circle is assumed to be (0,0).
- * @param pt 
- * @param hyp 
+ * away from pt_b. The center of the circle is assumed to be pt_a.
+ * @param pt_a
+ * @param pt_b
+ * @param hyp
  */
-export function getNewPointAlongAngle(pt: ICoords2D, hyp: number): ICoords2D {
+export function getNewPointAlongAngle(pt_a: ICoords2D, pt_b: ICoords2D, hyp: number): ICoords2D {
     let result: ICoords2D = {
         x: 0,
         y: 0
     };
     
-    let angle = Math.atan2(pt.y, pt.x);
-    result.x = (Math.cos(angle) * hyp);
-    result.y = (Math.sin(angle) * hyp);
+    let angle = Math.atan2((pt_b.y - pt_a.y), (pt_b.x - pt_a.x));
+    result.x = pt_b.x + (Math.cos(angle) * hyp);
+    result.y = pt_b.y + (Math.sin(angle) * hyp);
 
     return result;
 }

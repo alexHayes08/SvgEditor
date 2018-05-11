@@ -95,6 +95,29 @@ export const Names = {
                     ToggleControlsBtn: {
                         DATA_NAME: "handles-toggle-controls-btn"
                     }
+                },
+            },
+            ButtonArcPathsContainer: {
+                DATA_NAME: "handles-btn-path-container",
+                SubElements: {
+                    ColorsBtnArcPath: {
+                        DATA_NAME: "handles-colors-btn"
+                    },
+                    EditBtnArcPath: {
+                        DATA_NAME: "handles-edit-btn"
+                    },
+                    DeleteBtnArcPath: {
+                        DATA_NAME: "handles-delete-btn"
+                    },
+                    PanBtnArcPath: {
+                        DATA_NAME: "handles-pan-btn"
+                    },
+                    RotateBtnArcPath: {
+                        DATA_NAME: "handles-rotate-btn"
+                    },
+                    ScaleBtnArcPath: {
+                        DATA_NAME: "handles-scale-btn"
+                    }
                 }
             },
             HightlightRect: {

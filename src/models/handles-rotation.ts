@@ -14,7 +14,7 @@ import { SvgTransformServiceSingleton, ICoords2D } from "../services/svg-transfo
  * organizational purposes.
  */
 export class HandlesRotationOverlay implements IContainer, IDrawable {
-    // [Fields]
+    //#region Fields
 
     private rotationModeContainerEl?: SVGGElement;
     private dialLineEl?: SVGLineElement;
@@ -29,9 +29,9 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
     public radius: number;
     public pivotPoint?: ICoords2D;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>) {
         this.container = container;
@@ -46,13 +46,13 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
         this.containerNode = containerNode;
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     public draw(): void {
 
@@ -210,5 +210,5 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
         }
     }
 
-    // [End Functions]
+    //#endregion
 }

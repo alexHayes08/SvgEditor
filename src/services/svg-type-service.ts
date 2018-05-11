@@ -5,21 +5,21 @@ import ISvgType from "../models/isvg-type";
  * match those types. Checks svg elements to see if they are of a certain type.
  */
 export class SvgTypeService {
-    // [Fields]
+    //#region Fields
 
     private _registeredTypes: { [key: string]: ISvgType };
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     constructor() {
         this._registeredTypes = {};
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
     /**
      * Returns all registered ISvgTypes.
@@ -30,9 +30,9 @@ export class SvgTypeService {
         return [ ...this.registeredTypes ];
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     /**
      * Registers an ISvgType and stores it.
@@ -69,5 +69,5 @@ export class SvgTypeService {
         return matchedTypes;
     }
 
-    // [End Functions]
+    //#endregion
 }

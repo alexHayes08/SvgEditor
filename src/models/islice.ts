@@ -45,7 +45,7 @@ export function isISlice(obj: any): obj is ISlice {
 }
 
 export class DefaultCircleArc implements ICircleArc {
-    // [Fields]
+    //#region Fields
 
     public slices: ISlice[];
     public startAngleOffset: number;
@@ -54,9 +54,9 @@ export class DefaultCircleArc implements ICircleArc {
     public defaultWidth: number;
     public transformService: SvgTransformService;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     constructor(data: ICircleArcConfig) {
         this.slices = data.slices;
@@ -67,7 +67,7 @@ export class DefaultCircleArc implements ICircleArc {
         this.transformService = SvgTransformServiceSingleton;
     }
 
-    // [Functions]
+    //#region Functions
 
     /**
      * Creates or updates path elements of the parent element to draw the
@@ -182,12 +182,36 @@ export class DefaultCircleArc implements ICircleArc {
 
         // The distance between the arc and btn center.
         let hyp_3 = (PADDING_BETWEEN_ARC_AND_BTN + BUTTON_RADIUS + 20) + radius;
-        let deleteBtn_newCoords = getNewPointAlongAngle(relativeTo, deleteArcCenter, hyp_3);
-        let moveBtn_newCoords = getNewPointAlongAngle(relativeTo, moveArcCenter, hyp_3);
-        let scaleBtn_newCoords = getNewPointAlongAngle(relativeTo, scaleArcCenter, hyp_3);
-        let rotateBtn_newCoords = getNewPointAlongAngle(relativeTo, rotateArcCenter, hyp_3);
-        let colorBtn_newCoords = getNewPointAlongAngle(relativeTo, colorArcCenter, hyp_3);
-        let editBtn_newCoords = getNewPointAlongAngle(relativeTo, editArcCenter, hyp_3);
+        let deleteBtn_newCoords = getNewPointAlongAngle({
+            pt_a: relativeTo, 
+            pt_b: deleteArcCenter, 
+            radius: hyp_3
+        });
+        let moveBtn_newCoords = getNewPointAlongAngle({
+            pt_a: relativeTo, 
+            pt_b: moveArcCenter, 
+            radius: hyp_3
+        });
+        let scaleBtn_newCoords = getNewPointAlongAngle({
+            pt_a: relativeTo, 
+            pt_b: scaleArcCenter, 
+            radius: hyp_3
+        });
+        let rotateBtn_newCoords = getNewPointAlongAngle({
+            pt_a: relativeTo, 
+            pt_b: rotateArcCenter, 
+            radius: hyp_3
+        });
+        let colorBtn_newCoords = getNewPointAlongAngle({
+            pt_a: relativeTo, 
+            pt_b: colorArcCenter, 
+            radius: hyp_3
+        });
+        let editBtn_newCoords = getNewPointAlongAngle({
+            pt_a: relativeTo,
+            pt_b: editArcCenter, 
+            radius: hyp_3
+        });
 
         // Update btn positions
         SvgTransformServiceSingleton.setTranslation(deleteEl, deleteBtn_newCoords);
@@ -198,5 +222,5 @@ export class DefaultCircleArc implements ICircleArc {
         SvgTransformServiceSingleton.setTranslation(editEl, editBtn_newCoords);
     }
 
-    // [Functions]
+    //#region Functions
 }

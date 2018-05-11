@@ -46,7 +46,7 @@ export const SVG_CANVAS_NAMES = {
  */
 export class SvgCanvas {
     
-    // [Fields]
+    //#region Fields
 
     private svgCanvas_el: SVGSVGElement;
 
@@ -61,9 +61,9 @@ export class SvgCanvas {
     // @Inject
     // private maskService: SvgMaskService;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     /**
      * Creates an SvgCanvas object.
@@ -138,9 +138,9 @@ export class SvgCanvas {
          */
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
     get canvasEl() {
         return this.svgCanvas_el;
@@ -185,9 +185,9 @@ export class SvgCanvas {
         }
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     /**
      * Used to get and set the height of the svg element.
@@ -385,5 +385,5 @@ export class SvgCanvas {
         return result;
     }
 
-    // [End Functions]
+    //#endregion
 }

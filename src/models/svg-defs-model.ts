@@ -7,13 +7,13 @@ import { Names } from "./names";
 import { isSvgElement } from "../helpers/svg-helpers";
 
 export class SvgDefs {
-    // [Fields]
+    //#region Fields
 
     private readonly defsSelection: d3.Selection<SVGDefsElement, {}, null, undefined>;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     public constructor(parent: SVGSVGElement) {
         
@@ -44,9 +44,9 @@ export class SvgDefs {
             .attr("data-name", Names.SvgDefs.SubElements.EditorOnlyDefsContainer.DATA_NAME);
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
     get editorOnlyContainerName() {
         return this.defsSelection
@@ -66,9 +66,9 @@ export class SvgDefs {
             .attr("id");
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     /**
      * 
@@ -112,5 +112,5 @@ export class SvgDefs {
         return d3.select(`#${id}`).remove().node();
     }
 
-    // [End Functions]
+    //#endregion
 }

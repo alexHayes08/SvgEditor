@@ -10,14 +10,14 @@ import { Names } from "./names";
 import { SvgTransformServiceSingleton, ICoords2D } from "../services/svg-transform-service";
 
 export class HandlesColorsOverlay implements IContainer, IDrawable {
-    // [Fields]
+    //#region Fields
 
     public container: d3.Selection<SVGGElement, {}, null, undefined>;
     public containerNode: SVGGElement;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>) {
         this.container = container;
@@ -29,13 +29,13 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         this.containerNode = containerNode;
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     public draw(): void {
 
@@ -49,5 +49,5 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
 
     }
 
-    // [End Functions]
+    //#endregion
 }

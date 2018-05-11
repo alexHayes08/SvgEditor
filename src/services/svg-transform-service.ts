@@ -5,6 +5,11 @@ import { getAllGroups } from "../helpers/regex-helper";
 import { getDOMMatrix } from "../helpers/node-helper";
 import { getFurthestSvgOwner } from "../helpers/svg-helpers";
 
+export interface ICoords2D {
+    x: number;
+    y: number;
+}
+
 export interface IBBox {
     x: number;
     y: number;
@@ -12,15 +17,9 @@ export interface IBBox {
     height: number;
 }
 
-export interface ICoords2D {
-    x: number;
-    y: number;
-}
-
-export interface IScaleMatrix {
-    x: number;
-    y: number;
-}
+export type IScaleMatrix = ICoords2D;
+export type ITranslationMatrix = ICoords2D;
+export type ISkewMatrix = ICoords2D;
 
 export interface IRotationMatrix {
     a: number;
@@ -28,21 +27,18 @@ export interface IRotationMatrix {
     cy?: number;
 }
 
-export interface ITranslationMatrix {
-    x: number;
-    y: number;
-}
-
-export interface ISkewMatrix {
-    x: number;
-    y: number;
-}
-
-export interface ITransformMatrix {
+export interface ITransformMatrixData {
     rotation?: IRotationMatrix;
     scale?: IScaleMatrix;
     translation?: ITranslationMatrix;
     skew?: ISkewMatrix;
+}
+
+export interface ITransformMatrix {
+    rotation: IRotationMatrix;
+    scale: IScaleMatrix;
+    translation: ITranslationMatrix;
+    skew: ISkewMatrix;
 }
 
 /**
@@ -78,11 +74,22 @@ export class DefaultTransformMatrix implements ITransformMatrix {
     }
 }
 
+export enum TransformType {
+    ROTATE,
+    SCALE,
+    SKEW,
+    TRANSLATE
+}
+
+export interface ISvgTransformServiceData {
+    order?: TransformType[];
+}
+
 /**
  * Responsible for applying and retrieving transformations from an element.
  */
 export class SvgTransformService {
-    // [Fields]
+    //#region Fields
 
     private readonly transformsRegex: RegExp;
     private readonly translateRegex: RegExp;
@@ -93,34 +100,103 @@ export class SvgTransformService {
     private readonly skewYRegex: RegExp;
     private readonly _defaultTransformString: string;
 
-    // [End Fields]
+    private _canRotate: boolean;
+    private _canScale: boolean;
+    private _canSkew: boolean;
+    private _canTranslate: boolean;
 
-    // [Ctor]
+    //#endregion
 
-    constructor() {
-        this.transformsRegex = /^translate[^a-z]+ rotate[^a-z]+ scale[^a-z/]+ skewX[^a-z]+ skewY[^a-z]+$/;
+    //#region Ctor
+
+    constructor(data: ISvgTransformServiceData = {}) {
         this.translateRegex = /translate\(\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*\)/g;
         this.rotateRegex = /rotate\(\s*([\-\d\.]+)\s*,?([\-\d\.]+)?,?([\-\d\.]+)?\)/g;
         this.scaleRegex = /scale\(\s*([\-\d\.]+)\s*,([\-\d\.]+)\)/g;
         this.matrixRegex = /matrix\(\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*\)/g;
         this.skewXRegex = /skewX\(\s*([\-\d\.]+)\s*\)/g;
         this.skewYRegex = /skewY\(\s*([\-\d\.]+)\s*\)/g;
-        this._defaultTransformString = "translate(0,0) rotate(0,0,0) scale(1,1) skewX(0) skewY(0)";
+        this._canRotate = false;
+        this._canScale = false;
+        this._canSkew = false;
+        this._canTranslate = false;
+
+        if (data.order) {
+            let str = "";
+            let reg = "";
+            data.order.map(t => {
+                switch(t) {
+                    case TransformType.ROTATE:
+                        str += " rotate(0,0,0)";
+                        reg += ` ${this.regexToString(this.rotateRegex)}`;
+                        this._canRotate = true;
+                        break;
+                    case TransformType.SCALE:
+                        str += " scale(1,1)";
+                        reg += ` ${this.regexToString(this.scaleRegex)}`;
+                        this._canScale = true;
+                        break;
+                    case TransformType.SKEW:
+                        str += " skewX(0) skewY(0)";
+                        reg += ` ${this.regexToString(this.skewXRegex)} ${this.regexToString(this.skewYRegex)}}`;
+                        this._canSkew = true;
+                        break;
+                    case TransformType.TRANSLATE:
+                        str += " translate(0,0)";
+                        reg += ` ${this.regexToString(this.translateRegex)}`
+                        this._canTranslate = true;
+                        break; 
+                    default:
+                        throw new Error("Transform type not yet supported.");
+                }
+            });
+
+            this.transformsRegex = RegExp(reg.trimLeft());
+            this._defaultTransformString = str.trimLeft();
+        } else {
+            this._defaultTransformString = "translate(0,0) rotate(0,0,0) scale(1,1) skewX(0) skewY(0)";
+            this.transformsRegex = /translate[^a-z]+ rotate[^a-z]+ scale[^a-z/]+ skewX[^a-z]+ skewY[^a-z]+/;
+            this._canRotate = true;
+            this._canScale = true;
+            this._canSkew = true;
+            this._canTranslate = true;
+        }
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
+
+    get canRotate() {
+        return this._canRotate;
+    }
+
+    get canScale() {
+        return this._canScale;
+    }
+
+    get canSkew() {
+        return this._canSkew;
+    }
+
+    get canTranslate() {
+        return this._canTranslate;
+    }
 
     get defaultTransformString() {
         return this._defaultTransformString;
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
-    public extractTransformProperties(matrix: DOMMatrix|string): ITransformMatrix {
+    private regexToString(regex: RegExp): string {
+        let stringified = regex.toString();
+        return stringified.substr(1, stringified.length - 2);
+    }
+
+    public extractTransformProperties(matrix: DOMMatrix|string): ITransformMatrixData {
 
         let transformMatrix = new DefaultTransformMatrix();
 
@@ -593,13 +669,25 @@ export class SvgTransformService {
         return matches.length == 1;
     }
 
-    public setScale(element: SVGGraphicsElement, matrix: IScaleMatrix): void {
+    public setScale(element: SVGGraphicsElement, matrix: IScaleMatrix, index: number = 1): void {
         let transformStr = element.getAttribute("transform") || "";
-        transformStr = transformStr.replace(this.rotateRegex, `rotate(${matrix.x},${matrix.y})`);
+        let currentIndex = 1;
+        transformStr = transformStr.replace(this.rotateRegex, function(match: string, ...matches: string[]) {
+            let result = "";
+
+            if (currentIndex == index) {
+                result = `rotate(${matrix.x},${matrix.y})`;
+            } else {
+                result = match;
+            }
+            
+            currentIndex++;
+            return result;
+        });
         element.setAttribute("transform", transformStr);
     }
 
-    public getScale(element: SVGGraphicsElement): IScaleMatrix {
+    public getScale(element: SVGGraphicsElement, index: number = 1): IScaleMatrix {
         let result: IScaleMatrix = {
             x: 1,
             y: 1
@@ -615,7 +703,7 @@ export class SvgTransformService {
         return result;
     }
 
-    public incrementScale(element: SVGGraphicsElement, matrix: IScaleMatrix): void {
+    public incrementScale(element: SVGGraphicsElement, matrix: IScaleMatrix, index: number = 1): void {
         let scale = this.getScale(element);
         this.setScale(element, {
             x: scale.x + matrix.x,
@@ -623,13 +711,25 @@ export class SvgTransformService {
         });
     }
 
-    public setRotation(element: SVGGraphicsElement, matrix: IRotationMatrix): void {
+    public setRotation(element: SVGGraphicsElement, matrix: IRotationMatrix, index: number = 1): void {
         let transformStr = element.getAttribute("transform") || "";
-        transformStr = transformStr.replace(this.rotateRegex, `rotate(${matrix.a},${matrix.cx || 0},${matrix.cy || 0})`);
+        let currentIndex = 1;
+        transformStr = transformStr.replace(this.rotateRegex, function(match: string, ...matches: string[]) {
+            let result = "";
+
+            if (currentIndex == index) {
+                result = `rotate(${matrix.a},${matrix.cx || 0},${matrix.cy || 0})`;
+            } else {
+                result = match;
+            }
+            
+            currentIndex++;
+            return result;
+        });
         element.setAttribute("transform", transformStr);
     }
 
-    public getRotation(element: SVGGraphicsElement): IRotationMatrix {
+    public getRotation(element: SVGGraphicsElement, index: number = 1): IRotationMatrix {
         let transformMatrix = this.extractTransformProperties(getDOMMatrix(element));
         if (transformMatrix.rotation != undefined) {
             return transformMatrix.rotation;
@@ -638,7 +738,7 @@ export class SvgTransformService {
         }
     }
 
-    public incrementRotation(element: SVGGraphicsElement, matrix: IRotationMatrix): void {
+    public incrementRotation(element: SVGGraphicsElement, matrix: IRotationMatrix, index: number = 1): void {
         let rot = this.getRotation(element);
         this.setRotation(element, {
             cx: (rot.cx || 0) + (matrix.cx || 0),
@@ -647,13 +747,25 @@ export class SvgTransformService {
         });
     }
 
-    public setTranslation(element: SVGGraphicsElement, matrix: ITranslationMatrix): void {
+    public setTranslation(element: SVGGraphicsElement, matrix: ITranslationMatrix, index: number = 1): void {
         let transformStr = element.getAttribute("transform") || "";
-        transformStr = transformStr.replace(this.translateRegex, `translate(${matrix.x.toFixed(3)},${matrix.y.toFixed(3)})`);
+        let currentIndex = 1;
+        transformStr = transformStr.replace(this.translateRegex, function(match: string, ...matches: string[]) {
+            let result = "";
+
+            if (currentIndex == index) {
+                result = `translate(${matrix.x.toFixed(3)},${matrix.y.toFixed(3)})`;
+            } else {
+                result = match;
+            }
+            
+            currentIndex++;
+            return result;
+        });
         element.setAttribute("transform", transformStr);
     }
 
-    public getTranslation(element: SVGGraphicsElement): ITranslationMatrix {
+    public getTranslation(element: SVGGraphicsElement, index: number = 1): ITranslationMatrix {
         let transformMatrix = this.extractTransformProperties(getDOMMatrix(element));
         if (transformMatrix.translation != undefined) {
             return transformMatrix.translation;
@@ -662,7 +774,7 @@ export class SvgTransformService {
         }
     }
 
-    public incrementTranslation(element: SVGGraphicsElement, matrix: ITranslationMatrix): void {
+    public incrementTranslation(element: SVGGraphicsElement, matrix: ITranslationMatrix, index: number = 1): void {
         let translate = this.getTranslation(element);
         this.setTranslation(element, {
             x: translate.x + matrix.x,
@@ -670,7 +782,7 @@ export class SvgTransformService {
         });
     }
 
-    public setTransform(element: SVGGraphicsElement, transform: ITransformMatrix): void {
+    public setTransform(element: SVGGraphicsElement, transform: ITransformMatrixData, index: number = 1): void {
         if (transform.scale)
             this.setScale(element, transform.scale)
 
@@ -681,7 +793,7 @@ export class SvgTransformService {
             this.setTranslation(element, transform.translation);
     }
 
-    // [End Functions]
+    //#endregion
 }
 
 // Export singleton

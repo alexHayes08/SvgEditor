@@ -18,13 +18,13 @@ export interface IActivatableService {
 }
 
 export class ActivatableService implements IActivatableService  {
-    // [Fields]
+    //#region Fields
 
     private _elements: Element[];
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     public constructor() {
 
@@ -39,7 +39,7 @@ export class ActivatableService implements IActivatableService  {
         this._elements = _elements;
     }
 
-    // [End Ctor]
+    //#endregion
 
     /**
      * Returns a list of all registered elements.
@@ -60,7 +60,7 @@ export class ActivatableService implements IActivatableService  {
             .contains(ActivatableServiceNames.INACTIVE_CLASS_NAME));
     }
 
-    // [Functions]
+    //#region Functions
 
     private isRegistered(element: Element): boolean {
         return this._elements.indexOf(element) !== -1;
@@ -143,7 +143,7 @@ export class ActivatableService implements IActivatableService  {
         element.classList.add(ActivatableServiceNames.ACTIVE_CLASS_NAME);
     }
 
-    // [End Functions]
+    //#endregion
 }
 
 // Export singleton

@@ -12,8 +12,15 @@ import { IDrawable } from './idrawable';
 import { IHandleButton, IMode } from "./ihandle-button";
 import { ISlice } from "./islice";
 import { Names } from "./names";
-import { SvgTransformServiceSingleton, ICoords2D } from "../services/svg-transform-service";
-import { toRadians } from "../helpers/math-helpers";
+import { toRadians, toDegrees } from "../helpers/math-helpers";
+import { 
+    DefaultTransformMatrix, 
+    ICoords2D, 
+    ITransformMatrix, 
+    SvgTransformServiceSingleton,
+    SvgTransformService,
+    TransformType
+} from "../services/svg-transform-service";
 
 export enum HandleModes {
     PAN = 0,
@@ -30,10 +37,21 @@ interface IMainOverlayData {
     angle: number;
     modes: IMode[],
     buttonPathArcDataName?: string;
+    buttonTransformData: ITransformMatrix;
+    middleAngle?: number;
 };
 
+const buttonArcPathStartAngle = toRadians(270);
+const buttonsTransformService = new SvgTransformService({
+    order: [
+        TransformType.ROTATE,
+        TransformType.TRANSLATE,
+        TransformType.ROTATE
+    ]
+});
+
 export class HandlesMain implements IContainer, IDrawable {
-    // [Fields]
+    //#region Fields
 
     private _mode: HandleModes;
     private defaultWidth: number;
@@ -59,44 +77,43 @@ export class HandlesMain implements IContainer, IDrawable {
 
     private readonly data: IMainOverlayData[] = [
         {
-            angle: 90,
-            arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.FillArc.DATA_NAME,
-            buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME,
-            modes: [{ label: "Toggle", selected: true }]
-        },
-        {
             angle: 45,
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.ColorsArc.DATA_NAME,
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME,
             modes: [{ label: "Colors", selected: true }],
-            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.ColorsBtnArcPath.DATA_NAME
+            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.ColorsBtnArcPath.DATA_NAME,
+            buttonTransformData: new DefaultTransformMatrix()
         },
         {
             angle: 45,
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.EditArc.DATA_NAME,
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME,
             modes: [{ label: "Edit", selected: true }],
-            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.EditBtnArcPath.DATA_NAME
+            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.EditBtnArcPath.DATA_NAME,
+            buttonTransformData: new DefaultTransformMatrix()
         },
         {
             angle: 90,
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.FillArc.DATA_NAME,
             buttonDataName: "",
-            modes: []
+            modes: [],
+            buttonTransformData: new DefaultTransformMatrix()
         },
         {
             angle: 22.5,
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.DeleteArc.DATA_NAME,
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.DeleteBtn.DATA_NAME,
             modes: [{ label: "Delete", selected: true }],
-            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.DeleteBtnArcPath.DATA_NAME
+            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.DeleteBtnArcPath.DATA_NAME,
+            buttonTransformData: new DefaultTransformMatrix()
         },
         {
             angle: 22.5,
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.PanArc.DATA_NAME,
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.PanBtn.DATA_NAME,
             modes: [{ label: "Pan", selected: true }],
-            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.PanBtnArcPath.DATA_NAME
+            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.PanBtnArcPath.DATA_NAME,
+            buttonTransformData: new DefaultTransformMatrix()
         },
         {
             angle: 22.5,
@@ -106,22 +123,31 @@ export class HandlesMain implements IContainer, IDrawable {
                 { label: "Rotate Collectivley", selected: true }, 
                 { label: "Rotate Individually", selected: false }
             ],
-            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.RotateBtnArcPath.DATA_NAME
+            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.RotateBtnArcPath.DATA_NAME,
+            buttonTransformData: new DefaultTransformMatrix()
         },
         {
             angle: 22.5,
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.ScaleArc.DATA_NAME,
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.ScaleBtn.DATA_NAME,
             modes: [{ label: "Scale", selected: true }],
-            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.ScaleBtnArcPath.DATA_NAME
+            buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.ScaleBtnArcPath.DATA_NAME,
+            buttonTransformData: new DefaultTransformMatrix()
+        },
+        {
+            angle: 90,
+            arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.FillArc.DATA_NAME,
+            buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME,
+            modes: [{ label: "Toggle", selected: true }],
+            buttonTransformData: new DefaultTransformMatrix()
         }
     ];
 
     private readonly buttonsData: IMainOverlayData[];
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>) {
         this.container = container;
@@ -130,7 +156,7 @@ export class HandlesMain implements IContainer, IDrawable {
         this._radius = 100;
         this.onDeleteClickedHandlers = [];
         this.center = { x: 0, y: 0};
-        this.startAngleOffset = 135;
+        this.startAngleOffset = 45 + 180;
         this._collapseButtons = false;
 
         let containerNode = this.container.node();
@@ -200,9 +226,9 @@ export class HandlesMain implements IContainer, IDrawable {
         this.buttonsData = this.data.filter(d => d.modes.length > 0);
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
     get collapseButtons() {
         return this._collapseButtons;
@@ -211,6 +237,7 @@ export class HandlesMain implements IContainer, IDrawable {
     set collapseButtons(value: boolean) {
         if (value != this.collapseButtons) {
             this._collapseButtons = value;
+            this.drawAndUpdate();
         }
     }
 
@@ -237,9 +264,9 @@ export class HandlesMain implements IContainer, IDrawable {
         }
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     private modeChanged(): void {
         console.log(`Mode changed to ${this.mode}`);
@@ -303,104 +330,88 @@ export class HandlesMain implements IContainer, IDrawable {
             .attr("d", setPathFunc)
             .enter()
             .append("path")
-            .attr("data-name", function(d) { return d.data.arcDataName; });
+            .attr("id", () => uniqid())
+            .attr("data-name", d => d.data.arcDataName);
 
-        // Draw buttons
         this.buttonsContainer
             .selectAll<SVGGElement, IMainOverlayData>("g")
             .data(this.buttonsData)
-            .each(function(d, i, nodes) {
-                let arcEl = self.arcsContainer
-                    .select<SVGPathElement>(`*[data-name='${d.arcDataName}']`)
-                    .node();
+            .each(function(d) {
+                let pieSlice = pieData.find(p => p.data.buttonDataName == d.buttonDataName);
 
-                let arcsContainerEl = self.arcsContainer.node();
-
-                if (arcEl == undefined || arcsContainerEl == undefined) {
-                    return;
+                // Check that the slice exists and is NOT the toggle button
+                if (pieSlice == undefined)
+                    // || pieSlice.data.arcDataName == Names.Handles.SubElements
+                    //     .ArcsContainer.SubElements.FillArc.DATA_NAME)
+                {
+                    return "";
                 }
 
-                let relativeTo = self.center;
-                let arcCenter = SvgTransformServiceSingleton
-                    .getCenterRelativeToPoint(relativeTo, arcEl);
-                let circleCenter = SvgTransformServiceSingleton
-                    .getCenterRelativeToPoint(relativeTo, arcsContainerEl);
-                let newBtnCoords = getNewPointAlongAngle(circleCenter, arcCenter, self._radius + 30);
+                let middleAngle: number = 0;
+                if (!self.collapseButtons) {
 
-                d3.select(this)
-                    .append<SVGRectElement>("rect")
-                    .attr("id", uniqid())
-                    .attr("x", -21)
-                    .attr("y", -21)
-                    .attr("rx", 21)
-                    .attr("ry", 21)
-                    .attr("width", 42 * d.modes.length)
-                    .attr("height", 42);
+                    // Find the angle halfway between the start and end angles
+                    middleAngle = 180 + toDegrees(pieSlice.startAngle 
+                        + ((pieSlice.endAngle - pieSlice.startAngle) / 2));
+                }
 
+                buttonsTransformService.setRotation(this, { a: middleAngle });
+                buttonsTransformService.setRotation(this, { a: -1 * middleAngle }, 2)
+                buttonsTransformService.setTranslation(this, { x: 0, y: self.radius + 20 })
+            })
+            .enter()
+            .append<SVGGElement>("g")
+            .attr("id", () => uniqid())
+            .attr("data-name", function(d) { return d.buttonDataName })
+            .classed(Names.Handles.BTN_HANDLE_CLASS, true)
+            .each(function(d) {
+                buttonsTransformService.standardizeTransforms(this);
+
+                // Create background rect
+                if (d.modes.length > 1) {
+                    d3.select(this)
+                        .selectAll("rect")
+                        .data([{}])
+                        .enter()
+                        .append("rect")
+                        .attr("id", uniqid())
+                        .attr("x", -21)
+                        .attr("y", -21)
+                        .attr("rx", 21)
+                        .attr("ry", 21)
+                        .attr("width", 42 * d.modes.length)
+                        .attr("height", 42);
+                }
+
+                // Draw buttons
                 d3.select(this)
-                    .selectAll<SVGCircleElement, {}>("circle")
+                    .selectAll<SVGCircleElement, IMainOverlayData>("circle")
                     .data(d.modes)
                     .enter()
                     .append<SVGCircleElement>("circle")
-                    .attr("id", uniqid())
+                    .attr("id", () => uniqid())
                     .attr("r", 20)
                     .attr("data-mode", function(d) { return d.label })
-                    .attr("transform", defaultTransformStr)
-                    .classed("selected", function(d, i) { return i == 0; })
+                    .classed("selected", (d, i) => { return i == 0; })
+
+                    // FIXME: Update the SvgTransformService to return a string.
                     .each(function(d, i) {
-                        SvgTransformServiceSingleton.setTranslation(this, {
-                            x: i * 42,
-                            y: 0
-                        });
+                        SvgTransformServiceSingleton.standardizeTransforms(this);
+                        SvgTransformServiceSingleton.setTranslation(this, { x: i * 40, y: 0 });
                     });
-
-                SvgTransformServiceSingleton.setTranslation(<any>this, newBtnCoords);
             })
-            .enter()
-            .append("g")
-            .attr("id", function(d) { return uniqid(); })
-            .attr("data-name", function(d) { return d.buttonDataName })
-            .attr("transform", defaultTransformStr)
-            .classed(Names.Handles.BTN_HANDLE_CLASS, true);
-
-         this.buttonArcsPathContainer
-            .selectAll("path")
-            .data(this.buttonsData)
-            .append<SVGPathElement>("path")
-            .enter()
-            .attr("id", uniqid())
-            .attr("data-name", function(d) { return d.buttonPathArcDataName || ""; })
-            .attr("d", function(d) {
-                // TODO
-                return d3.arc()({
-                    outerRadius: self.radius,
-                    innerRadius: self.radius - 1,
-                    startAngle: 0,
-                    endAngle: Math.PI * 2
-                })
-            })
+            .transition("toggle-buttons-display")
+            .duration(2000);
     }
 
     public draw(): void {
         let self = this;
-
-        // This should remain in the svg-handles-model.ts file
-        // // Create the highlight rect
-        // let hightlightRect = this.container
-        //     .append<SVGRectElement>("rect")
-        //     .attr("id", uniqid())
-        //     .attr("data-name",
-        //         Names.Handles.SubElements.HightlightRect.DATA_NAME)
-        //     .attr("x", 0)
-        //     .attr("y", 0)
-        //     .attr("width", 0)
-        //     .attr("height", 0);
-
         this.drawAndUpdate();
 
         // Add event listeners to the buttons
         this.buttonsContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.DeleteBtn.DATA_NAME}']`)
             .on("click", function() {
+                self.mode = HandleModes.DELETE;
                 self.onDeleteClickedHandlers.map(f => f())
             });
 
@@ -408,6 +419,31 @@ export class HandlesMain implements IContainer, IDrawable {
             .on("click", function() {
                 self.collapseButtons = !self.collapseButtons;
                 console.log(`Toggled collapse buttons: ${self.collapseButtons}`);
+            });
+
+        this.buttonsContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME}']`)
+            .on("click", function() {
+                self.mode = HandleModes.COLORS;
+            });
+
+        this.buttonsContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME}']`)
+            .on("click", function() {
+                self.mode = HandleModes.EDIT;
+            });
+
+        this.buttonsContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.PanBtn.DATA_NAME}']`)
+            .on("mousedown", function() {
+                self.mode = HandleModes.PAN;
+            });
+
+        this.buttonsContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME}']`)
+            .on("mousedown", function() {
+                self.mode = HandleModes.ROTATE;
+            });
+
+        this.buttonsContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ScaleBtn.DATA_NAME}']`)
+            .on("mousedown", function() {
+                self.mode = HandleModes.SCALE;
             });
 
         this.modeChanged()
@@ -418,8 +454,10 @@ export class HandlesMain implements IContainer, IDrawable {
     }
 
     public erase(): void {
-
+        this.colorsOverlay.erase();
+        this.rotationOverlay.erase();
+        this.scaleOverlay.erase();
     }
 
-    // [End Functions]
+    //#endregion
 }

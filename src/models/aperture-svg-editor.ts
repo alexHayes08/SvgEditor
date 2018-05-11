@@ -177,7 +177,7 @@ export class ApertureSvgEditorOptions implements IFromNode {
 }
 
 export class ApertureSvgEditor {
-    // [Fields]
+    //#region Fields
 
     public static INIT_FINISHED_EVT_NAME: string = "init_finished";
 
@@ -199,9 +199,9 @@ export class ApertureSvgEditor {
     public svgActionService: SvgActionService;
     public svgCanvasService: SvgCanvasService;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     public constructor(element: Element) {
         this.element = element;
@@ -249,17 +249,17 @@ export class ApertureSvgEditor {
         $(this.element).trigger(ApertureSvgEditor.INIT_FINISHED_EVT_NAME);
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
     public get canvases() {
         return this.svgElements;
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     public registerSvgAsEditor(svgElement: SVGGraphicsElement): void {
         this.svgElements.push(svgElement);
@@ -306,5 +306,5 @@ export class ApertureSvgEditor {
         });
     }
 
-    // [End Functions]
+    //#endregion
 }

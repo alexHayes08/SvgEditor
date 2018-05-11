@@ -12,7 +12,7 @@ import { NS } from "../helpers/namespaces-helper";
 @Singleton
 export class SvgMaskService {
 
-    // [Fields]
+    //#region Fields
 
     private _masksClass: string;
     private _activeMaskClass: string;
@@ -24,9 +24,9 @@ export class SvgMaskService {
     private readonly editorElement: SVGGElement;
     private readonly handles: SVGGElement;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     constructor(private parentSvgElement: SVGGraphicsElement) {
 
@@ -57,9 +57,9 @@ export class SvgMaskService {
         this.handles = <SVGGElement>document.createElementNS(NS.SVG, "g");
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
     /**
      * Retrieves the class name used to identify the masks in the element.
@@ -117,9 +117,9 @@ export class SvgMaskService {
         return maskEls;
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     public createMask(mask: SVGGraphicsElement): void {
 
@@ -155,5 +155,5 @@ export class SvgMaskService {
         return true;
     }
 
-    // [End Functions]
+    //#endregion
 }

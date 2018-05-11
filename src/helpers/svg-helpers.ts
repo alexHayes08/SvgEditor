@@ -1,7 +1,10 @@
+import * as d3 from "d3";
+
+import { getAllGroups } from "../helpers/regex-helper";
 import { ICoords2D, IBBox, SvgTransformService } from "../services/svg-transform-service";
+import { MathServiceSingleton } from "../services/math-service";
 import { normalizeAngle, toDegrees, toRadians } from "../helpers/math-helpers";
 import { NS } from "../helpers/namespaces-helper";
-import { getAllGroups } from "../helpers/regex-helper";
 
 /**
  * https://www.w3.org/TR/SVG2/struct.html#TermGraphicsElement
@@ -314,22 +317,80 @@ export function getFurthestSvgOwner(element: SVGGraphicsElement): SVGSVGElement 
     }
 }
 
+export interface IPointAlongAngleFromPointData {
+    pt_a: ICoords2D;
+    pt_b: ICoords2D;
+    radius: number;
+}
+
+export interface IPointAlongAngleFromAngleData {
+    pt_a: ICoords2D;
+    angle: number;
+    radius: number;
+}
+
+export function isIPointAlongAngleFromPointData(data: any): data is IPointAlongAngleFromPointData {
+    return (data != undefined
+        && data.pt_a != undefined
+        && data.pt_b != undefined
+        && data.radius != undefined);
+}
+
+export function isIPointAlongAngleFromAngleData(data: any): data is IPointAlongAngleFromAngleData {
+    return (data != undefined
+        && data.pt_a != undefined
+        && data.angle != undefined
+        && data.radius != undefined);
+}
+
 /**
  * Returns a new point along a line between two points that is a 'hyp' amount
- * away from pt_b. The center of the circle is assumed to be pt_a.
- * @param pt_a
- * @param pt_b
- * @param hyp
+ * away from pt_a. The center of the circle is assumed to be pt_a.
  */
-export function getNewPointAlongAngle(pt_a: ICoords2D, pt_b: ICoords2D, hyp: number): ICoords2D {
+export function getNewPointAlongAngle(data: IPointAlongAngleFromAngleData|IPointAlongAngleFromPointData): ICoords2D {
     let result: ICoords2D = {
         x: 0,
         y: 0
     };
     
-    let angle = Math.atan2((pt_b.y - pt_a.y), (pt_b.x - pt_a.x));
-    result.x = pt_b.x + (Math.cos(angle) * hyp);
-    result.y = pt_b.y + (Math.sin(angle) * hyp);
+    if (isIPointAlongAngleFromPointData(data)) {
+        let pointData = data as IPointAlongAngleFromPointData;
+        let { pt_a, pt_b, radius } = pointData;
+        
+        let angle = Math.atan2((pt_b.y - pt_a.y), (pt_b.x - pt_a.x));
+        result.x = pt_a.x + (Math.cos(angle) * radius);
+        result.y = pt_a.y + (Math.sin(angle) * radius);
+
+    } else if (isIPointAlongAngleFromAngleData(data)) {
+        let pointData = data as IPointAlongAngleFromAngleData;
+        let { pt_a, angle, radius } = pointData;
+
+        result.x = pt_a.x + (Math.cos(angle) * radius);
+        result.y = pt_a.y + (Math.sin(angle) * radius);
+    } else {
+        throw new Error("Could not determine type of 'data'.");
+    }
 
     return result;
+}
+
+/**
+ * Returns a path string.
+ * @param center 
+ * @param radius 
+ * @param startAngle - Uses degrees
+ * @param endAngle - Uses degrees
+ */
+export function arcPath(radius: number, startAngle: number, endAngle: number): string {
+    startAngle = toRadians(startAngle);
+    endAngle = toRadians(endAngle);
+    
+    let arc = d3.arc()({
+        innerRadius: 0,
+        outerRadius: radius,
+        startAngle: startAngle,
+        endAngle: endAngle
+    }) || "";
+
+    return arc.replace(/L.*/, "");
 }

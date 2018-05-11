@@ -5,16 +5,16 @@ import { Singleton } from 'typescript-ioc';
 
 @Singleton
 export default class SvgActionService {
-    // [Fields]
+    //#region Fields
 
     private cached_categories: string[];
     private registeredActions: ISvgAction[];
     private svgTypeService: SvgTypeService;
     private svgUndoManagerService: SvgUndoManagerService;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     constructor() {
         this.cached_categories = [];
@@ -23,9 +23,9 @@ export default class SvgActionService {
         this.svgUndoManagerService = new SvgUndoManagerService();
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
     /**
      * Returns an array of categories
@@ -34,9 +34,9 @@ export default class SvgActionService {
         return this.cached_categories;
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     /**
      * Registers an action.
@@ -82,5 +82,5 @@ export default class SvgActionService {
         }
     }
 
-    // [End Functions]
+    //#endregion
 }

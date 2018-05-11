@@ -14,17 +14,17 @@ export interface IStorableAction {
 
 @Singleton
 export class SvgUndoManagerService {
-    // [Fields]
+    //#region Fields
 
     private actions: IStorableAction[];
     private currentActionIndex: number;
     private _maxNumberOfActionsToStore: number;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
-    // [End Ctor]
+    //#endregion
 
     constructor() {
         this.actions = [];
@@ -32,7 +32,7 @@ export class SvgUndoManagerService {
         this._maxNumberOfActionsToStore = 10; // TODO: Make this configurable.
     }
 
-    // [Properties]
+    //#region Properties
 
     public get canRedo(): boolean {
         return this.currentActionIndex < this.actions.length - 1;
@@ -56,9 +56,9 @@ export class SvgUndoManagerService {
         return this._maxNumberOfActionsToStore;
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     /**
      * Removes the oldest actions that exceed the maxNumberOfActions
@@ -140,5 +140,5 @@ export class SvgUndoManagerService {
         return false;
     }
 
-    // [End Functions]
+    //#endregion
 }

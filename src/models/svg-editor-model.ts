@@ -21,7 +21,7 @@ export interface ITotal {
  */
 export class SvgEditor {
 
-    // [Fields]
+    //#region Fields
 
     private underEditor: d3.Selection<SVGGElement, {}, null, undefined>;
     private editor: d3.Selection<SVGGElement, {}, null, undefined>;
@@ -32,9 +32,9 @@ export class SvgEditor {
 
     public handles?: ISvgHandles;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     public constructor(parent: SVGSVGElement)
     {
@@ -59,9 +59,9 @@ export class SvgEditor {
             .attr("data-name", Names.SvgEditor.OverEditor.DATA_NAME);
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
     get items() {
         let editorNode = this.getEditorNode();
@@ -95,9 +95,9 @@ export class SvgEditor {
         };
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
     private getEditorNode(): SVGGElement {
         let editorNode = this.editor.node();
@@ -257,5 +257,5 @@ export class SvgEditor {
         }
     }
 
-    // [End Functions]
+    //#endregion
 }

@@ -127,6 +127,10 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     rect {
         opacity: .25;
     }
+
+    .btn-handle * {
+        transition: all .2s ease-in-out;
+    }
 }
 
 /**

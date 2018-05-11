@@ -26,7 +26,7 @@ export const SVGITEM_EVT_NAMES = {
  * includes transforms, colors, etc...
  */
 export class SvgItem {
-    // [Fields]
+    //#region Fields
 
     /**
      * The element being wrapped.
@@ -39,9 +39,9 @@ export class SvgItem {
      */
     private mapToColors: Map<SVGGraphicsElement, SvgColors>;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     public constructor(item: SVGGraphicsElement) {
         this.transformService = SvgTransformServiceSingleton;
@@ -67,9 +67,9 @@ export class SvgItem {
         }
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
     /**
      * Gets the center of the item (in respect to the upper left corner of the
@@ -90,9 +90,9 @@ export class SvgItem {
         return this._element;
     }
 
-    // [End Properties]
+    //#endregion
     
-    // [Functions]
+    //#region Functions
 
     private recalculateColors(): void {
         let colors: ColorMap[] = [];
@@ -203,5 +203,5 @@ export class SvgItem {
         return colors;
     }
 
-    // [End Functions]
+    //#endregion
 }

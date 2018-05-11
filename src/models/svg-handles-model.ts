@@ -102,7 +102,7 @@ const handlesData = new DefaultCircleArc({
  * This should be moved out of here into the UI.
  */
 export class SvgHandles implements ISvgHandles {
-    // [Fields]
+    //#region Fields
 
     private canvas: SvgCanvas;
     private parentNode: SVGGraphicsElement;
@@ -128,9 +128,9 @@ export class SvgHandles implements ISvgHandles {
     // private rotateHelpersContainer: SVGGElement;
     // private handle_rotationOverlay: HandlesRotationOverlay;
 
-    // [End Fields]
+    //#endregion
 
-    // [Ctor]
+    //#region Ctor
 
     constructor(editor: SvgCanvas) {
         this.canvas = editor;
@@ -172,7 +172,8 @@ export class SvgHandles implements ISvgHandles {
 
         // Create main handles overlay
         this.mainHandlesOverlay = new HandlesMain(d3.select(handleContainer));
-        this.mainHandlesOverlay.onDeleteClickedHandlers.push(this.onDeleteClicked);
+        this.mainHandlesOverlay.onDeleteClickedHandlers
+            .push(this.onDeleteClicked.bind(this));
         this.mainHandlesOverlay.draw();
 
         // // Add event handlers
@@ -194,9 +195,9 @@ export class SvgHandles implements ISvgHandles {
         // this.displayHandles();
     }
 
-    // [End Ctor]
+    //#endregion
 
-    // [Properties]
+    //#region Properties
 
     /**
      * Returns the last selected section.
@@ -214,11 +215,11 @@ export class SvgHandles implements ISvgHandles {
         }
     }
 
-    // [End Properties]
+    //#endregion
 
-    // [Functions]
+    //#region Functions
 
-    // [Event Handlers]
+    //#region Event Handlers
 
     private onDeleteClicked() {
         console.log("Delete clicked!");
@@ -229,7 +230,7 @@ export class SvgHandles implements ISvgHandles {
         this.selectedObjects = [];
     }
 
-    // [End Event Handlers]
+    //#endregion
 
     /**
      * Will hide/show the handles.
@@ -464,5 +465,5 @@ export class SvgHandles implements ISvgHandles {
             .on("click", null);
     }
 
-    // [End Functions]
+    //#endregion
 }

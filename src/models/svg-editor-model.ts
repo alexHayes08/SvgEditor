@@ -4,7 +4,7 @@ import * as d3 from "d3";
 import { ActivatableServiceSingleton } from "../services/activatable-service";
 import { isSvgGraphicsElement, getFurthestSvgOwner } from "./../helpers/svg-helpers";
 import { nodeListToArray } from "../helpers/node-helper";
-import { ICoords2D, SvgTransformService, SvgTransformServiceSingleton } from "./../services/svg-transform-service";
+import { ICoords2D, SvgTransformService, SvgTransformServiceSingleton, ITransformable } from "./../services/svg-transform-service";
 import { isSvgElement } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
 import { ISvgHandles } from "./isvg-handles-model";
@@ -29,6 +29,8 @@ export class SvgEditor {
     private editor_items: SvgItem[];
 
     private readonly transformService: SvgTransformService;
+    // TODO: Start mapping elements by id to their ITransformable
+    private readonly transformMap: Map<string, ITransformable>;
 
     public handles?: ISvgHandles;
 
@@ -40,6 +42,7 @@ export class SvgEditor {
     {
         this.transformService = SvgTransformServiceSingleton;
         this.editor_items = [];
+        this.transformMap = new Map();
 
         let parentSelection = d3.select(parent);
 
@@ -225,6 +228,12 @@ export class SvgEditor {
                 // Attempt to center element
                 let centerOfSvg = this.transformService.getCenter(svgCanvas);
                 let centerOfItem = svgItem.center;
+
+                this.transformService.setRotation(el, {
+                    a: 0,
+                    cx: centerOfItem.x,
+                    cy: centerOfItem.y
+                });
 
                 this.transformService.setTranslation(el, {
                     x: Math.abs(centerOfSvg.x - centerOfItem.y),

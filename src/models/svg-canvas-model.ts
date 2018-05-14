@@ -9,7 +9,7 @@ import { ISvgHandles } from "./isvg-handles-model";
 import { IViewBox } from "../services/svg-canvas-service";
 import { Names } from "./names";
 import { NS } from "../helpers/namespaces-helper";
-import { SvgDefs } from "./svg-defs-model";
+import { SvgDefs, ISvgDefs, SvgDefsV2 } from "./svg-defs-model";
 import { SvgEditor } from "./svg-editor-model";
 import { SvgHandles } from "./svg-handles-model";
 import { SvgMaskService } from "../services/svg-mask-service";
@@ -50,7 +50,7 @@ export class SvgCanvas {
 
     private svgCanvas_el: SVGSVGElement;
 
-    private _defs: SvgDefs;
+    private _defs: ISvgDefs;
     private _editor: SvgEditor;
     private _handles?: ISvgHandles;
 
@@ -102,40 +102,10 @@ export class SvgCanvas {
         ActivatableServiceSingleton.register(svgCanvas_el, true);
 
         // Create defs element & symbolsContainer element
-        this._defs = new SvgDefs(svgCanvas_el);
+        this._defs = new SvgDefsV2(svgCanvas_el);
 
         // Create editor
         this._editor = new SvgEditor(svgCanvas_el);
-
-        /**
-         * [EVENT LISTENERS]
-         * 
-         * Ideally ALL event listeners will be added thru the ui instead of
-         * here. There should be only TWO event listeners, on for the handles
-         * and one for the editor area. The handle events must NOT be
-         * propagated to the editor.
-         */
-
-        // Attach event listener to canvas
-        // this.svgCanvas_el.addEventListener("click", this.onSvgCanvasMouseDown);
-        // $(this.svgCanvas_el).on("mousedown", this.onSvgCanvasMouseDownV2.bind(this));
-
-        // Capture class vars
-        let editor = this.editor;
-        let handles = this.handles;
-        let transformService = this.transformService;
-
-        // $(this.handles_el).on("mousedown", function(e) {
-            
-        //     console.log("Handles evt occurred");
-
-        //     // Stop propagation, the editor must NOT recieve handle events.
-        //     return false;
-        // });
-
-        /**
-         * [End EVENT LISTENERS]
-         */
     }
 
     //#endregion

@@ -143,6 +143,9 @@ export const Names = {
                     },
                     DialPivotToPivotPointLine: {
                         DATA_NAME: "dial-pivot-to-pivot-point-line"
+                    },
+                    Grabber: {
+                        DATA_NAME: "rotation-grabber"
                     }
                 }
             },

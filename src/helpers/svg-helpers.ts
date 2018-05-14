@@ -394,3 +394,19 @@ export function arcPath(radius: number, startAngle: number, endAngle: number): s
 
     return arc.replace(/L.*/, "");
 }
+
+/**
+ * Returns the angle in degrees between two points.
+ * @param pt_a 
+ * @param pt_b 
+ */
+export function getAngle(pt_a: ICoords2D, pt_b: ICoords2D): number {
+    let zeroed_pt_b = {
+        x: pt_b.x - pt_a.x,
+        y: pt_b.y - pt_a.y
+    }
+
+    let angle = Math.atan2(zeroed_pt_b.y, zeroed_pt_b.x);
+
+    return toDegrees(angle);
+}

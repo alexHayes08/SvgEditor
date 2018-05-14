@@ -42,39 +42,51 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     fill: rgba(0,0,0,0.25);
 }
 
+*[data-name="handles-toggle-controls-btn"] circle.selected {
+    fill: gray;
+    stroke: gray;
+    opacity: 1;
+}
+
 *[data-name="handles-delete-arc"],
 *[data-name="handles-delete-btn"] circle.selected {
     fill: red;
+    stroke: red;
     opacity: 1;
 }
 
 *[data-name="handles-pan-arc"],
 *[data-name="handles-pan-btn"] circle.selected {
     fill: yellow;
+    stroke: yellow;
     opacity: 1;
 }
 
 *[data-name="handles-scale-arc"],
 *[data-name="handles-scale-btn"] circle.selected {
     fill: blue;
+    stroke: blue;
     opacity: 1;
 }
 
 *[data-name="handles-rotate-arc"],
 *[data-name="handles-rotate-btn"] circle.selected {
     fill: green;
+    stroke: green;
     opacity: 1;
 }
 
 *[data-name="handles-colors-arc"],
 *[data-name="handles-colors-btn"] circle.selected {
     fill: rebeccapurple;
+    stroke: rebeccapurple;
     opacity: 1;
 }
 
 *[data-name="handles-edit-arc"],
 *[data-name="handles-edit-btn"] circle.selected {
     fill: orange;
+    stroke: orange;
     opacity: 1;
 }
 
@@ -84,15 +96,18 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     z-index: 1;
 } */
 
-.btn-handle {
+.btn-handle:not(.active) {
+    transition: all .2s;
+
     circle {
         opacity: 0;
-        fill: gray;
         transition: .2s ease-in-out;
     }
 
-    circle.selected {
-        opacity: .15;
+    circle.selected:not(:hover) {
+        fill: transparent;
+        stroke-width: 2px;
+        opacity: 1;
     }
 
     rect {
@@ -104,6 +119,10 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
 .btn-handle.active {
     circle.selected {
         opacity: 1
+    }
+
+    rect {
+        opacity: 0;
     }
 }
 
@@ -118,10 +137,6 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
 
     circle:hover {
         opacity: 1;
-    }
-
-    circle:hover:not(.selected) {
-        color: unset;
     }
 
     rect {

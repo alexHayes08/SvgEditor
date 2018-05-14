@@ -14,7 +14,7 @@ import { SvgCanvas } from "./svg-canvas-model";
 import { SvgDefs } from "./svg-defs-model";
 import { SvgEditor } from "./svg-editor-model";
 import { SvgItem } from "./svg-item-model";
-import { SvgTransformService, SvgTransformServiceSingleton, IBBox } from "../services/svg-transform-service";
+import { SvgTransformService, SvgTransformServiceSingleton, IBBox, IRotationMatrix } from "../services/svg-transform-service";
 import { toRadians } from "../helpers/math-helpers";
 import { 
     drawCubicBezierArc, 
@@ -169,30 +169,30 @@ export class SvgHandles implements ISvgHandles {
 
         this.handlesContainer = handleContainer;
         this.transformService.standardizeTransforms(this.handlesContainer);
+        ActivatableServiceSingleton.register(this.handlesContainer, false);
 
         // Create main handles overlay
         this.mainHandlesOverlay = new HandlesMain(d3.select(handleContainer));
         this.mainHandlesOverlay.onDeleteClickedHandlers
             .push(this.onDeleteClicked.bind(this));
+        this.mainHandlesOverlay.onRotationEventHandlers
+            .push(this.onRotation.bind(this));
         this.mainHandlesOverlay.draw();
 
-        // // Add event handlers
-        // let self = this;
-        // d3.select(this.deleteEl).on("click", function({}, i: number) {
-        //     self.onDeleteClicked();
-        // });
+        // Add a shadows definition
+        this.canvas.defs.createSection("shadows");
 
-        // d3.select<Element, {}>(this.rotateEl).call(d3.drag()
-        //     .on("start", function({}, i: number) {
-        //         console.log("Drag start on rotate handle btn");
-        //     }).on("drag", function({}, i: number) {
-                
-        //     }).on("end", function({}, i: number) {
-        //         console.log("Drag end on rotate handle btn")
-        //     }));
-
-        // // Hide the handles
-        // this.displayHandles();
+        // Can't use d3 to create an feDropShadow element
+        let filter = document.createElementNS(NS.SVG, "filter");
+        filter.setAttribute("id", "shadow-1");
+        let feDropShadow = document.createElementNS(NS.SVG, "feDropShadow");
+        feDropShadow.setAttribute("dx", "0");
+        feDropShadow.setAttribute("dy", "1");
+        feDropShadow.setAttribute("stdDeviation", "2");        
+        filter.appendChild(feDropShadow);
+        this.canvas.defs.pushToSection(filter, "shadows");
+        this.handlesContainer.style.filter = this.canvas.defs
+            .getUrlOfSectionItem("shadow-1", "shadows");
     }
 
     //#endregion
@@ -228,6 +228,23 @@ export class SvgHandles implements ISvgHandles {
         });
 
         this.selectedObjects = [];
+    }
+
+    private onRotation(angle: IRotationMatrix): void {
+        let centerOfItems = this.transformService.getCenter(...this.selectedObjects.map(so => so.element));
+        for (let item of this.selectedObjects) {
+            this.transformService.setRotation(item.element, {
+                a: angle.a,
+                cx: 0,
+                cy: 0
+            });
+
+            // let bbox = this.transformService.getBBox(item.element)
+            this.transformService.setTranslation(item.element, {
+                x: (angle.cx || 0),// - (bbox.width/2),
+                y: (angle.cy || 0)// - (bbox.height/2)
+            });
+        }
     }
 
     //#endregion

@@ -6,7 +6,8 @@ import { ActivatableServiceSingleton } from "../services/activatable-service";
 import { IContainer } from "./icontainer";
 import { IDrawable } from './idrawable';
 import { Names } from "./names";
-import { SvgTransformServiceSingleton, ICoords2D } from "../services/svg-transform-service";
+import { SvgTransformServiceSingleton, ICoords2D, SvgTransformString, TransformType, ITransformable, IRotationMatrix } from "../services/svg-transform-service";
+import { getFurthestSvgOwner, getAngle } from "../helpers/svg-helpers";
 
 /**
  * This class moves the setup of the rotation related elements away from the
@@ -22,12 +23,18 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
     private pivotPointEl?: SVGCircleElement;
     private dialPivotToPivotPointLine?: SVGLineElement;
     private dashedOuterCircle?: SVGCircleElement;
+    private grabberCircle?: SVGCircleElement;
+
+    private _angle: number;
 
     public container: d3.Selection<SVGGElement, {}, null, undefined>;
     public containerNode: SVGGElement;
-    public angle: number;
-    public radius: number;
+    public dialTransform: ITransformable;
+    public grabberTransform: ITransformable;
+    public onRotation: Array<(angle: IRotationMatrix) => void>;
+    public pivotPointTransform?: ITransformable;
     public pivotPoint?: ICoords2D;
+    public radius: number;
 
     //#endregion
 
@@ -36,7 +43,18 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
     public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>) {
         this.container = container;
         this.radius = 100;
-        this.angle = 0;
+        this._angle = 0;
+        this.onRotation = [];
+        this.grabberTransform = new SvgTransformString([
+            TransformType.ROTATE,
+            TransformType.TRANSLATE
+        ]);
+        this.dialTransform = new SvgTransformString([
+            TransformType.ROTATE
+        ]);
+
+        this.grabberTransform.setTranslate({x: this.radius, y: 0}, 0);
+        this.dialTransform.setRotation({a: 0}, 0);
 
         let containerNode = this.container.node();
         if (!containerNode) {
@@ -49,6 +67,16 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
     //#endregion
 
     //#region Properties
+
+    get angle() {
+        return this._angle;
+    }
+
+    set angle(value: number) {
+        this._angle = value;
+        this.dialTransform.setRotation({a: this.angle}, 0);
+        this.grabberTransform.setRotation({a: this.angle}, 0);
+    }
 
     //#endregion
 
@@ -105,6 +133,7 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
 
         // Create the dial line
         let dialLineEl = d3.select(rotationModeContainerEl)
+            .data([this.dialTransform])
             .append<SVGLineElement>("line")
             .attr("id", uniqid())
             .attr("data-name", 
@@ -115,6 +144,7 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
             .attr("x2", 100)
             .attr("y2", 0)
             .attr("stroke", "black")
+            .attr("transform", function(d) { return d.toTransformString(); })
             .node();
 
         if (dialLineEl == null) {
@@ -145,7 +175,7 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
         // Create the dial pivot to pivot point line
         let dialPivotToPivotPointLine = d3.select(rotationModeContainerEl)
             .append<SVGLineElement>("line")
-            .attr("id", uniqid())
+            .attr("id", () => uniqid())
             .attr("data-name", Names.Handles.SubElements
                 .RotationHelpersContainer.SubElements.DialPivotToPivotPointLine
                 .DATA_NAME)
@@ -153,26 +183,86 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
             .attr("y1", 0)
             .attr("x2", 0)
             .attr("y2", 0)
-            .attr("stroke", )
+            .attr("stroke", "rgba(0,0,0,.25)");
+        
+        let grabberCircle = d3.select(rotationModeContainerEl)
+            .append<SVGCircleElement>("circle")
+            .data([this.grabberTransform])
+            .attr("id", () => uniqid())
+            .attr("data-name", Names.Handles.SubElements
+                .RotationHelpersContainer.SubElements.Grabber.DATA_NAME)
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", 5)
+            .attr("transform", function(d) { return d.toTransformString(); })
+            .node();
+
+        if (grabberCircle == undefined) {
+            throw new Error("Failed to create the rotation grabber element.");
+        }
+
+        this.grabberCircle = grabberCircle;
+
+        /** Add event listeners */
+        let self = this;
+        let furthestSvg = getFurthestSvgOwner(this.containerNode);
+
+        d3.select<Element, {}>(this.grabberCircle)
+            .call(d3.drag()
+                .container(furthestSvg)
+                .on("start", function() {
+                    console.log("Drag started (Rotation grabber).");
+                }).on("drag", function() {
+                    if (self.dialPivotEl
+                        && self.grabberCircle) 
+                    {
+                        let relativeMouseCoords = SvgTransformServiceSingleton
+                            .convertScreenCoordsToSvgCoords(
+                                d3.event.sourceEvent, furthestSvg);
+
+                        let pivotCenter = SvgTransformServiceSingleton
+                            .getCenter(self.dialPivotEl);
+
+                        self.angle = getAngle(pivotCenter, relativeMouseCoords);
+                        // console.log(self.angle);
+                        self.update();
+
+                        for (let func of self.onRotation) {
+                            func({
+                                a: self.angle,
+                                cx: pivotCenter.x,
+                                cy: pivotCenter.y
+                            });
+                        }
+                    }
+                }).on("end", function() {
+                    console.log("Drag ended (Rotation grabber)");
+                }));
+
+        /** End Add event listeners */
     }
 
     public update(): void {
+        let self = this;
 
         // Check that none of the elements are null
-        if (this.assertElementsExist()) {
+        if (!this.assertElementsExist()) {
             throw new Error("Some of the elements were undefined.");
         }
 
         // Update the dial line
         d3.select(<any>this.dialLineEl)
+            .data([self.angle])
             .attr("x2", this.radius);
 
         SvgTransformServiceSingleton.setRotation(<any>this.dialLineEl, 
             { a: this.angle });
 
         // Update the dashed outer circle
-        d3.select(<any>this.dashedOuterCircle)
-            .attr("r", this.radius);
+        if (this.dashedOuterCircle) {
+            d3.select(this.dashedOuterCircle)
+                .attr("r", this.radius)
+        }
 
         // Update the pivot point
         if (this.pivotPoint) {
@@ -186,6 +276,16 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
         } else {
             ActivatableServiceSingleton.deactivate(<any>this.pivotPointEl);
             ActivatableServiceSingleton.deactivate(<any>this.dialPivotToPivotPointLine);
+        }
+
+        // Update grabber position
+        if (this.grabberCircle) {
+            d3.select(this.grabberCircle)
+                .data([this.grabberTransform])
+                .attr("transform", function(d) {
+                    d.setTranslate({ x: self.radius, y: 0 }, 0);
+                    return d.toTransformString()
+                });
         }
     }
 
@@ -202,7 +302,8 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
         if (this.dashedOuterCircle == undefined
             || this.dialLineEl == undefined
             || this.dialPivotEl == undefined
-            || this.pivotPointEl == undefined)
+            || this.pivotPointEl == undefined
+            || this.grabberCircle == undefined)
         {
             return false;
         } else {

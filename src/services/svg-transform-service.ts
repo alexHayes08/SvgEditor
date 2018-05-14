@@ -2,7 +2,7 @@ import { HandleModes } from './../models/handles-main';
 import { DOMMatrix } from "geometry-interfaces";
 
 import { toDegrees, toRadians } from "../helpers/math-helpers";
-import { getAllGroups } from "../helpers/regex-helper";
+import { getAllGroups, replaceNthOccurance, getNthOccurance } from "../helpers/regex-helper";
 import { getDOMMatrix } from "../helpers/node-helper";
 import { getFurthestSvgOwner } from "../helpers/svg-helpers";
 
@@ -33,6 +33,7 @@ export interface ITransformMatrixData {
     scale?: IScaleMatrix;
     translation?: ITranslationMatrix;
     skew?: ISkewMatrix;
+    matrix?: IMatrixMatrix;
 }
 
 export interface ITransformMatrix {
@@ -40,6 +41,15 @@ export interface ITransformMatrix {
     scale: IScaleMatrix;
     translation: ITranslationMatrix;
     skew: ISkewMatrix;
+}
+
+export interface IMatrixMatrix {
+    a: number;
+    b: number;
+    c: number;
+    d: number;
+    e: number;
+    f: number;
 }
 
 /**
@@ -78,7 +88,8 @@ export class DefaultTransformMatrix implements ITransformMatrix {
 export enum TransformType {
     ROTATE,
     SCALE,
-    SKEW,
+    SKEW_X,
+    SKEW_Y,
     TRANSLATE,
     MATRIX
 }
@@ -145,9 +156,14 @@ export class SvgTransformService {
                         reg += ` ${this.regexToString(this.scaleRegex)}`;
                         this._canScale = true;
                         break;
-                    case TransformType.SKEW:
-                        str += " skewX(0) skewY(0)";
-                        reg += ` ${this.regexToString(this.skewXRegex)} ${this.regexToString(this.skewYRegex)}}`;
+                    case TransformType.SKEW_X:
+                        str += " skewX(0)";
+                        reg += ` ${this.regexToString(this.skewXRegex)}`;
+                        this._canSkew = true;
+                        break;
+                    case TransformType.SKEW_Y:
+                        str += " skewY(0)";
+                        reg += ` ${this.regexToString(this.skewYRegex)}`;
                         this._canSkew = true;
                         break;
                     case TransformType.TRANSLATE:
@@ -723,11 +739,12 @@ export class SvgTransformService {
     public setRotation(element: SVGGraphicsElement, matrix: IRotationMatrix, index: number = 1): void {
         let transformStr = element.getAttribute("transform") || "";
         let currentIndex = 1;
+        let currentRotation = this.getRotation(element);
         transformStr = transformStr.replace(this.rotateRegex, function(match: string, ...matches: string[]) {
             let result = "";
 
             if (currentIndex == index) {
-                result = `rotate(${matrix.a},${matrix.cx || 0},${matrix.cy || 0})`;
+                result = `rotate(${matrix.a},${matrix.cx || currentRotation.cx || 0},${matrix.cy || currentRotation.cy || 0})`;
             } else {
                 result = match;
             }
@@ -823,7 +840,8 @@ export class TransformStringService {
 
     private _canRotate: boolean;
     private _canScale: boolean;
-    private _canSkew: boolean;
+    private _canSkewX: boolean;
+    private _canSkewY: boolean;
     private _canTranslate: boolean;
 
     //#endregion
@@ -839,7 +857,8 @@ export class TransformStringService {
         this.skewYRegex = /skewY\(\s*([\-\d\.]+)\s*\)/g;
         this._canRotate = false;
         this._canScale = false;
-        this._canSkew = false;
+        this._canSkewX = false;
+        this._canSkewY = false;
         this._canTranslate = false;
 
         if (data.order) {
@@ -857,10 +876,15 @@ export class TransformStringService {
                         reg += ` ${this.regexToString(this.scaleRegex)}`;
                         this._canScale = true;
                         break;
-                    case TransformType.SKEW:
-                        str += " skewX(0) skewY(0)";
-                        reg += ` ${this.regexToString(this.skewXRegex)} ${this.regexToString(this.skewYRegex)}}`;
-                        this._canSkew = true;
+                    case TransformType.SKEW_X:
+                        str += " skewX(0)";
+                        reg += ` ${this.regexToString(this.skewXRegex)}`;
+                        this._canSkewX = true;
+                        break;
+                    case TransformType.SKEW_Y:
+                        str += " skewY(0)";
+                        reg += ` ${this.regexToString(this.skewYRegex)}`;
+                        this._canSkewY = true;
                         break;
                     case TransformType.TRANSLATE:
                         str += " translate(0,0)";
@@ -879,7 +903,8 @@ export class TransformStringService {
             this.transformsRegex = /translate[^a-z]+ rotate[^a-z]+ scale[^a-z/]+ skewX[^a-z]+ skewY[^a-z]+/;
             this._canRotate = true;
             this._canScale = true;
-            this._canSkew = true;
+            this._canSkewX = true;
+            this._canSkewY = true;
             this._canTranslate = true;
         }
     }
@@ -906,40 +931,89 @@ export interface ITransformService {
 
 export interface ITransformable {
     //#region Functions
-    getCanRotate(): boolean;
-    getCanScale(): boolean;
-    getCanSkew(): boolean;
-    getCanTranslate(): boolean;
+    hasRotate(): boolean;
+    hasScale(): boolean;
+    hasSkewX(): boolean;
+    hasSkewY(): boolean;
+    hasTranslate(): boolean;
+    hasMatrix(): boolean;
+    getMatrix(): IMatrixMatrix;
+    setMatrix(value: IMatrixMatrix): void;
+    incrementMatrix(value: IMatrixMatrix): void;
     getTranslate(index: number): ITranslationMatrix;
     setTranslate(value: ITranslationMatrix, index: number): void;
     incrementTranslate(value: ITranslationMatrix, index: number): void;
-    getScale(index: number): IRotationMatrix;
+    getScale(index: number): IScaleMatrix;
     setScale(value: IScaleMatrix, index: number): void;
     incrementScale(value: IScaleMatrix, index: number): void;
     getRotation(index: number): IRotationMatrix;
     setRotation(value: IRotationMatrix, index: number): void;
     incrementRotation(value: IRotationMatrix, index: number): void;
-    getSkew(index: number): ISkewMatrix
-    setSkew(value: ISkewMatrix, index: number): void;
-    incrementSkew(value: ISkewMatrix, index: number): void;
+    getSkewX(index: number): number;
+    setSkewX(value: number, index: number): void;
+    incrementSkewX(value: number, index: number): void;
+    getSkewY(index: number): number;
+    setSkewY(value: number, index: number): void;
+    incrementSkewY(value: number, index: number): void;
+    toTransformString(): string;
     //#endregion
 }
 
-export class SvgTransformString implements ITransformMatrix {
+export class SvgTransformString implements ITransformable {
     //#region Fields
 
+    private transformString: string;
     private data: TransformType[];
-    private _canRotate: boolean;
-    private _canScale: boolean;
-    private _canSkew: boolean;
-    private _canTranslate: boolean;
+    private _hasMatrix: boolean;
+    private _hasRotate: boolean;
+    private _hasScale: boolean;
+    private _hasSkewX: boolean;
+    private _hasSkewY: boolean;
+    private _hasTranslate: boolean;
 
     //#endregion
 
     //#region Ctor
 
-    public constructor(svgTransformString: string) {
-        this.data = this.parseTransformString(svgTransformString);
+    public constructor(svgTransform: string|TransformType[]) {
+        if (Array.isArray(svgTransform)) {
+            this.data = svgTransform;
+            this.transformString = "";
+            for (let transform of this.data) {
+                switch (transform) {
+                    case TransformType.MATRIX:
+                        this.transformString += " matrix(1,0,0,1,0,0)";
+                        break;
+                    case TransformType.ROTATE:
+                        this.transformString += " rotate(0,0,0)";
+                        break;
+                    case TransformType.SCALE:
+                        this.transformString += " scale(1,1)";
+                        break;
+                    case TransformType.SKEW_X:
+                        this.transformString += " skewX(0)";
+                        break;
+                    case TransformType.SKEW_Y:
+                        this.transformString += " skewY(0)";
+                        break;
+                    case TransformType.TRANSLATE:
+                        this.transformString += " translate(0,0)";
+                        break;
+                    default:
+                        throw new Error();
+                }
+            }
+            this.transformString.trimLeft();
+        } else {
+            this.data = this.parseTransformString(svgTransform);
+            this.transformString = svgTransform;
+        }
+        this._hasMatrix = this.data.indexOf(TransformType.MATRIX) != -1;
+        this._hasRotate = this.data.indexOf(TransformType.ROTATE) != -1;
+        this._hasScale = this.data.indexOf(TransformType.SCALE) != -1;
+        this._hasSkewX = this.data.indexOf(TransformType.SKEW_X) != -1;
+        this._hasSkewY = this.data.indexOf(TransformType.SKEW_Y) != -1;
+        this._hasTranslate = this.data.indexOf(TransformType.TRANSLATE) != -1;
     }
 
     //#endregion
@@ -949,18 +1023,6 @@ export class SvgTransformString implements ITransformMatrix {
     //#endregion
 
     //#region Functions
-    getCanRotate(): boolean {
-
-    }
-    getCanScale(): boolean {
-
-    }
-    getCanSkew(): boolean {
-
-    }
-    getCanTranslate(): boolean {
-
-    }
     private parseTransformString(transformStr: string): TransformType[] {
         let t_data: TransformType[] = [];
 
@@ -968,38 +1030,38 @@ export class SvgTransformString implements ITransformMatrix {
         for (let group of groups) {
             do {
                 // Check if rotate
-                let match = rotateRegex.test(group);
-                if (match) {
+                if (rotateRegex.test(group)) {
                     t_data.push(TransformType.ROTATE);
                     break;
                 }
 
                 // Check if scale
-                match = scaleRegex.test(group);
-                if (match) {
+                if (scaleRegex.test(group)) {
                     t_data.push(TransformType.SCALE);
                     break;
                 }
 
                 // Check if translate
-                match = translateRegex.test(group);
-                if (match) {
+                if (translateRegex.test(group)) {
                     t_data.push(TransformType.SCALE);
                     break;
                 }
 
                 // Check if matrix
-                match = matrixRegex.test(group);
-                if (match) {
+                if (matrixRegex.test(group)) {
                     t_data.push(TransformType.MATRIX);
                     break;
                 }
 
-                // Else it might be a skew
-                // FIXME: This will create duplicates...
-                match = /skew/.test(group);
-                if (match) {
-                    t_data.push(TransformType.SKEW);
+                // Check if skew x
+                if (skewXRegex.test(group)) {
+                    t_data.push(TransformType.SKEW_X);
+                    break;
+                }
+
+                // Check if skew y
+                if (skewYRegex.test(group)) {
+                    t_data.push(TransformType.SKEW_Y);
                     break;
                 }
             } while(false);
@@ -1007,44 +1069,176 @@ export class SvgTransformString implements ITransformMatrix {
 
         return t_data;
     }
+    public hasMatrix(): boolean {
+        return this._hasMatrix;
+    }
+    public hasRotate(): boolean {
+        return this._hasRotate;
+    }
+    public hasScale(): boolean {
+        return this._hasScale;
+    }
+    public hasSkewX(): boolean {
+        return this._hasSkewX;
+    }
+    public hasSkewY(): boolean {
+        return this._hasSkewY;
+    }
+    public hasTranslate(): boolean {
+        return this._hasTranslate;
+    }
+    public getMatrix(index: number = 0): IMatrixMatrix {
+        let matrix: IMatrixMatrix = {
+            a: 1,
+            b: 0,
+            c: 0,
+            d: 1,
+            e: 0,
+            f: 0
+        };
+
+        let matrixMatch =
+            getNthOccurance(this.transformString, matrixRegex, index);
+
+        matrix.a = Number(matrixMatch[1]);
+        matrix.b = Number(matrixMatch[2]);
+        matrix.c = Number(matrixMatch[3]);
+        matrix.d = Number(matrixMatch[4]);
+        matrix.e = Number(matrixMatch[5]);
+        matrix.f = Number(matrixMatch[6]);
+
+        return matrix;
+    }
+    public setMatrix(value: IMatrixMatrix, index: number = 0): void {
+        let matrixStr = `matrix(${value.a},${value.b},${value.c},${value.d},${value.e},${value.f})`;
+        this.transformString = replaceNthOccurance(this.transformString, matrixRegex, matrixStr, index);
+    }
+    public incrementMatrix(value: IMatrixMatrix, index: number = 0): void {
+        let matrix = this.getMatrix();
+        matrix.a += value.a;
+        matrix.b += value.b;
+        matrix.c += value.c;
+        matrix.d += value.d;
+        matrix.e += value.e;
+        matrix.f += value.f;
+        this.setMatrix(matrix);
+    }
+    public getRotation(index: number = 0): IRotationMatrix {
+        let matrix: IRotationMatrix = {
+            a: 0,
+            cx: 0,
+            cy: 0
+        };
+
+        let rotationMatch = 
+            getNthOccurance(this.transformString, rotateRegex, index);
+        
+        matrix.a = Number(rotationMatch[1]);
+        matrix.cx = Number(rotationMatch[2]) || 0;
+        matrix.cy = Number(rotationMatch[2]) || 0;
+
+        return matrix;
+    }
+    public setRotation(value: IRotationMatrix, index: number = 0): void {
+        let rotationStr = `rotate(${value.a},${value.cx || 0},${value.cy || 0})`;
+        this.transformString = replaceNthOccurance(this.transformString, rotateRegex, rotationStr, index);
+    }
+    public incrementRotation(value: IRotationMatrix, index: number = 0): void {
+        let rotation = this.getRotation();
+        rotation.a += value.a;
+        rotation.cx = rotation.cx || 0;
+        rotation.cy = rotation.cy || 0;
+        
+        if (value.cx) {
+            rotation.cx += value.cx;
+        }
+
+        if (value.cy) {
+            rotation.cy += value.cy;
+        }
+
+        this.setRotation(rotation);
+    }
+    public getScale(index: number = 0): IScaleMatrix {
+        let matrix: IScaleMatrix = {
+            x: 1,
+            y: 1
+        };
+
+        let skewMatch =
+            getNthOccurance(this.transformString, scaleRegex, index);
+        
+        matrix.x = Number(skewMatch[1]);
+        matrix.y = Number(skewMatch[2]);
+
+        return matrix;
+    }
+    public setScale(value: IScaleMatrix, index: number = 0): void {
+        let scaleStr = `scale(${value.x},${value.y})`;
+        this.transformString = replaceNthOccurance(this.transformString, scaleRegex, scaleStr, index);
+    }
+    public incrementScale(value: IScaleMatrix, index: number = 0): void {
+        let scale = this.getScale(index);
+        scale.x += value.x;
+        scale.y += value.y;
+        this.setScale(scale);
+    }
+    public getSkewX(index: number = 0): number {
+        let skewXMatch = 
+            getNthOccurance(this.transformString, skewXRegex, index);
+
+        return Number(skewXMatch[1]);
+    }
+    public setSkewX(value: number, index: number = 0): void {
+        let skewXStr = `skewX(${value})`;
+        this.transformString = replaceNthOccurance(this.transformString, skewXRegex, skewXStr, index);
+    }
+    public incrementSkewX(value: number, index: number = 0): void {
+        let skewX = this.getSkewX(index);
+        skewX += value;
+        this.setSkewX(skewX);
+    }
+    public getSkewY(index: number = 0): number {
+        let skewXMatch = 
+            getNthOccurance(this.transformString, skewYRegex, index);
+
+        return Number(skewXMatch[1]);
+    }
+    public setSkewY(value: number, index: number = 0): void {
+        let skewYStr = `skewY(${value})`;
+        this.transformString = replaceNthOccurance(this.transformString, skewYRegex, skewYStr, index);
+    }
+    public incrementSkewY(value: number, index: number = 0): void {
+        let skewX = this.getSkewY(index);
+        skewX += value;
+        this.setSkewX(skewX);
+    }
     public getTranslate(index: number = 0): ITranslationMatrix {
+        let matrix: ITranslationMatrix = {
+            x: 0,
+            y: 0
+        };
 
+        let translateMatch = 
+            getNthOccurance(this.transformString, translateRegex, index);
+
+        matrix.x = Number(translateMatch[1]);
+        matrix.y = Number(translateMatch[2]);
+
+        return matrix;
     }
-    getTranslate(index: number): ITranslationMatrix {
-
+    public setTranslate(value: ITranslationMatrix, index: number = 0): void {
+        let translateStr = `translate(${value.x},${value.y})`;
+        this.transformString = replaceNthOccurance(this.transformString, translateRegex, translateStr, index);
     }
-    setTranslate(value: ITranslationMatrix, index: number): void {
-
+    public incrementTranslate(value: ITranslationMatrix, index: number = 0): void {
+        let translation = this.getTranslate(index);
+        translation.x += value.x;
+        translation.y += value.y;
+        this.setTranslate(translation, index);
     }
-    incrementTranslate(value: ITranslationMatrix, index: number): void {
-
-    }
-    getScale(index: number): IRotationMatrix {
-
-    }
-    setScale(value: IScaleMatrix, index: number): void {
-
-    }
-    incrementScale(value: IScaleMatrix, index: number): void {
-
-    }
-    getRotation(index: number): IRotationMatrix {
-
-    }
-    setRotation(value: IRotationMatrix, index: number): void {
-
-    }
-    incrementRotation(value: IRotationMatrix, index: number): void {
-
-    }
-    getSkew(index: number): ISkewMatrix {
-
-    }
-    setSkew(value: ISkewMatrix, index: number): void {
-
-    }
-    incrementSkew(value: ISkewMatrix, index: number): void {
-
+    public toTransformString(): string {
+        return this.transformString;
     }
     //#endregion
 }

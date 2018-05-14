@@ -6,6 +6,238 @@ import * as $ from "jquery";
 import { Names } from "./names";
 import { isSvgElement } from "../helpers/svg-helpers";
 
+export interface ISvgDefs {
+    //#region Functions
+    
+    /**
+     * Creates a new section.
+     * @param sectionName
+     * @returns - The created <g> element.
+     */
+    createSection(sectionName: string): SVGGElement;
+
+    /**
+     * Moves an element to the section.
+     * @param element - The element being relocated. Will have its 'data-name'
+     * attribute set to it's id.
+     * @param sectionName - Name of the section to move the element to.
+     */
+   pushToSection(element: Element, sectionName: string): Element;
+
+   /**
+    * Removes an element from a section.
+    * @param dataId - The data-id of the element.
+    * @param sectionName - Name of the section.
+    */
+   pullFromSection(dataId: string, sectionName: string): Element;
+
+    /**
+     * Deletes a section and all elements in it.
+     * @param sectionName 
+     */
+    removeSection(sectionName: string): void;
+
+    /**
+     * Retrieves all elements in a section.
+     * @param sectionName - The name of the section.
+     */
+    getContentsOfSection(sectionName: string): HTMLElement[];
+
+    /**
+     * Retrieves all sections.
+     */
+    getAllSections(): SVGGElement[];
+
+    getUrlOfSectionItem(dataId: string, sectionName: string): string;
+    //#endregion
+}
+
+export class SvgDefsV2 implements ISvgDefs {
+    //#region Fields
+
+    private readonly defsSelection: d3.Selection<SVGDefsElement, {}, null, undefined>;
+
+    //#endregion
+
+    //#region Ctor
+
+    public constructor(parent: SVGSVGElement) {
+        
+        // Create the defs element
+        this.defsSelection = d3.select(parent)
+            .append<SVGDefsElement>("defs")
+            .attr("id", uniqid())
+            .attr("data-name", Names.SvgDefs.DATA_NAME)
+            .attr("class", Names.SvgDefs.CLASS);
+    }
+
+    //#endregion
+
+    //#region Properties
+
+    //#endregion
+
+    //#region Functions
+
+    private sectionExists(sectionName: string): boolean {
+        
+        // Check if a section by that name already exists
+        return this.defsSelection.select(`[data-section-name='${sectionName}']`)
+            .node() != null;
+    }
+
+    createSection(sectionName: string): SVGGElement {
+
+        // Check if a section by that name already exists
+        if (this.sectionExists(sectionName)) {
+            throw new Error("A section by that name already exists.");
+        }
+
+        // Create section
+        let section = this.defsSelection
+            .append<SVGGElement>("g")
+            .attr("id", () => uniqid())
+            .attr("data-section-name", sectionName);
+
+        let sectionNode = section.node();
+
+        if (sectionNode == undefined) {
+            throw new Error("Failed to create the section.");
+        }
+
+        return sectionNode;
+    }
+
+    pushToSection(element: Element, sectionName: string): Element {
+        
+        // Check that the section exists
+        if (!this.sectionExists(sectionName)) {
+            throw new Error("No such section exists.");
+        }
+
+        let node: Element = element;
+        this.defsSelection
+            .select(`g[data-section-name='${sectionName}']`)
+            .append(function() {
+                let el = d3.select(element).remove();
+
+                // If the element has no id create one for it
+                if (el.attr("id") == undefined) {
+                    el.attr("id", () => uniqid());
+                }
+
+                // Store old id in data-id
+                el.attr("data-id", el.attr("id"));
+
+                // Assign new unique id
+                el.attr("id", () => uniqid());
+
+                let _node = el.node();
+                if (_node == null) {
+                    throw new Error("Internal error occurred.");
+                }
+                node = _node;
+                return node;
+            });
+
+        return node;
+    }
+
+    pullFromSection(dataId: string, sectionName: string): Element {
+        
+        // Check if section exists
+        if (!this.sectionExists(sectionName)) {
+            throw new Error(`Failed to find section named ${sectionName}.`);
+        }
+
+        let el = this.defsSelection
+            .select<Element>(`g[data-section-name='${sectionName}'] *[data-id='${dataId}']`)
+            .remove();
+
+        // Reassign old id
+        el.attr("id", el.attr("data-id"));
+
+        // Remove the data-id attribute
+        el.attr("data-id", null);
+
+        let node = el.node();
+        if (node == undefined) {
+            throw new Error("Internal error occurred.");
+        }
+
+        return node;
+    }
+
+    removeSection(sectionName: string): void {
+
+        // Check if section exists
+        if (!this.sectionExists(sectionName)) {
+            throw new Error(`Failed to find section with name ${sectionName}`);
+        }
+
+        this.defsSelection
+            .select(`g[data-section-name='${sectionName}']`)
+            .remove();
+    }
+
+    getContentsOfSection(sectionName: string): HTMLElement[] {
+
+        // Check if section exists
+        if (!this.sectionExists(sectionName)) {
+            throw new Error(`Failed to find section with name ${sectionName}`);
+        }
+
+        let elements: HTMLElement[] = [];
+        let sectionNode = this.defsSelection
+            .select<SVGGElement>(`g[data-section-name='${sectionName}']`)
+            .node();
+
+        if (sectionNode == undefined) {
+            throw new Error("Internal error occurred.");
+        }
+
+        for (let i = 0; i < sectionNode.childElementCount; i++) {
+            elements.push(<any>sectionNode.children.item(i));
+        }
+
+        return elements;
+    }
+
+    getAllSections(): SVGGElement[] {
+        let sections: SVGGElement[] = [];
+        let nodes = this.defsSelection
+            .selectAll("g")
+            .nodes();
+
+        for (let node of nodes) {
+            sections.push(<any>node);
+        }
+
+        return sections;
+    }
+
+    getUrlOfSectionItem(dataId: string, sectionName: string): string {
+
+        // Check if section exists
+        if (!this.sectionExists(sectionName)) {
+            throw new Error(`Failed to find any section with the name '${sectionName}'.`);
+        }
+
+        let node = this.defsSelection
+            .select(`g[data-section-name='${sectionName}']`)
+            .select<Element>(`*[data-id='${dataId}']`)
+            .node();
+
+        if (node == undefined) {
+            throw new Error(`Failed to find item with data-id of '${dataId}'.`);
+        }
+
+        return `url(#${node.id})`
+    }
+
+    //#endregion
+}
+
 export class SvgDefs {
     //#region Fields
 
@@ -83,7 +315,8 @@ export class SvgDefs {
         }
         
         this.defsSelection
-            .append(`g#${section}`);
+            .append("g")
+            .attr("id", section);
     }
 
     public removeSection(section: string): void {

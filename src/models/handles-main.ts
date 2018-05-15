@@ -31,7 +31,8 @@ export enum HandleModes {
     ROTATE = 2,
     COLORS = 3,
     EDIT = 4,
-    DELETE = 5
+    DELETE = 5,
+    SELECT_MODE = 6
 };
 
 interface IMainOverlayData {
@@ -66,14 +67,15 @@ export class HandlesMain implements IContainer, IDrawable {
     private startAngleOffset: number;
     private _radius: number;
     private _collapseButtons: boolean;
+    private highlightData: ITransformable;
 
     private colorsOverlay: HandlesColorsOverlay;
     private rotationOverlay: HandlesRotationOverlay;
     private scaleOverlay: HandlesScaleOverlay;
     
+    private highlightEl: d3.Selection<SVGCircleElement, ITransformable, null, undefined>;
     private arcsContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private buttonsContainer: d3.Selection<SVGGElement, {}, null, undefined>;
-    private buttonArcsPathContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private colorsContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private rotationOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private scaleOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
@@ -168,6 +170,7 @@ export class HandlesMain implements IContainer, IDrawable {
         this.center = { x: 0, y: 0};
         this.startAngleOffset = 45 + 180;
         this._collapseButtons = false;
+        this.highlightData = SvgTransformString.CreateDefaultTransform();
 
         let containerNode = this.container.node();
         if (containerNode == undefined) {
@@ -176,6 +179,19 @@ export class HandlesMain implements IContainer, IDrawable {
         this.containerNode = containerNode;
 
         let self = this;
+
+        this.highlightEl = this.container
+            .append<SVGCircleElement>("circle")
+            .data([self.highlightData])
+            .attr("id", uniqid())
+            .attr("data-name",
+                Names.Handles.SubElements.HightlightSection.DATA_NAME)
+            .attr("r", self.radius)
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("transform", function(d) {
+                return d.toTransformString();
+            });
 
         this.arcsContainer = this.container
             .append<SVGGElement>("g")
@@ -194,11 +210,6 @@ export class HandlesMain implements IContainer, IDrawable {
             .each(function() {
                 SvgTransformServiceSingleton.standardizeTransforms(this);
             });
-
-        this.buttonArcsPathContainer = this.container
-            .append<SVGGElement>("g")
-            .attr("id", uniqid())
-            .attr("data-name", Names.Handles.SubElements.ButtonArcPathsContainer.DATA_NAME);
 
         // Setup other overlays
 
@@ -284,12 +295,13 @@ export class HandlesMain implements IContainer, IDrawable {
 
     private modeChanged(oldMode: HandleModes, newMode: HandleModes): void {
         console.log(`Mode changed to ${this.mode}`);
-        // this.buttonsContainer.selectAll(".active")
-        //     .classed("active", false);
         let oldName: string = "";
         let newName: string = "";
 
         switch(oldMode) {
+            case HandleModes.SELECT_MODE:
+                oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME;
+                break;
             case HandleModes.COLORS:
                 ActivatableServiceSingleton.deactivate(this.colorsOverlay.containerNode);
                 oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME;
@@ -316,17 +328,19 @@ export class HandlesMain implements IContainer, IDrawable {
         }
 
         switch(newMode) {
+            case HandleModes.SELECT_MODE:
+                oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME;
+                break;
             case HandleModes.COLORS:
                 ActivatableServiceSingleton.activate(this.colorsOverlay.containerNode);
                 newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME;
-                break;
-            case HandleModes.DELETE:
-                newName = Names.Handles.SubElements.ButtonsContainer.SubElements.DeleteBtn.DATA_NAME;
                 break;
             case HandleModes.EDIT:
                 newName = Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME;
                 break;
             case HandleModes.ROTATE:
+                this.rotationOverlay.radius = this.radius;
+                this.rotationOverlay.update();
                 ActivatableServiceSingleton.activate(this.rotationOverlay.containerNode);
                 newName = Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME;
                 break;
@@ -334,6 +348,9 @@ export class HandlesMain implements IContainer, IDrawable {
                 ActivatableServiceSingleton.activate(this.scaleOverlay.containerNode);
                 newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ScaleBtn.DATA_NAME;
                 break;
+            // Delete should switch to Pan mode, it doesn't make much sense to
+            // add object and have them be in the delete mode.
+            case HandleModes.DELETE: 
             case HandleModes.PAN:
             default:
                 newName = Names.Handles.SubElements.ButtonsContainer.SubElements.PanBtn.DATA_NAME;
@@ -342,12 +359,17 @@ export class HandlesMain implements IContainer, IDrawable {
         
         this.buttonsContainer.select(`*[data-name='${oldName}']`).classed("active", false);
         this.buttonsContainer.select(`*[data-name='${newName}']`).classed("active", true);
+
+        this.collapseButtons = newMode != HandleModes.SELECT_MODE;
     }
 
     private drawAndUpdate(): void {
-        let self = this;
+        const self = this;
+        const defaultTransformStr = SvgTransformServiceSingleton.defaultTransformString;
 
-        let defaultTransformStr = SvgTransformServiceSingleton.defaultTransformString;
+        // Update the highlight element
+        this.highlightEl
+            .attr("r", self.radius - (self.defaultWidth/2));
         
         // Draw arcs
         let pieData = d3.pie<IMainOverlayData>()
@@ -361,12 +383,16 @@ export class HandlesMain implements IContainer, IDrawable {
         let setPathFunc = function(d: d3.PieArcDatum<ISlice>) {
             let w = d.data.width || self.defaultWidth;
 
-            return d3.arc()({
+            if (self.collapseButtons) {
+                return "";
+            } else {
+                return d3.arc()({
                     innerRadius: self._radius,
                     outerRadius: self._radius - w,
                     startAngle: d.startAngle,
                     endAngle: d.endAngle
                 });
+            }
         }
 
         this.arcsContainer

@@ -1,10 +1,10 @@
 const uniqid = require("uniqid");
 
-import { color, ColorSpaceObject } from "d3";
+import * as d3 from "d3";
 import * as $ from "jquery";
 
 import { ColorValue } from "./color-value";
-import { SvgTransformService, SvgTransformServiceSingleton, ICoords2D } from "../services/svg-transform-service";
+import { SvgTransformService, SvgTransformServiceSingleton, ICoords2D, ITransformable, SvgTransformString } from "../services/svg-transform-service";
 import { isSvgGraphicsElement } from "../helpers/svg-helpers";
 
 export interface ColorMap {
@@ -21,6 +21,11 @@ export const SVGITEM_EVT_NAMES = {
     COLOR_CHANGED: "color-changed"
 }
 
+export interface IRestriction {
+    on: string;
+    validator: (value: any) => boolean;
+}
+
 /**
  * This class is responsible for 'normalizing' the element passed in. This
  * includes transforms, colors, etc...
@@ -32,7 +37,8 @@ export class SvgItem {
      * The element being wrapped.
      */
     private _element: SVGGraphicsElement;
-    private transformService: SvgTransformService;
+    private _transforms: ITransformable;
+    private _restrictions: IRestriction[];
 
     /**
      * Maps an element to a ColorMap.
@@ -44,13 +50,15 @@ export class SvgItem {
     //#region Ctor
 
     public constructor(item: SVGGraphicsElement) {
-        this.transformService = SvgTransformServiceSingleton;
+        this._transforms = SvgTransformString.CreateDefaultTransform();
+        this._restrictions = [];
         
         let $el = $(item);
         this._element = item;
 
         // Standardize the elements transforms
-        this.transformService.standardizeTransforms(item);
+        d3.select(this.element)
+            .attr("transform", this._transforms.toTransformString());
 
         // Check if this was already called on the element
         if ($el.data()) {
@@ -76,7 +84,7 @@ export class SvgItem {
      * item).
      */
     get center(): ICoords2D {
-        return this.transformService.getCenter(this._element);
+        return SvgTransformServiceSingleton.getCenter(this._element);
     }
 
     /**
@@ -84,6 +92,10 @@ export class SvgItem {
      */
     get colors() {
         return this.mapToColors;
+    }
+
+    get transforms() {
+        return this._transforms;
     }
 
     get element() {
@@ -133,6 +145,11 @@ export class SvgItem {
         });
     }
 
+    public update(): void {
+        d3.select(this.element)
+            .attr("transform", this.transforms.toTransformString());
+    }
+
     private static _GetColorsFromImage(element: SVGGraphicsElement): ColorMap[] {
         // TODO: Handle scenario where the image points to another svg. Though
         // I'm not sure how to detect if the image being pointed to is a svg.
@@ -175,7 +192,7 @@ export class SvgItem {
         // Check stroke
         let stroke = $(element).attr("stroke");
         if (stroke != null && stroke != "") {
-            let c = color(stroke);
+            let c = d3.color(stroke);
 
             // Check stroke opacity
             if (c.opacity > 0) {

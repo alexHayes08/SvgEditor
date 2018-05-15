@@ -35,3 +35,16 @@ export interface ISvgAction {
      */
     undoOperation(node: Element): void;
 }
+
+export enum ActionType {
+    ADD,
+    REMOVE,
+    UPDATE
+}
+
+export interface ISvgActionV2 {
+    targets(): SVGElement[];
+    beforeOperation(): void;
+    operation(): void;
+    afterOperation(): void;
+}

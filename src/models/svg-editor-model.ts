@@ -9,6 +9,8 @@ import { isSvgElement } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
 import { ISvgHandles } from "./isvg-handles-model";
 import { Names } from "./names";
+import { NS } from "../helpers/namespaces-helper";
+import { InternalError } from "./errors";
 
 export interface ITotal {
     colors: d3.ColorSpaceObject[];
@@ -23,14 +25,17 @@ export class SvgEditor {
 
     //#region Fields
 
+    private editorMask: d3.Selection<SVGUseElement, {}, null, undefined>;
     private underEditor: d3.Selection<SVGGElement, {}, null, undefined>;
     private editor: d3.Selection<SVGGElement, {}, null, undefined>;
     private overEditor: d3.Selection<SVGGElement, {}, null, undefined>;
     private editor_items: SvgItem[];
 
+    private _maskUrl?: string;
+
     private readonly transformService: SvgTransformService;
     // TODO: Start mapping elements by id to their ITransformable
-    private readonly transformMap: Map<string, ITransformable>;
+    private readonly transformMap: WeakMap<Element, ITransformable>;
 
     public handles?: ISvgHandles;
 
@@ -42,7 +47,7 @@ export class SvgEditor {
     {
         this.transformService = SvgTransformServiceSingleton;
         this.editor_items = [];
-        this.transformMap = new Map();
+        this.transformMap = new WeakMap();
 
         let parentSelection = d3.select(parent);
 
@@ -56,6 +61,11 @@ export class SvgEditor {
             .attr("id", uniqid())
             .attr("data-name", Names.SvgEditor.Editor.DATA_NAME);
 
+        this.editorMask = parentSelection
+            .append<SVGUseElement>("use")
+            .attr("id", uniqid())
+            .attr("data-name", Names.SvgEditor.Mask.DATA_NAME);
+
         this.overEditor = parentSelection
             .append<SVGGElement>("g")
             .attr("id", uniqid())
@@ -65,6 +75,24 @@ export class SvgEditor {
     //#endregion
 
     //#region Properties
+
+    get mask() {
+        return this._maskUrl;
+    }
+
+    /**
+     * @param id - The id of an element to use as the mask or null to stop
+     * using the mask.
+     */
+    set mask(id: string|undefined) {
+        if (id == undefined) {
+            this.editorMask.attr("href", null);
+            this.editor.attr("mask", null);
+        } else {
+            this.editorMask.attr("href", `#${id}`);
+            this.editor.attr("mask", `url(#${id})`);
+        }
+    }
 
     get items() {
         let editorNode = this.getEditorNode();
@@ -206,13 +234,28 @@ export class SvgEditor {
         // This is also for IE9, would prefer to iterate over items.children but oh well
         for (let i = 0; i < items.childNodes.length; i++) {
             let el = <Element>items.childNodes[i];
-            if (el.id == "") {
-                el.id = uniqid();
-            }
 
             // Setup default transformations
             if (isSvgGraphicsElement(el)) {
-                let svgItem = new SvgItem(el);
+
+                // Wrapper to all transforms originate on the upper left hand
+                // side of the parent element. Without this circles in
+                // particular will have their transform origin behave
+                // unexpectedly.
+                let itemWrapper = document.createElementNS(NS.SVG, "g");
+                itemWrapper.appendChild(el);
+
+                if (!isSvgGraphicsElement(itemWrapper)) {
+                    throw new Error("Internal error occurred.");
+                }
+
+                this.transformService.standardizeTransforms(itemWrapper);
+
+                if (itemWrapper.id == "") {
+                    itemWrapper.id = uniqid();
+                }
+
+                let svgItem = new SvgItem(<any>itemWrapper);
 
                 if (this.handles != undefined) {
                     this.handles.onBeforeItemAdded(svgItem)
@@ -223,22 +266,44 @@ export class SvgEditor {
                 let svgCanvas = getFurthestSvgOwner(editorNode);
 
                 // Add item to editor & editor_items
-                editorNode.appendChild(el);
+                editorNode.appendChild(itemWrapper);
+
+                // Scale the item so it doesn't take up more than 50% of the
+                // editor-mask or canvas if the editor-mask isn't set.
+                let canvas = this.mask ? this.editorMask.node() : svgCanvas;
+
+                // Null check
+                if (canvas == undefined) {
+                    throw InternalError;
+                }
+
+                let canvasBBox = SvgTransformServiceSingleton.getBBox(canvas);
+                let itemBBox = SvgTransformServiceSingleton.getBBox(itemWrapper);
+                let scaleRatio = 1;
+
+                if (itemBBox.height > (canvasBBox.height / 2)) {
+                    scaleRatio = (canvasBBox.height / 2) / itemBBox.height;
+                }
+
+                if (itemBBox.width > (canvasBBox.width / 2) * scaleRatio) {
+                    scaleRatio = (canvasBBox.width / 2) / itemBBox.width;
+                }
+
+                // Apply scale
+                svgItem.transforms.setScale({x: scaleRatio, y: scaleRatio}, 0);
+                
+                // Need to call this so we can get an updated bbox.
+                svgItem.update();
 
                 // Attempt to center element
                 let centerOfSvg = this.transformService.getCenter(svgCanvas);
                 let centerOfItem = svgItem.center;
 
-                this.transformService.setRotation(el, {
-                    a: 0,
-                    cx: centerOfItem.x,
-                    cy: centerOfItem.y
-                });
-
-                this.transformService.setTranslation(el, {
+                svgItem.transforms.setTranslate({
                     x: Math.abs(centerOfSvg.x - centerOfItem.y),
-                    y: Math.abs(centerOfSvg.y - centerOfItem.y)
+                    y: Math.abs(centerOfSvg.y - centerOfItem.y) 
                 });
+                svgItem.update();
 
                 if (this.handles != undefined) {
                     this.handles.onAfterItemAdded(svgItem)
@@ -264,6 +329,10 @@ export class SvgEditor {
         if (this.handles != undefined) {
             this.handles.onAfterItemRemoved(svgItem)
         }
+    }
+
+    public getItemData(element: SVGElement): ITransformable {
+        throw new Error("Not implemented error.");
     }
 
     //#endregion

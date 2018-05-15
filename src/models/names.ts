@@ -31,6 +31,9 @@ export const Names = {
         }
     },
     SvgEditor: {
+        Mask: {
+            DATA_NAME: "editor-mask"
+        },
         Editor: {
             DATA_NAME: "editor-container"
         },
@@ -45,6 +48,9 @@ export const Names = {
         DATA_NAME: "handles-area",
         BTN_HANDLE_CLASS: "btn-handle",
         SubElements: {
+            HightlightSection: {
+                DATA_NAME: "hightlight-section"
+            },
             ArcsContainer: {
                 DATA_NAME: "arcs-container",
                 SubElements: {

@@ -925,10 +925,6 @@ export class TransformStringService {
     //#endregion
 }
 
-export interface ITransformService {
-    
-}
-
 export interface ITransformable {
     //#region Functions
     hasRotate(): boolean;
@@ -937,24 +933,24 @@ export interface ITransformable {
     hasSkewY(): boolean;
     hasTranslate(): boolean;
     hasMatrix(): boolean;
-    getMatrix(): IMatrixMatrix;
-    setMatrix(value: IMatrixMatrix): void;
-    incrementMatrix(value: IMatrixMatrix): void;
-    getTranslate(index: number): ITranslationMatrix;
-    setTranslate(value: ITranslationMatrix, index: number): void;
-    incrementTranslate(value: ITranslationMatrix, index: number): void;
-    getScale(index: number): IScaleMatrix;
-    setScale(value: IScaleMatrix, index: number): void;
-    incrementScale(value: IScaleMatrix, index: number): void;
-    getRotation(index: number): IRotationMatrix;
-    setRotation(value: IRotationMatrix, index: number): void;
-    incrementRotation(value: IRotationMatrix, index: number): void;
-    getSkewX(index: number): number;
-    setSkewX(value: number, index: number): void;
-    incrementSkewX(value: number, index: number): void;
-    getSkewY(index: number): number;
-    setSkewY(value: number, index: number): void;
-    incrementSkewY(value: number, index: number): void;
+    getMatrix(index?: number): IMatrixMatrix;
+    setMatrix(value: IMatrixMatrix, index?: number): ITransformable;
+    incrementMatrix(value: IMatrixMatrix, index?: number): ITransformable;
+    getTranslate(index?: number): ITranslationMatrix;
+    setTranslate(value: ITranslationMatrix, index?: number): ITransformable;
+    incrementTranslate(value: ITranslationMatrix, index?: number): ITransformable;
+    getScale(index?: number): IScaleMatrix;
+    setScale(value: IScaleMatrix, index?: number): ITransformable;
+    incrementScale(value: IScaleMatrix, index?: number): ITransformable;
+    getRotation(index?: number): IRotationMatrix;
+    setRotation(value: IRotationMatrix, index?: number): ITransformable;
+    incrementRotation(value: IRotationMatrix, index?: number): ITransformable;
+    getSkewX(index?: number): number;
+    setSkewX(value: number, index?: number): ITransformable;
+    incrementSkewX(value: number, index?: number): ITransformable;
+    getSkewY(index?: number): number;
+    setSkewY(value: number, index?: number): ITransformable;
+    incrementSkewY(value: number, index?: number): ITransformable;
     toTransformString(): string;
     //#endregion
 }
@@ -1109,11 +1105,12 @@ export class SvgTransformString implements ITransformable {
 
         return matrix;
     }
-    public setMatrix(value: IMatrixMatrix, index: number = 0): void {
+    public setMatrix(value: IMatrixMatrix, index: number = 0): ITransformable {
         let matrixStr = `matrix(${value.a},${value.b},${value.c},${value.d},${value.e},${value.f})`;
         this.transformString = replaceNthOccurance(this.transformString, matrixRegex, matrixStr, index);
+        return this;
     }
-    public incrementMatrix(value: IMatrixMatrix, index: number = 0): void {
+    public incrementMatrix(value: IMatrixMatrix, index: number = 0): ITransformable {
         let matrix = this.getMatrix();
         matrix.a += value.a;
         matrix.b += value.b;
@@ -1122,6 +1119,7 @@ export class SvgTransformString implements ITransformable {
         matrix.e += value.e;
         matrix.f += value.f;
         this.setMatrix(matrix);
+        return this;
     }
     public getRotation(index: number = 0): IRotationMatrix {
         let matrix: IRotationMatrix = {
@@ -1139,11 +1137,12 @@ export class SvgTransformString implements ITransformable {
 
         return matrix;
     }
-    public setRotation(value: IRotationMatrix, index: number = 0): void {
+    public setRotation(value: IRotationMatrix, index: number = 0): ITransformable {
         let rotationStr = `rotate(${value.a},${value.cx || 0},${value.cy || 0})`;
         this.transformString = replaceNthOccurance(this.transformString, rotateRegex, rotationStr, index);
+        return this;
     }
-    public incrementRotation(value: IRotationMatrix, index: number = 0): void {
+    public incrementRotation(value: IRotationMatrix, index: number = 0): ITransformable {
         let rotation = this.getRotation();
         rotation.a += value.a;
         rotation.cx = rotation.cx || 0;
@@ -1158,6 +1157,7 @@ export class SvgTransformString implements ITransformable {
         }
 
         this.setRotation(rotation);
+        return this;
     }
     public getScale(index: number = 0): IScaleMatrix {
         let matrix: IScaleMatrix = {
@@ -1173,15 +1173,17 @@ export class SvgTransformString implements ITransformable {
 
         return matrix;
     }
-    public setScale(value: IScaleMatrix, index: number = 0): void {
+    public setScale(value: IScaleMatrix, index: number = 0): ITransformable {
         let scaleStr = `scale(${value.x},${value.y})`;
         this.transformString = replaceNthOccurance(this.transformString, scaleRegex, scaleStr, index);
+        return this;
     }
-    public incrementScale(value: IScaleMatrix, index: number = 0): void {
+    public incrementScale(value: IScaleMatrix, index: number = 0): ITransformable {
         let scale = this.getScale(index);
         scale.x += value.x;
         scale.y += value.y;
         this.setScale(scale);
+        return this;
     }
     public getSkewX(index: number = 0): number {
         let skewXMatch = 
@@ -1189,14 +1191,16 @@ export class SvgTransformString implements ITransformable {
 
         return Number(skewXMatch[1]);
     }
-    public setSkewX(value: number, index: number = 0): void {
+    public setSkewX(value: number, index: number = 0): ITransformable {
         let skewXStr = `skewX(${value})`;
         this.transformString = replaceNthOccurance(this.transformString, skewXRegex, skewXStr, index);
+        return this;
     }
-    public incrementSkewX(value: number, index: number = 0): void {
+    public incrementSkewX(value: number, index: number = 0): ITransformable {
         let skewX = this.getSkewX(index);
         skewX += value;
         this.setSkewX(skewX);
+        return this;
     }
     public getSkewY(index: number = 0): number {
         let skewXMatch = 
@@ -1204,14 +1208,16 @@ export class SvgTransformString implements ITransformable {
 
         return Number(skewXMatch[1]);
     }
-    public setSkewY(value: number, index: number = 0): void {
+    public setSkewY(value: number, index: number = 0): ITransformable {
         let skewYStr = `skewY(${value})`;
         this.transformString = replaceNthOccurance(this.transformString, skewYRegex, skewYStr, index);
+        return this;
     }
-    public incrementSkewY(value: number, index: number = 0): void {
+    public incrementSkewY(value: number, index: number = 0): ITransformable {
         let skewX = this.getSkewY(index);
         skewX += value;
         this.setSkewX(skewX);
+        return this;
     }
     public getTranslate(index: number = 0): ITranslationMatrix {
         let matrix: ITranslationMatrix = {
@@ -1227,18 +1233,30 @@ export class SvgTransformString implements ITransformable {
 
         return matrix;
     }
-    public setTranslate(value: ITranslationMatrix, index: number = 0): void {
+    public setTranslate(value: ITranslationMatrix, index: number = 0): ITransformable {
         let translateStr = `translate(${value.x},${value.y})`;
         this.transformString = replaceNthOccurance(this.transformString, translateRegex, translateStr, index);
+        return this;
     }
-    public incrementTranslate(value: ITranslationMatrix, index: number = 0): void {
+    public incrementTranslate(value: ITranslationMatrix, index: number = 0): ITransformable {
         let translation = this.getTranslate(index);
         translation.x += value.x;
         translation.y += value.y;
         this.setTranslate(translation, index);
+        return this;
     }
     public toTransformString(): string {
         return this.transformString;
+    }
+    public static CreateDefaultTransform(): ITransformable {
+        return new SvgTransformString([
+            TransformType.MATRIX,
+            TransformType.TRANSLATE,
+            TransformType.ROTATE,
+            TransformType.SKEW_X,
+            TransformType.SKEW_Y,
+            TransformType.SCALE
+        ]);
     }
     //#endregion
 }

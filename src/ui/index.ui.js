@@ -65,6 +65,8 @@ Aperture.register("SvgEditorControls", {
 
     addTriangleEl: $("#addTriangle"),
 
+    addPathEl: $("#addPath"),
+
     changeCanvasEl: $("#changeEditor"),
 
     loading: function(value) {
@@ -205,6 +207,25 @@ Aperture.resolve(["SvgEditors"]).then(() => {
         frag.appendChild(path);
 
         // Add fragment to the editor
+        canvas.editor.add(frag);
+    });
+
+    Aperture.SvgEditorControls.addPathEl.on("click", function(e) {
+
+        // Create doc frag
+        let frag = document.createDocumentFragment();
+
+        // Create path
+        let path = document.createElementNS(NS.SVG, "path");
+        $(path).attr({
+            d: "M446.348,0h37.391l1.823,2.128L487.404,0h1.825c4.258,0,9.527,50.574,15.81,151.73v18.852l1.824,8.504  h-1.824l1.824,2.137v25.209l1.844,27.364l-1.844,16.714c0,19.267,3.558,34.054,10.65,44.412c-7.093,9.102-10.65,16.824-10.65,23.107  c0,8.291,20.806,34.236,62.359,77.838c17.837,11.148,29.079,19.568,33.722,25.244l1.843,6.375l-5.474,31.623v14.594  c0,10.135-2.928,15.811-8.807,17.027l-1.825-2.139l-7.003,2.139c-168.464,9.73-252.676,17.432-252.676,23.109  c-20.05,4.273-53.209,6.375-99.435,6.375h-16.115l-8.835,1.842v-1.842l-5.474,1.842L85.439,534.809H67.491  c-36.682-2.82-55.043-9.822-55.043-20.953C12.245,506.561,8.108,491.762,0,469.465c1.825,0,7.786-10.561,17.92-31.621  c20.684-10.357,43.176-30.627,67.5-60.83c8.928-16.824,15.396-25.227,19.45-25.227l-5.15-141.089l-1.825-6.376h1.825l-1.825-2.136  v-2.129L96.08,98.798l-1.833-8.209l1.833-2.129l-1.833-10.622l5.474-41.97l-1.806-21.283l8.809-3.943l31.925,6.071h24.933L446.348,0 z",
+            fill: "#231f20",
+            stroke: "black"
+        });
+
+        frag.appendChild(path);
+
+        // Add fragment to editor
         canvas.editor.add(frag);
     })
 

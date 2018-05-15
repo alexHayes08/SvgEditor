@@ -55,7 +55,7 @@ export function getNthOccurance(str: string,
 {
     let result: RegExpExecArray|null = null;
     
-    for (let index = 1, match = regex.exec(str)
+    for (let index = 0, match = regex.exec(str)
         ; match != null && index <= occurance
         ; match = regex.exec(str))
     {

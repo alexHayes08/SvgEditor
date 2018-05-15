@@ -26,7 +26,10 @@ export const GraphicsElements = [
     "text", 
     "textPath", 
     "tspan",
-    "video"
+    "video",
+
+    // ELements not included in the spec, but inherit from SVGGraphicsElement
+    "g"
 ];
 
 /**
@@ -61,7 +64,9 @@ export function isSvgElement(element: any): element is SVGGraphicsElement {
 }
 
 export function isSvgGraphicsElement(element: any): element is SVGGraphicsElement {
-    return element != undefined && element.transform != undefined;
+    return element != undefined 
+        && element.transform != undefined
+        && GraphicsElements.indexOf(element.tagName) != -1;
 }
 
 export function isSvgSvgElement(element: any): element is SVGSVGElement {

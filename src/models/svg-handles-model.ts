@@ -14,7 +14,7 @@ import { SvgCanvas } from "./svg-canvas-model";
 import { SvgDefs } from "./svg-defs-model";
 import { SvgEditor } from "./svg-editor-model";
 import { SvgItem } from "./svg-item-model";
-import { SvgTransformService, SvgTransformServiceSingleton, IBBox, IRotationMatrix } from "../services/svg-transform-service";
+import { SvgTransformService, SvgTransformServiceSingleton, IBBox, IRotationMatrix, ITransformable, SvgTransformString } from "../services/svg-transform-service";
 import { toRadians } from "../helpers/math-helpers";
 import { 
     drawCubicBezierArc, 
@@ -110,6 +110,8 @@ export class SvgHandles implements ISvgHandles {
     private transformService: SvgTransformService;
     private _lastSelectedSection: number;
     private cachedElementsWithEvts: Element[];
+    private minHandlesRadius: number;
+    private transformData: ITransformable;
 
     private handlesContainer: SVGGElement;
     private mainHandlesOverlay: HandlesMain;
@@ -141,6 +143,8 @@ export class SvgHandles implements ISvgHandles {
         this._lastSelectedSection = 0;
         this.cachedElementsWithEvts = [];
         // this._mode = SvgHandlesModes.PAN;
+        this.minHandlesRadius = 75;
+        this.transformData = SvgTransformString.CreateDefaultTransform();
 
         // Create the highlight rect
         let highlightRectEl = d3.select(this.parentNode)
@@ -234,17 +238,103 @@ export class SvgHandles implements ISvgHandles {
         let centerOfItems = this.transformService.getCenter(...this.selectedObjects.map(so => so.element));
         for (let item of this.selectedObjects) {
             this.transformService.setRotation(item.element, {
-                a: angle.a,
-                cx: 0,
-                cy: 0
+                a: angle.a
             });
 
             // let bbox = this.transformService.getBBox(item.element)
-            this.transformService.setTranslation(item.element, {
-                x: (angle.cx || 0),// - (bbox.width/2),
-                y: (angle.cy || 0)// - (bbox.height/2)
-            });
+            // this.transformService.setTranslation(item.element, {
+            //     x: (angle.cx || 0),// - (bbox.width/2),
+            //     y: (angle.cy || 0)// - (bbox.height/2)
+            // });
         }
+    }
+
+    public onBeforeItemAdded(item: SvgItem): void {
+        console.log("Before item added");
+        this.deselectObjects();
+    }
+
+    public onAfterItemAdded(item: SvgItem): void {
+        console.log("After item added");
+        this.selectObjects(item);
+        let self = this;
+
+        // Add event listener to the item
+        d3.select<Element, {}>(item.element)
+            .call(d3.drag()
+                .container(<any>self.canvas.canvasEl)
+                .on("start", function() {
+                    console.log("Drag start.")
+
+                    if (!d3.event.sourceEvent.ctrlKey) {
+                        
+                        // Check if the target is already selected, if not then
+                        // deselect all objects
+                        if (!self.selectedObjects.find(so => so.element.id == this.id)) {
+                            self.deselectObjects();
+                        }
+                    }
+    
+                    // Only select the item it's not already selected
+                    if (!self.selectedObjects.find(so => so.element.id == item.element.id)) {
+                        self.selectObjects(item);
+                    }
+                }).on("drag", function() {
+                    let increment = {
+                        x: d3.event.dx,
+                        y: d3.event.dy
+                    };
+                    self.selectedObjects.map(item => {
+                        item.transforms.incrementTranslate(increment);
+                        item.update();
+                    });
+
+                    self.transformData.incrementTranslate(increment);
+                    d3.select(self.handlesContainer)
+                        .attr("transform", self.transformData.toTransformString());
+                }).on("end", function() {
+                    console.log("Drag end.")
+                }));
+    }
+
+    public onBeforeItemRemoved(item: SvgItem): void {
+        console.log("Before item removed");
+
+        d3.select(item.element)
+            .on("mousedown", null);
+    }
+
+    public onAfterItemRemoved(item: SvgItem): void {
+        console.log("After item removed");
+    }
+
+    public onAddedToEditor(): void {
+        console.log("Added to the editor.")
+        let self = this;
+
+        // Add event listener to the canvas
+        d3.select(this.parentNode)
+            .on("click", function({}, i: number) {
+                
+                // Check if any items intersect the point
+                let { pageX:x, pageY: y } = d3.event;
+                let transformedCoords = self.transformService
+                    .convertScreenCoordsToSvgCoords({x,y}, <any>self.parentNode);
+                let intersectingItems = self.canvas.editor
+                    .getItemsIntersectionPoint(transformedCoords);
+                
+                if (intersectingItems.nodes().length == 0) {
+                    self.deselectObjects();
+                }
+            });
+    }
+
+    public onRemovedFromEditor(): void {
+        console.log("Removed from the editor.")
+
+        // Remove event listener from the canvas
+        d3.select(this.parentNode)
+            .on("click", null);
     }
 
     //#endregion
@@ -278,8 +368,11 @@ export class SvgHandles implements ISvgHandles {
             this.transformService.getCenter(...this.selectedObjects.map(so => so.element));
 
         // Update the handles to surround the bbox
-        this.transformService
-            .setTranslation(this.handlesContainer, centerOfSelectedItems);
+        this.transformData.setTranslate(centerOfSelectedItems);
+        d3.select(this.handlesContainer)
+            .attr("transform", this.transformData.toTransformString());
+        // this.transformService
+        //     .setTranslation(this.handlesContainer, centerOfSelectedItems);
     }
 
     private drawHandles(): void {
@@ -293,8 +386,8 @@ export class SvgHandles implements ISvgHandles {
         let hyp = (Math.sqrt((bbox.width * bbox.width) + (bbox.height * bbox.height)) / 2) + 10;
 
         // Min-width for hyp
-        if (hyp < 50) {
-            hyp = 50;
+        if (hyp < this.minHandlesRadius) {
+            hyp = this.minHandlesRadius;
         }
 
         this.mainHandlesOverlay.radius = hyp;
@@ -396,90 +489,6 @@ export class SvgHandles implements ISvgHandles {
 
     public getSelectedObjects(): SvgItem[] {
         return [ ...this.selectedObjects ];
-    }
-
-    public onBeforeItemAdded(item: SvgItem): void {
-        console.log("Before item added");
-        this.deselectObjects();
-    }
-
-    public onAfterItemAdded(item: SvgItem): void {
-        console.log("After item added");
-        this.selectObjects(item);
-        let self = this;
-
-        // Add event listener to the item
-        d3.select<Element, {}>(item.element)
-            .call(d3.drag()
-                .container(<any>self.canvas.canvasEl)
-                .on("start", function() {
-                    console.log("Drag start.")
-
-                    if (!d3.event.sourceEvent.ctrlKey) {
-                        
-                        // Check if the target is already selected, if not then
-                        // deselect all objects
-                        if (!self.selectedObjects.find(so => so.element.id == this.id)) {
-                            self.deselectObjects();
-                        }
-                    }
-    
-                    // Only select the item it's not already selected
-                    if (!self.selectedObjects.find(so => so.element.id == item.element.id)) {
-                        self.selectObjects(item);
-                    }
-                }).on("drag", function() {
-                    let increment = {
-                        x: d3.event.dx,
-                        y: d3.event.dy
-                    };
-                    self.selectedObjects.map(item => {
-                        self.transformService.incrementTranslation(item.element, increment);
-                    });
-                    self.transformService.incrementTranslation(self.handlesContainer, increment);
-                }).on("end", function() {
-                    console.log("Drag end.")
-                }));
-    }
-
-    public onBeforeItemRemoved(item: SvgItem): void {
-        console.log("Before item removed");
-
-        d3.select(item.element)
-            .on("mousedown", null);
-    }
-
-    public onAfterItemRemoved(item: SvgItem): void {
-        console.log("After item removed");
-    }
-
-    public onAddedToEditor(): void {
-        console.log("Added to the editor.")
-        let self = this;
-
-        // Add event listener to the canvas
-        d3.select(this.parentNode)
-            .on("click", function({}, i: number) {
-                
-                // Check if any items intersect the point
-                let { pageX:x, pageY: y } = d3.event;
-                let transformedCoords = self.transformService
-                    .convertScreenCoordsToSvgCoords({x,y}, <any>self.parentNode);
-                let intersectingItems = self.canvas.editor
-                    .getItemsIntersectionPoint(transformedCoords);
-                
-                if (intersectingItems.nodes().length == 0) {
-                    self.deselectObjects();
-                }
-            });
-    }
-
-    public onRemovedFromEditor(): void {
-        console.log("Removed from the editor.")
-
-        // Remove event listener from the canvas
-        d3.select(this.parentNode)
-            .on("click", null);
     }
 
     //#endregion

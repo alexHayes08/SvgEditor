@@ -48,49 +48,49 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     stroke-width: 2px;
 }
 
-*[data-name="handles-toggle-controls-btn"] circle.selected {
+*[data-name="handles-toggle-controls-btn"] circle {
     fill: gray;
     stroke: gray;
     opacity: 1;
 }
 
 *[data-name="handles-delete-arc"],
-*[data-name="handles-delete-btn"] circle.selected {
+*[data-name="handles-delete-btn"] circle {
     fill: red;
     stroke: red;
     opacity: 1;
 }
 
 *[data-name="handles-pan-arc"],
-*[data-name="handles-pan-btn"] circle.selected {
+*[data-name="handles-pan-btn"] circle {
     fill: yellow;
     stroke: yellow;
     opacity: 1;
 }
 
 *[data-name="handles-scale-arc"],
-*[data-name="handles-scale-btn"] circle.selected {
+*[data-name="handles-scale-btn"] circle {
     fill: blue;
     stroke: blue;
     opacity: 1;
 }
 
 *[data-name="handles-rotate-arc"],
-*[data-name="handles-rotate-btn"] circle.selected {
+*[data-name="handles-rotate-btn"] circle {
     fill: green;
     stroke: green;
     opacity: 1;
 }
 
 *[data-name="handles-colors-arc"],
-*[data-name="handles-colors-btn"] circle.selected {
+*[data-name="handles-colors-btn"] circle {
     fill: rebeccapurple;
     stroke: rebeccapurple;
     opacity: 1;
 }
 
 *[data-name="handles-edit-arc"],
-*[data-name="handles-edit-btn"] circle.selected {
+*[data-name="handles-edit-btn"] circle {
     fill: orange;
     stroke: orange;
     opacity: 1;
@@ -102,33 +102,42 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     z-index: 1;
 } */
 
+.btn-handle {
+    rect {
+        opacity: .25;
+        fill: gray;
+        stroke: aliceblue;
+        stroke-width: 4;
+    }
+}
+
+.collapsed .btn-handle rect {
+    display: none;
+}
+
 .btn-handle:not(.active) {
-    transition: all .2s;
+    // transition: all .2s;
 
     circle {
-        opacity: 0;
+        // opacity: 0;
         transition: .2s ease-in-out;
     }
 
-    circle.selected:not(:hover) {
+    circle:not(:hover) {
         fill: transparent;
         stroke-width: 2px;
         opacity: 1;
     }
-
-    rect {
-        opacity: 0;
-        fill: gray;
-    }
 }
 
 .btn-handle.active {
+    circle:not(.selected) {
+        fill: transparent;
+        opacity: 1;
+    }
+    
     circle.selected {
         opacity: 1
-    }
-
-    rect {
-        opacity: 0;
     }
 }
 

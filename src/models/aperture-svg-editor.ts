@@ -3,7 +3,7 @@ import {AutoWired, Inject} from "typescript-ioc";
 import { BooleanOption, IFromNode, IOption, NumberOption, StringOption } from "./ioption";
 import { NS } from "../helpers/namespaces-helper";
 import * as NodeHelper from "../helpers/node-helper";
-import SvgActionService from "../services/svg-action-service";
+import { SvgActionService } from "../services/action-service";
 import { SvgTypeService } from "../services/svg-type-service";
 import { SvgUndoManagerService } from "../services/svg-undo-manager-service";
 import { SvgCanvasService } from "../services/svg-canvas-service";

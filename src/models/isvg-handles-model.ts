@@ -8,13 +8,13 @@ export interface ISvgHandles {
 
     deselectObjects(): void;
 
-    onBeforeItemAdded(item: SvgItem): void;
+    onBeforeItemsAdded(items: SvgItem[]): void;
 
-    onAfterItemAdded(item: SvgItem): void;
+    onAfterItemsAdded(items: SvgItem[]): void;
 
-    onBeforeItemRemoved(item: SvgItem): void;
+    onBeforeItemsRemoved(items: SvgItem[]): void;
 
-    onAfterItemRemoved(item: SvgItem): void;
+    onAfterItemsRemoved(items: SvgItem[]): void;
 
     onAddedToEditor(): void;
 

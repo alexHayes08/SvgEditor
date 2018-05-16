@@ -27,6 +27,7 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
 
     private _angle: number;
 
+    public rotateIndividually: boolean;
     public container: d3.Selection<SVGGElement, {}, null, undefined>;
     public containerNode: SVGGElement;
     public dialTransform: ITransformable;
@@ -42,6 +43,7 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
 
     public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>) {
         this.container = container;
+        this.rotateIndividually = true;
         this.radius = 100;
         this._angle = 0;
         this.onRotation = [];

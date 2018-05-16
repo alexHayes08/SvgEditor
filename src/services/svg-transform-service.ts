@@ -1,4 +1,4 @@
-import { HandleModes } from './../models/handles-main';
+import { HandleMode } from './../models/ihandle-button';
 import { DOMMatrix } from "geometry-interfaces";
 
 import { toDegrees, toRadians } from "../helpers/math-helpers";
@@ -1106,7 +1106,7 @@ export class SvgTransformString implements ITransformable {
         return matrix;
     }
     public setMatrix(value: IMatrixMatrix, index: number = 0): ITransformable {
-        let matrixStr = `matrix(${value.a},${value.b},${value.c},${value.d},${value.e},${value.f})`;
+        let matrixStr = `matrix(${value.a.toFixed(6)},${value.b.toFixed(6)},${value.c.toFixed(6)},${value.d.toFixed(6)},${value.e.toFixed(6)},${value.f.toFixed(6)})`;
         this.transformString = replaceNthOccurance(this.transformString, matrixRegex, matrixStr, index);
         return this;
     }
@@ -1138,7 +1138,7 @@ export class SvgTransformString implements ITransformable {
         return matrix;
     }
     public setRotation(value: IRotationMatrix, index: number = 0): ITransformable {
-        let rotationStr = `rotate(${value.a},${value.cx || 0},${value.cy || 0})`;
+        let rotationStr = `rotate(${value.a.toFixed(6)},${(value.cx || 0).toFixed(6)},${(value.cy || 0).toFixed(6)})`;
         this.transformString = replaceNthOccurance(this.transformString, rotateRegex, rotationStr, index);
         return this;
     }
@@ -1174,7 +1174,7 @@ export class SvgTransformString implements ITransformable {
         return matrix;
     }
     public setScale(value: IScaleMatrix, index: number = 0): ITransformable {
-        let scaleStr = `scale(${value.x},${value.y})`;
+        let scaleStr = `scale(${value.x.toFixed(6)},${value.y.toFixed(6)})`;
         this.transformString = replaceNthOccurance(this.transformString, scaleRegex, scaleStr, index);
         return this;
     }
@@ -1192,7 +1192,7 @@ export class SvgTransformString implements ITransformable {
         return Number(skewXMatch[1]);
     }
     public setSkewX(value: number, index: number = 0): ITransformable {
-        let skewXStr = `skewX(${value})`;
+        let skewXStr = `skewX(${value.toFixed(6)})`;
         this.transformString = replaceNthOccurance(this.transformString, skewXRegex, skewXStr, index);
         return this;
     }
@@ -1209,7 +1209,7 @@ export class SvgTransformString implements ITransformable {
         return Number(skewXMatch[1]);
     }
     public setSkewY(value: number, index: number = 0): ITransformable {
-        let skewYStr = `skewY(${value})`;
+        let skewYStr = `skewY(${value.toFixed(6)})`;
         this.transformString = replaceNthOccurance(this.transformString, skewYRegex, skewYStr, index);
         return this;
     }
@@ -1234,7 +1234,7 @@ export class SvgTransformString implements ITransformable {
         return matrix;
     }
     public setTranslate(value: ITranslationMatrix, index: number = 0): ITransformable {
-        let translateStr = `translate(${value.x},${value.y})`;
+        let translateStr = `translate(${value.x.toFixed(6)},${value.y.toFixed(6)})`;
         this.transformString = replaceNthOccurance(this.transformString, translateRegex, translateStr, index);
         return this;
     }

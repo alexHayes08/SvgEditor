@@ -228,56 +228,71 @@ export class SvgHandles implements ISvgHandles {
     private onDeleteClicked() {
         console.log("Delete clicked!");
         this.selectedObjects.map(item => {
-            this.canvas.editor.remove(item.element.id);
+            this.canvas.editor.remove(item);
         });
 
         this.selectedObjects = [];
     }
 
     private onRotation(angle: IRotationMatrix): void {
-        let centerOfItems = this.transformService.getCenter(...this.selectedObjects.map(so => so.element));
-        for (let item of this.selectedObjects) {
-            this.transformService.setRotation(item.element, {
-                a: angle.a
-            });
+        this.selectedObjects.map(so => {
+            
+            so.angle = angle.a;
+            so.update();
+            // Check that the element was registered
+            // if (soData != undefined) {
+            //     soData.angle
+            // }
+        });
+        // let centerOfItems = this.transformService.getCenter(...this.selectedObjects.map(so => this.canvas.editor.getData(so)));
+        // for (let item of this.selectedObjects) {
+        //     // this.transformService.setRotation(item.element, {
+        //     //     a: angle.a
+        //     // });
 
-            // let bbox = this.transformService.getBBox(item.element)
-            // this.transformService.setTranslation(item.element, {
-            //     x: (angle.cx || 0),// - (bbox.width/2),
-            //     y: (angle.cy || 0)// - (bbox.height/2)
-            // });
-        }
+        //     // let bbox = this.transformService.getBBox(item.element)
+        //     // this.transformService.setTranslation(item.element, {
+        //     //     x: (angle.cx || 0),// - (bbox.width/2),
+        //     //     y: (angle.cy || 0)// - (bbox.height/2)
+        //     // });
+        // }
     }
 
-    public onBeforeItemAdded(item: SvgItem): void {
+    public onBeforeItemsAdded(items: SvgItem[]): void {
         console.log("Before item added");
         this.deselectObjects();
     }
 
-    public onAfterItemAdded(item: SvgItem): void {
+    public onAfterItemsAdded(items: SvgItem[]): void {
         console.log("After item added");
-        this.selectObjects(item);
+        this.selectObjects(...items);
         let self = this;
 
         // Add event listener to the item
-        d3.select<Element, {}>(item.element)
+        d3.selectAll<Element, {}>(items.map(item => SvgItem.GetElementOfSvgItem(item)))
             .call(d3.drag()
                 .container(<any>self.canvas.canvasEl)
                 .on("start", function() {
-                    console.log("Drag start.")
+                    console.log("Drag start.");
+
+                    let data = self.canvas.editor.getData(<any>this);
+
+                    if (data == undefined) {
+                        return;
+                    }
 
                     if (!d3.event.sourceEvent.ctrlKey) {
                         
                         // Check if the target is already selected, if not then
                         // deselect all objects
-                        if (!self.selectedObjects.find(so => so.element.id == this.id)) {
+                        if (!self.selectedObjects.find(so => so == data)) {
                             self.deselectObjects();
                         }
                     }
     
                     // Only select the item it's not already selected
-                    if (!self.selectedObjects.find(so => so.element.id == item.element.id)) {
-                        self.selectObjects(item);
+                    if (!self.selectedObjects.find(so => so == data)) {
+                        self.selectObjects(data);
                     }
                 }).on("drag", function() {
                     let increment = {
@@ -293,18 +308,15 @@ export class SvgHandles implements ISvgHandles {
                     d3.select(self.handlesContainer)
                         .attr("transform", self.transformData.toTransformString());
                 }).on("end", function() {
-                    console.log("Drag end.")
+                    console.log("Drag end.");
                 }));
     }
 
-    public onBeforeItemRemoved(item: SvgItem): void {
+    public onBeforeItemsRemoved(item: SvgItem[]): void {
         console.log("Before item removed");
-
-        d3.select(item.element)
-            .on("mousedown", null);
     }
 
-    public onAfterItemRemoved(item: SvgItem): void {
+    public onAfterItemsRemoved(item: SvgItem[]): void {
         console.log("After item removed");
     }
 
@@ -317,7 +329,7 @@ export class SvgHandles implements ISvgHandles {
             .on("click", function({}, i: number) {
                 
                 // Check if any items intersect the point
-                let { pageX:x, pageY: y } = d3.event;
+                let { x, y } = d3.event;
                 let transformedCoords = self.transformService
                     .convertScreenCoordsToSvgCoords({x,y}, <any>self.parentNode);
                 let intersectingItems = self.canvas.editor
@@ -365,7 +377,7 @@ export class SvgHandles implements ISvgHandles {
 
         // Get bbox of all items
         let centerOfSelectedItems = 
-            this.transformService.getCenter(...this.selectedObjects.map(so => so.element));
+            this.transformService.getCenter(...this.selectedObjects.map(so => SvgItem.GetElementOfSvgItem(so)));
 
         // Update the handles to surround the bbox
         this.transformData.setTranslate(centerOfSelectedItems);
@@ -377,7 +389,7 @@ export class SvgHandles implements ISvgHandles {
 
     private drawHandles(): void {
 
-        let bbox = this.transformService.getBBox(...this.selectedObjects.map(so => so.element));
+        let bbox = this.transformService.getBBox(...this.selectedObjects.map(so => SvgItem.GetElementOfSvgItem(so)));
 
         if (bbox == null) {
             return;

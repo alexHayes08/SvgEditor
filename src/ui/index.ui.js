@@ -2,8 +2,11 @@ import { Aperture, EVT_NAMES } from "./aperture.main";
 import { NS } from "../helpers/namespaces-helper";
 import { SvgColorService } from "../services/svg-color-service";
 import { SvgEditors } from "../index";
+import * as mathHelpers from "../helpers/math-helpers";
 
 export { Aperture } from "./aperture.main";
+
+Aperture.Math = mathHelpers;
 
 // [Private]
 
@@ -66,6 +69,8 @@ Aperture.register("SvgEditorControls", {
     addTriangleEl: $("#addTriangle"),
 
     addPathEl: $("#addPath"),
+
+    addMultiShapeEl: $("#addMultiShapes"),
 
     changeCanvasEl: $("#changeEditor"),
 
@@ -227,7 +232,46 @@ Aperture.resolve(["SvgEditors"]).then(() => {
 
         // Add fragment to editor
         canvas.editor.add(frag);
-    })
+    });
+
+    Aperture.SvgEditorControls.addMultiShapeEl.on("click", function(e) {
+
+        // Create doc frag
+        let frag = document.createDocumentFragment();
+
+        // Create rect
+        let rectA = document.createElementNS(NS.SVG, "rect");
+        rectA.setAttribute("x", "50");
+        rectA.setAttribute("y", "50");
+        rectA.setAttribute("width", "100");
+        rectA.setAttribute("height", "100");
+
+        let rectB = document.createElementNS(NS.SVG, "rect");
+        rectB.setAttribute("x", "350");
+        rectB.setAttribute("y", "50");
+        rectB.setAttribute("width", "100");
+        rectB.setAttribute("height", "100")
+
+        let rectC = document.createElementNS(NS.SVG, "rect");
+        rectC.setAttribute("x", "50");
+        rectC.setAttribute("y", "350");
+        rectC.setAttribute("width", "100");
+        rectC.setAttribute("height", "100")
+
+        let rectD = document.createElementNS(NS.SVG, "rect");
+        rectD.setAttribute("x", "350");
+        rectD.setAttribute("y", "350");
+        rectD.setAttribute("width", "100");
+        rectD.setAttribute("height", "100")
+
+        frag.appendChild(rectA);
+        frag.appendChild(rectB);
+        frag.appendChild(rectC);
+        frag.appendChild(rectD);
+
+        // Add fragment to editor
+        canvas.editor.add(frag);
+    });
 
     Aperture.SvgEditorControls.modeSelectEl.on("change", function() {
         console.log("TODO");

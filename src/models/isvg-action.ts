@@ -1,4 +1,5 @@
 import ISvgType from "./isvg-type";
+import { SvgCanvas } from "./svg-canvas-model";
 
 /**
  * Defines an 'action' that can only be applied to nodes matching the ISvgTypes
@@ -43,8 +44,9 @@ export enum ActionType {
 }
 
 export interface ISvgActionV2 {
+    type(): ActionType;
     targets(): SVGElement[];
-    beforeOperation(): void;
-    operation(): void;
-    afterOperation(): void;
+    beforeOperation(editor: SvgCanvas): void;
+    operation(editor: SvgCanvas): void;
+    afterOperation(editor: SvgCanvas): void;
 }

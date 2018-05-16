@@ -1,10 +1,10 @@
 import { ISvgAction } from '../models/isvg-action';
 import { SvgTypeService } from './svg-type-service';
 import { SvgUndoManagerService } from './svg-undo-manager-service';
-import { Singleton } from 'typescript-ioc';
+// import { Singleton } from 'typescript-ioc';
 
-@Singleton
-export default class SvgActionService {
+// @Singleton
+export class SvgActionService {
     //#region Fields
 
     private cached_categories: string[];

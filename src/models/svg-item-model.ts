@@ -13,8 +13,9 @@ export interface ColorMap {
 }
 
 export interface SvgColors {
-    stroke: ColorValue;
-    fill: ColorValue;
+    stroke?: ColorValue;
+    strokeWidth?: number;
+    fill?: ColorValue;
 }
 
 export const SVGITEM_EVT_NAMES = {
@@ -26,6 +27,12 @@ export interface IRestriction {
     validator: (value: any) => boolean;
 }
 
+export interface ICircleBBox {
+    r: number;
+    cx: number;
+    cy: number;
+}
+
 /**
  * This class is responsible for 'normalizing' the element passed in. This
  * includes transforms, colors, etc...
@@ -33,46 +40,32 @@ export interface IRestriction {
 export class SvgItem {
     //#region Fields
 
-    /**
-     * The element being wrapped.
-     */
-    private _element: SVGGraphicsElement;
-    private _transforms: ITransformable;
-    private _restrictions: IRestriction[];
+    private readonly element: SVGGraphicsElement;
 
-    /**
-     * Maps an element to a ColorMap.
-     */
-    private mapToColors: Map<SVGGraphicsElement, SvgColors>;
+    private _circleBBox: ICircleBBox;
+    private _originalTransformMatrix: string;
+    private _restrictions: IRestriction[];
+    private _transforms: ITransformable;
+    private mapToColors: WeakMap<SVGGraphicsElement, SvgColors>;
+
+    public angle: number;
+    public scale: number;
 
     //#endregion
 
     //#region Ctor
 
-    public constructor(item: SVGGraphicsElement) {
-        this._transforms = SvgTransformString.CreateDefaultTransform();
+    public constructor(element: SVGGraphicsElement) {
+        this.element = element;
+
+        this._circleBBox = { r: 0, cx: 0, cy: 0 };
+        this._originalTransformMatrix = "";
         this._restrictions = [];
-        
-        let $el = $(item);
-        this._element = item;
+        this._transforms = SvgTransformString.CreateDefaultTransform();
 
-        // Standardize the elements transforms
-        d3.select(this.element)
-            .attr("transform", this._transforms.toTransformString());
-
-        // Check if this was already called on the element
-        if ($el.data()) {
-
-            // Used cached values
-            let data = $el.data();
-            this.mapToColors = data.mapToColors;
-        } else {
-            this.mapToColors = new Map();
-            this.recalculateColors();
-
-            // Store a reference to 'this' in data
-            $el.data(this);
-        }
+        this.angle = 0;
+        this.mapToColors = new WeakMap();
+        this.scale = 1;
     }
 
     //#endregion
@@ -80,11 +73,11 @@ export class SvgItem {
     //#region Properties
 
     /**
-     * Gets the center of the item (in respect to the upper left corner of the
-     * item).
+     * Returns a bounding circle around the element, the cx and cy properties
+     * are relative to the elements center, not the canvas.
      */
-    get center(): ICoords2D {
-        return SvgTransformServiceSingleton.getCenter(this._element);
+    get circleBBox() {
+        return this._circleBBox;
     }
 
     /**
@@ -94,41 +87,95 @@ export class SvgItem {
         return this.mapToColors;
     }
 
-    get transforms() {
-        return this._transforms;
+    get originalTransformMatrix() {
+        return this._originalTransformMatrix;
     }
 
-    get element() {
-        return this._element;
+    get transforms() {
+        return this._transforms;
     }
 
     //#endregion
     
     //#region Functions
 
+    /**
+     * Try to NOT modify the attributes of the returned element.
+     */
+    public getElement(): SVGGraphicsElement {
+        return this.element;
+    }
+
+    /**
+     * Updates the element.
+     */
+    public update(): void {
+        let self = this;
+
+        let el = d3.select(this.element);
+        el.attr("transform", this.transforms.toTransformString());
+
+        // Update ALL colors... this may be expensive
+        d3.select(this.element)
+            .selectAll<SVGElement, null>("*")
+            .each(function() {
+                
+                /**
+                 * Update the following properties IF it has an entry in the
+                 * color map:
+                 * - fill
+                 * - stroke
+                 * - stroke-width
+                 */
+                let colorData = self.colors.get(<any>this);
+                if (colorData != undefined) {
+
+                    if (colorData.fill) {
+                        this.setAttribute("fill", colorData.fill.toString());
+                    }
+
+                    if (colorData.stroke) {
+                        this.setAttribute("stroke", colorData.stroke.toString())
+                    }
+
+                    if (colorData.strokeWidth) {
+                        this.setAttribute("stroke-width", colorData.strokeWidth.toString());
+                    }
+                }
+            });
+    }
+
+    /**
+     * This method is static only to prevent modifying the element the data is
+     * pointing to instead of modifying the data used to represent it.
+     * @param item 
+     */
+    public static GetElementOfSvgItem(item: SvgItem): SVGGraphicsElement {
+        return item.element;
+    }
+
     private recalculateColors(): void {
         let colors: ColorMap[] = [];
-        this.mapToColors.clear();
 
-        switch(this._element.tagName.toLowerCase()) {
+        switch(this.element.tagName.toLowerCase()) {
             case "image": {
-                colors.concat(SvgItem._GetColorsFromImage(this._element));
+                colors.concat(SvgItem._GetColorsFromImage(this.element));
                 break;
             }
             case "g": {
-                colors.concat(SvgItem._GetColorsFromGroup(this._element))
+                colors.concat(SvgItem._GetColorsFromGroup(this.element))
                 break;
             }
             case "use": {
-                colors.concat(SvgItem._GetColorsFromUse(this._element));
+                colors.concat(SvgItem._GetColorsFromUse(this.element));
                 break;
             }
             case "svg": {
-                colors.concat(SvgItem._GetColorsFromUse(this._element));
+                colors.concat(SvgItem._GetColorsFromUse(this.element));
                 break;
             }
             default: {
-                colors.concat(SvgItem._GetColorsFromGroup(this._element));
+                colors.concat(SvgItem._GetColorsFromGroup(this.element));
                 break;
             }
         }
@@ -143,11 +190,6 @@ export class SvgItem {
             let { element, colors: cs } = color;
             this.mapToColors.set(<SVGGraphicsElement>element, cs);
         });
-    }
-
-    public update(): void {
-        d3.select(this.element)
-            .attr("transform", this.transforms.toTransformString());
     }
 
     private static _GetColorsFromImage(element: SVGGraphicsElement): ColorMap[] {

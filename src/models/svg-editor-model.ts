@@ -1,3 +1,4 @@
+import { ISvgAction } from './isvg-action';
 const uniqid = require("uniqid");
 
 import * as d3 from "d3";
@@ -242,7 +243,11 @@ export class SvgEditor {
                 // side of the parent element. Without this circles in
                 // particular will have their transform origin behave
                 // unexpectedly.
+                //
+                // Another benifit is that now calling
+                // this.editor.selectAll(`.${Names.Handles.} > g`) will select all items.
                 let itemWrapper = document.createElementNS(NS.SVG, "g");
+                itemWrapper.classList.add(Names.SvgEditor.Items.CLASS_NAME);
                 itemWrapper.appendChild(el);
 
                 if (!isSvgGraphicsElement(itemWrapper)) {
@@ -331,7 +336,31 @@ export class SvgEditor {
         }
     }
 
-    public getItemData(element: SVGElement): ITransformable {
+    /**
+     * Have handles call this to save the "state" of the editor_items?
+     * @param action 
+     */
+    applyAction(action: ISvgAction): void {
+
+    }
+
+    /**
+     * Call this to apply updates to the items?
+     * 
+     * Possibly seperate this into updateTransforms, updateColors, and 
+     * update
+     */
+    update() {
+        this.editor
+            .selectAll(`[data-name='${Names.SvgEditor.Editor.DATA_NAME}'] > .item`)
+            .data(this.editor_items)
+            .attr("transform", function(d) { return d.transforms.toTransformString() })
+            .each(function(d) {
+                // Update more specialized attributes like strokes/colors here
+            });
+    }
+
+    public getItems(element: SVGElement): ITransformable {
         throw new Error("Not implemented error.");
     }
 

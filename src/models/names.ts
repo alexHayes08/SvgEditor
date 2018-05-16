@@ -42,6 +42,9 @@ export const Names = {
         },
         UnderEditor: {
             DATA_NAME: "under-editor-container"
+        },
+        Items: {
+            CLASS_NAME: "item"
         }
     },
     Handles: {

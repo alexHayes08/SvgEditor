@@ -48,49 +48,49 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     stroke-width: 2px;
 }
 
-*[data-name="handles-toggle-controls-btn"] circle {
+*[data-name="handles-toggle-controls-btn"] polygon {
     fill: gray;
     stroke: gray;
     opacity: 1;
 }
 
 *[data-name="handles-delete-arc"],
-*[data-name="handles-delete-btn"] circle {
+*[data-name="handles-delete-btn"] polygon {
     fill: red;
     stroke: red;
     opacity: 1;
 }
 
 *[data-name="handles-pan-arc"],
-*[data-name="handles-pan-btn"] circle {
+*[data-name="handles-pan-btn"] polygon {
     fill: yellow;
     stroke: yellow;
     opacity: 1;
 }
 
 *[data-name="handles-scale-arc"],
-*[data-name="handles-scale-btn"] circle {
+*[data-name="handles-scale-btn"] polygon {
     fill: blue;
     stroke: blue;
     opacity: 1;
 }
 
 *[data-name="handles-rotate-arc"],
-*[data-name="handles-rotate-btn"] circle {
+*[data-name="handles-rotate-btn"] polygon {
     fill: green;
     stroke: green;
     opacity: 1;
 }
 
 *[data-name="handles-colors-arc"],
-*[data-name="handles-colors-btn"] circle {
+*[data-name="handles-colors-btn"] polygon {
     fill: rebeccapurple;
     stroke: rebeccapurple;
     opacity: 1;
 }
 
 *[data-name="handles-edit-arc"],
-*[data-name="handles-edit-btn"] circle {
+*[data-name="handles-edit-btn"] polygon {
     fill: orange;
     stroke: orange;
     opacity: 1;
@@ -118,39 +118,40 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
 .btn-handle:not(.active) {
     // transition: all .2s;
 
-    circle {
+    polygon {
         // opacity: 0;
         transition: .2s ease-in-out;
     }
 
-    circle:not(:hover) {
+    polygon:not(:hover) {
         fill: transparent;
+        stroke: aliceblue;
         stroke-width: 2px;
         opacity: 1;
     }
 }
 
 .btn-handle.active {
-    circle:not(.selected) {
+    polygon:not(.selected) {
         fill: transparent;
         opacity: 1;
     }
     
-    circle.selected {
+    polygon.selected {
         opacity: 1
     }
 }
 
 .btn-handle:hover {
-    circle {
+    polygon {
         opacity: .15;
     }
 
-    circle.selected {
+    polygon.selected {
         opacity: .5;
     }
 
-    circle:hover {
+    polygon:hover {
         opacity: 1;
     }
 

@@ -115,20 +115,7 @@ export class SvgHandles implements ISvgHandles {
 
     private handlesContainer: SVGGElement;
     private mainHandlesOverlay: HandlesMain;
-    // private arcsContainer: SVGGElement;
-    // private deleteEl: SVGGraphicsElement;
-    // private moveEl: SVGGraphicsElement;
-    // private scaleEl: SVGGraphicsElement;
-    // private rotateEl: SVGGraphicsElement;
-    // private colorsEl: SVGGraphicsElement;
-    // private editEl: SVGGraphicsElement;
-    // private optionEls: SVGPathElement[];
-
     private highlightRectEl: SVGRectElement;
-
-    // Setup the rotate elements
-    // private rotateHelpersContainer: SVGGElement;
-    // private handle_rotationOverlay: HandlesRotationOverlay;
 
     //#endregion
 
@@ -176,7 +163,7 @@ export class SvgHandles implements ISvgHandles {
         ActivatableServiceSingleton.register(this.handlesContainer, false);
 
         // Create main handles overlay
-        this.mainHandlesOverlay = new HandlesMain(d3.select(handleContainer));
+        this.mainHandlesOverlay = new HandlesMain(d3.select(handleContainer), this.canvas.editor);
         this.mainHandlesOverlay.onDeleteClickedHandlers
             .push(this.onDeleteClicked.bind(this));
         this.mainHandlesOverlay.onRotationEventHandlers

@@ -143,6 +143,31 @@ Aperture.resolve(["SvgEditors"]).then(() => {
         Aperture.SvgEditorControls.activeEditor = Aperture.SvgEditors[0];
         // Aperture.SvgEditorControls.activeEditor.svgCanvas_el.classList.add("active");
     }
+
+    // Add a mask to the editor
+    Aperture.SvgEditors.map(canvas => {
+
+        // First create a section named masks
+        canvas.defs.createSection("masks");
+
+        // Create simple mask
+        let mask = document.createElementNS(NS.SVG, "clipPath");
+        let rect = document.createElementNS(NS.SVG, "rect");
+        rect.setAttribute("width", "450");
+        rect.setAttribute("height", "450");
+        rect.setAttribute("x", "25");
+        rect.setAttribute("y", "25");
+        rect.setAttribute("fill", "none");
+        rect.setAttribute("stroke", "black");
+        rect.setAttribute("stroke-dasharray", "5,5");
+        rect.setAttribute("stroke-width", "2");
+        rect.id = "mask-a";
+        mask.appendChild(rect);
+        let maskA_ref = canvas.defs.pushToSection(mask, "masks");
+
+        // Apply mask
+        canvas.editor.mask = maskA_ref.id;
+    });
         
     // Init controls (add evt listeners, populate options, etc...)
     Aperture.SvgEditorControls.addRectEl.on("click", function(e) {

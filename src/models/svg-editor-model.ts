@@ -285,39 +285,46 @@ export class SvgEditor {
             throw InternalError;
         }
 
+        // Try to scale the items to fit in the canvas. The scale ratio should
+        // be the same for the x and y.
+        let scaleRatio = 1;
         let canvasBBox = SvgTransformServiceSingleton.getBBox(canvas);
+        let itemsBBox = SvgTransformServiceSingleton
+            .getBBox(...newSvgItems.map(svgItem => svgItem.getElement()));
 
-        // Try to scale the item to fit in the canvas and center it
+        if (itemsBBox.height > (canvasBBox.height / 2)) {
+            scaleRatio = (canvasBBox.height / 2) / itemsBBox.height;
+        }
+
+        if (itemsBBox.width > (canvasBBox.width / 2) * scaleRatio) {
+            scaleRatio = (canvasBBox.width / 2) / itemsBBox.width;
+        }
+
         newSvgItems.map(svgItem => {
-            let itemWrapper = SvgItem.GetElementOfSvgItem(svgItem);
-            let itemBBox = SvgTransformServiceSingleton.getBBox(itemWrapper);
-            let scaleRatio = 1;
+            svgItem.transforms.setScale({ x: scaleRatio, y: scaleRatio });
 
-            if (itemBBox.height > (canvasBBox.height / 2)) {
-                scaleRatio = (canvasBBox.height / 2) / itemBBox.height;
-            }
+            // This update is applied because scaling an object changes its
+            // translation which is needed for determining its center for the
+            // next step.
+            svgItem.update();
+        });
 
-            if (itemBBox.width > (canvasBBox.width / 2) * scaleRatio) {
-                scaleRatio = (canvasBBox.width / 2) / itemBBox.width;
-            }
+        // Center the items
+        let canvasCenter = SvgTransformServiceSingleton.getCenter(svgCanvas);
+        let itemsCenter = SvgTransformServiceSingleton
+            .getCenter(...newSvgItems.map(svgItem => svgItem.getElement()));
+        let itemsOffset: ICoords2D = {
+            x: Math.abs(canvasCenter.x - itemsCenter.x),
+            y: Math.abs(canvasCenter.y - itemsCenter.y)
+        };
 
-                // Apply scale
-                svgItem.transforms.setScale({x: scaleRatio, y: scaleRatio}, 0);
-                
-                // Need to call this so we can get an updated bbox.
-                svgItem.update();
+        newSvgItems.map(svgItem => {
 
-                // Attempt to center element
-                let centerOfSvg = this.transformService.getCenter(svgCanvas);
-                let centerOfItem = this.transformService.getCenter(itemWrapper);
+            // Apply offset to center element
+            svgItem.transforms.incrementTranslate(itemsOffset);
 
-                svgItem.transforms.setTranslate({
-                    x: Math.abs(centerOfSvg.x - centerOfItem.y),
-                    y: Math.abs(centerOfSvg.y - centerOfItem.y) 
-                });
-
-                // Apply remaining transformations to the item.
-                svgItem.update();
+            // Apply remaining transformations to the item.
+            svgItem.update();
         });
 
         if (this.handles != undefined) {

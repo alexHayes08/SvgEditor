@@ -265,46 +265,5 @@ export class ApertureSvgEditor {
         this.svgElements.push(svgElement);
     }
 
-    public switchMaskTo(maskId: string|null): void {
-        this.canvases.map(editor => {
-            let $editor = $(editor);
-            if (maskId == null) {
-                $editor.find(".editAreaMask").removeAttr("href");
-                $editor.find(".editor").removeAttr("clip-path");
-            } else {
-                $editor.find(".editAreaMask").attr("href", `#${maskId}`);
-                $editor.find(".editor").attr("clip-path", "url(#editableArea)");
-                $editor.find("defs clipPath#editableArea use").attr("href", `#${maskId}`);
-            }
-        });
-    }
-
-    /**
-     * TODO: Implement function
-     * @param numbers 
-     */
-    public createMask(...numbers: number[]) {
-        console.log("TODO")
-    }
-
-    public addRectangle(x: number, y: number, width: number, height: number): void {
-        let rectEl = document.createElementNS(NS.SVG, "rect");
-        const colors = [
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "blue",
-            "indigo",
-            "violet"
-        ];
-        let fill = colors[Math.floor(Math.random() * colors.length)];
-        $(rectEl).attr({ x, y, width, height, fill });
-        this.canvases.map(editor => {
-            let $editor = $(editor);
-            $editor.find(".editor").append(rectEl);
-        });
-    }
-
     //#endregion
 }

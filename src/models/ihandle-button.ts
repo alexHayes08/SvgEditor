@@ -11,7 +11,6 @@ export enum HandleMode {
 export interface IMode {
     label: string;
     selected: boolean;
-    handleMode: HandleMode
 }
 
 export interface IHandleButton {

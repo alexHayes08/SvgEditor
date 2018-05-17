@@ -8,7 +8,7 @@ import { ColorValue } from "./color-value";
 import { SvgTransformService, SvgTransformServiceSingleton, ICoords2D, ITransformable } from "../services/svg-transform-service";
 import { isSvgGraphicsElement } from "../helpers/svg-helpers";
 import { IDrawable } from "./idrawable";
-import { isSvgElement } from "../../dist/src/helpers/svg-helpers";
+import { isSvgElement } from "../helpers/svg-helpers";
 
 export interface ISvgItemV2 {
 

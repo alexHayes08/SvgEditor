@@ -1,8 +1,13 @@
+const uniqid = require("uniqid");
+
+import * as mathHelpers from "../helpers/math-helpers";
+
 import { Aperture, EVT_NAMES } from "./aperture.main";
+import { Angle } from "../models/angle";
+import { getPolygonPointsString } from "../helpers/svg-helpers";
 import { NS } from "../helpers/namespaces-helper";
 import { SvgColorService } from "../services/svg-color-service";
 import { SvgEditors } from "../index";
-import * as mathHelpers from "../helpers/math-helpers";
 
 export { Aperture } from "./aperture.main";
 
@@ -69,6 +74,8 @@ Aperture.register("SvgEditorControls", {
     addTriangleEl: $("#addTriangle"),
 
     addPathEl: $("#addPath"),
+
+    addPolygonEl: $("#addPolygon"),
 
     addMultiShapeEl: $("#addMultiShapes"),
 
@@ -147,26 +154,81 @@ Aperture.resolve(["SvgEditors"]).then(() => {
     // Add a mask to the editor
     Aperture.SvgEditors.map(canvas => {
 
-        // First create a section named masks
-        canvas.defs.createSection("masks");
-
         // Create simple mask
-        let mask = document.createElementNS(NS.SVG, "clipPath");
-        let rect = document.createElementNS(NS.SVG, "rect");
-        rect.setAttribute("width", "450");
-        rect.setAttribute("height", "450");
-        rect.setAttribute("x", "25");
-        rect.setAttribute("y", "25");
-        rect.setAttribute("fill", "none");
-        rect.setAttribute("stroke", "black");
-        rect.setAttribute("stroke-dasharray", "5,5");
-        rect.setAttribute("stroke-width", "2");
-        rect.id = "mask-a";
-        mask.appendChild(rect);
-        let maskA_ref = canvas.defs.pushToSection(mask, "masks");
+        let maskA = document.createElementNS(NS.SVG, "mask");
+        let rect_a = document.createElementNS(NS.SVG, "rect");
+        d3.select(rect_a)
+            .attr("width", 450)
+            .attr("height", 450)
+            .attr("x", 25)
+            .attr("y", 25)
+            .attr("fill", "none")
+            .attr("stroke", "black")
+            .attr("stroke-dasharray", "5,5")
+            .attr("stroke-width", 2)
+            .attr("id", "mask-a");
+        maskA.appendChild(rect_a);
+        let maskA_ref = canvas.defs.pushToSection(maskA, "masks");
 
-        // Apply mask
-        canvas.editor.mask = maskA_ref.id;
+        let maskB = document.createElementNS(NS.SVG, "mask");
+        let circle_b = document.createElementNS(NS.SVG, "circle");
+        d3.select(circle_b)
+            .attr("r", 250)
+            .attr("cx", 250)
+            .attr("cy", 250)
+            .attr("fill", "none")
+            .attr("stroke", "black")
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", "5,5")
+            .attr("id", "mask-b");
+        maskB.appendChild(circle_b);
+        let maskB_ref = canvas.defs.pushToSection(maskB, "masks");
+
+        let maskC = document.createElementNS(NS.SVG, "mask");
+        let g_c = document.createElementNS(NS.SVG, "g");
+        let circle1_c = document.createElementNS(NS.SVG, "circle");
+        let circle2_c = document.createElementNS(NS.SVG, "circle");
+        d3.select(circle1_c)
+            .attr("id", uniqid())
+            .attr("cx", 200)
+            .attr("cy", 200)
+            .attr("r", 200)
+            .attr("fill", "none")
+            .attr("stroke", "black")
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", "5,5");
+
+        d3.select(circle2_c)
+            .attr("id", uniqid())
+            .attr("cx", 300)
+            .attr("cy", 300)
+            .attr("r", 200)
+            .attr("fill", "none")
+            .attr("stroke", "black")
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", "5,5");
+
+        d3.select(g_c).attr("id", "mask-c");
+
+        g_c.appendChild(circle1_c);
+        g_c.appendChild(circle2_c);
+        maskC.appendChild(g_c);
+        let maskC_ref = canvas.defs.pushToSection(maskC, "masks");
+
+        // Setup what happens on mask select el change evt
+        Aperture.SvgEditorControls.maskSelectorEl.on("change", function(e) {        
+            var val = Number(e.target.value) == -1 ? null : e.target.value;
+            for (var editor of Aperture.SvgEditors) {
+                canvas.editor.mask = val;
+            }
+        });
+        
+        // Populate mask select el
+        for (var areaMask of [maskA_ref, maskB_ref, maskC_ref]) {
+            var optionEl = document.createElement("option");
+            optionEl.textContent = areaMask.id;
+            Aperture.SvgEditorControls.maskSelectorEl.append(optionEl);
+        }
     });
         
     // Init controls (add evt listeners, populate options, etc...)
@@ -259,6 +321,29 @@ Aperture.resolve(["SvgEditors"]).then(() => {
         canvas.editor.add(frag);
     });
 
+    Aperture.SvgEditorControls.addPolygonEl.on("click", function(e) {
+
+        // Get the number of sides
+        let numberOfSides = Number($("#polygon-number-of-sides").val());
+
+        // Create doc frag
+        let frag = document.createDocumentFragment();
+
+        // Create path
+        let polygon = document.createElementNS(NS.SVG, "polygon");
+        $(polygon).attr({
+            points: getPolygonPointsString(numberOfSides, 50, Angle.fromDegrees(-90)),
+            fill: colorService.randomColor,
+            stroke: colorService.randomColor,
+            "stroke-width": 4
+        });
+
+        frag.appendChild(polygon);
+
+        // Add fragment to editor
+        canvas.editor.add(frag);
+    });
+
     Aperture.SvgEditorControls.addMultiShapeEl.on("click", function(e) {
 
         // Create doc frag
@@ -309,22 +394,6 @@ Aperture.resolve(["SvgEditors"]).then(() => {
     //     width: 480,
     //     height: 480
     // }, 500);
-
-    // Setup what happens on mask select el change evt
-    Aperture.SvgEditorControls.maskSelectorEl.on("change", function(e) {        
-        var val = Number(e.target.value) == -1 ? null : e.target.value;
-        for (var editor of Aperture.SvgEditors) {
-            editor.switchMaskTo(val);
-        }
-    });
-    
-    // Populate mask select el
-    var editableAreaMasks = $(".editableAreaRect");
-    for (var areaMask of editableAreaMasks) {
-        var optionEl = document.createElement("option");
-        optionEl.textContent = areaMask.id;
-        Aperture.SvgEditorControls.maskSelectorEl.append(optionEl);
-    }
 
     // Setup what happens on canvas select el change evt
     Aperture.SvgEditorControls.changeCanvasEl.on("change", function(e) {

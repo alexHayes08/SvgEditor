@@ -63,6 +63,7 @@ export class HandlesMain implements IContainer, IDrawable {
     private readonly elementDataMap: WeakMap<Element, ITransformable>;
     private defaultWidth: number;
     private highlightData: ITransformable;
+    private minRadius: number;
     private startAngleOffset: number;
 
     private _collapseButtons: boolean;
@@ -185,6 +186,7 @@ export class HandlesMain implements IContainer, IDrawable {
         this.defaultWidth = 4;
         this.elementDataMap = new WeakMap();
         this.highlightData = SvgTransformString.CreateDefaultTransform();
+        this.minRadius = 100;
         this.onDeleteClickedHandlers = [];
         this.onRotationEventHandlers = [];
         this.startAngleOffset = 45 + 180;
@@ -303,8 +305,8 @@ export class HandlesMain implements IContainer, IDrawable {
     }
 
     set radius(value: number) {
-        if (value < 50) {
-            this._radius = 50;
+        if (value < this.minRadius) {
+            this._radius = this.minRadius;
         } else {
             this._radius = value;
         }

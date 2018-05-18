@@ -1,4 +1,3 @@
-import { ISvgAction } from './isvg-action';
 const uniqid = require("uniqid");
 
 import * as d3 from "d3";
@@ -8,10 +7,13 @@ import { nodeListToArray } from "../helpers/node-helper";
 import { ICoords2D, SvgTransformService, SvgTransformServiceSingleton, ITransformable } from "./../services/svg-transform-service";
 import { isSvgElement } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
+import { ISvgAction } from './isvg-action';
 import { ISvgHandles } from "./isvg-handles-model";
 import { Names } from "./names";
 import { NS } from "../helpers/namespaces-helper";
 import { InternalError, NotImplementedError } from "./errors";
+import { ISvgDefs } from './svg-defs-model';
+import { SvgActionService } from '../services/action-service';
 
 export interface ITotal {
     colors: d3.ColorSpaceObject[];
@@ -26,6 +28,7 @@ export class SvgEditor {
 
     //#region Fields
 
+    private clipPathEl: d3.Selection<SVGClipPathElement, {}, null, undefined>;
     private editorMask: d3.Selection<SVGUseElement, {}, null, undefined>;
     private underEditor: d3.Selection<SVGGElement, {}, null, undefined>;
     private editor: d3.Selection<SVGGElement, {}, null, undefined>;
@@ -34,7 +37,9 @@ export class SvgEditor {
     private _maskUrl?: string;
 
     private readonly transformService: SvgTransformService;
+    private readonly actionService: SvgActionService;
     private readonly dataMap: WeakMap<Element, SvgItem>;
+    private readonly defs: ISvgDefs;
 
     public handles?: ISvgHandles;
 
@@ -42,10 +47,12 @@ export class SvgEditor {
 
     //#region Ctor
 
-    public constructor(parent: SVGSVGElement)
+    public constructor(parent: SVGSVGElement, defs: ISvgDefs, actionService: SvgActionService)
     {
-        this.transformService = SvgTransformServiceSingleton;
         this.dataMap = new WeakMap();
+        this.defs = defs;
+        this.transformService = SvgTransformServiceSingleton;
+        this.actionService = actionService;
 
         let parentSelection = d3.select(parent);
 
@@ -68,6 +75,22 @@ export class SvgEditor {
             .append<SVGGElement>("g")
             .attr("id", uniqid())
             .attr("data-name", Names.SvgEditor.OverEditor.DATA_NAME);
+
+        // Create section for the handles
+        this.defs.createSection(Names.SvgDefs.SubElements.EditorOnlyDefsContainer.DATA_NAME);
+
+        // Create a section named masks
+        this.defs.createSection("masks");
+
+        // Create clip-path
+        let editorClipPath = document.createElementNS(NS.SVG, "clipPath");
+        let use = document.createElementNS(NS.SVG, "use");
+        editorClipPath.appendChild(use);
+
+        let editorClipPath_ref = <SVGClipPathElement>this.defs.pushToSection(editorClipPath, 
+            Names.SvgDefs.SubElements.EditorOnlyDefsContainer.DATA_NAME);
+
+        this.clipPathEl = d3.select<SVGClipPathElement, {}>(editorClipPath_ref);
     }
 
     //#endregion
@@ -84,11 +107,48 @@ export class SvgEditor {
      */
     set mask(id: string|undefined) {
         if (id == undefined) {
+            this.clipPathEl
+                .select("use")
+                .attr("href", null);
             this.editorMask.attr("href", null);
-            this.editor.attr("mask", null);
+            this.editor.attr("clip-path", null);
         } else {
-            this.editorMask.attr("href", `#${id}`);
-            this.editor.attr("mask", `url(#${id})`);
+            let maskElSubEl = d3.select(`#${id}`)
+                .selectAll<Element, {}>("*")
+                .node();
+
+            // Don't set the mask if the mask contained no sub elements.
+            if (maskElSubEl == undefined) {
+                this.mask = undefined;
+                return;
+            }
+
+            let clipPathData: string[] = [];
+
+            // Check if the node is a group
+            if (maskElSubEl.tagName == "g") {
+                d3.select(maskElSubEl)
+                    .selectAll<Element, {}>("*")
+                    .nodes()
+                    .map(function(node) {
+                        clipPathData.push(node.id);
+                    });
+            } else {
+                clipPathData.push(maskElSubEl.id);
+            }
+
+            this.clipPathEl
+                .selectAll("use")
+                .data(clipPathData)
+                .attr("href", d => `#${d}`);
+            this.clipPathEl.enter()
+                .append("use")
+                .attr("href", d => `#${d}`)
+            this.clipPathEl.exit()
+                .remove();
+
+            this.editorMask.attr("href", `#${maskElSubEl.id}`);
+            this.editor.attr("clip-path", `url(#${this.clipPathEl.attr("id")})`);
         }
     }
 
@@ -282,7 +342,7 @@ export class SvgEditor {
 
         // Null check
         if (canvas == undefined) {
-            throw InternalError;
+            throw new InternalError();
         }
 
         // Try to scale the items to fit in the canvas. The scale ratio should
@@ -349,8 +409,16 @@ export class SvgEditor {
      * Have handles call this to save the "state" of the editor_items?
      * @param action 
      */
-    applyAction(action: ISvgAction): void {
+    public applyAction(action: ISvgAction): void {
+        this.actionService.applyAction(action);
+    }
 
+    public undo(): boolean {
+        return this.actionService.undoAction();
+    }
+
+    public redo(): boolean {
+        return this.actionService.redoAction();
     }
 
     // /**

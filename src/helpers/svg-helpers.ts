@@ -422,9 +422,8 @@ export function getAngle(pt_a: ICoords2D, pt_b: ICoords2D): number {
  * @param n - Number of sides
  * @param r - The circumradius or radius from the center of the polygon to each
  * vertex.
- * @param startAngle - (In degrees) This polygon is oriented similar to a unit
- * circle where 0deg is east, 90deg is north, 180deg is west, and 270deg is
- * south.
+ * @param startAngle - This polygon is oriented similar to a unit circle where
+ * 0deg is east, 90deg is north, 180deg is west, and 270deg is south.
  * @throws - If n isn't an integer or is less than three.
  * @throws - If r is less than or equal to zero.
  */

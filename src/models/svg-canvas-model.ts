@@ -22,6 +22,7 @@ import {
     ITransitionEventData 
 } from "./transition-status";
 import { ActivatableServiceSingleton } from "../services/activatable-service";
+import { SvgActionService } from "../services/action-service";
 
 export const SVG_CANVAS_NAMES = {
     
@@ -105,7 +106,7 @@ export class SvgCanvas {
         this._defs = new SvgDefsV2(svgCanvas_el);
 
         // Create editor
-        this._editor = new SvgEditor(svgCanvas_el);
+        this._editor = new SvgEditor(svgCanvas_el, this.defs, new SvgActionService());
     }
 
     //#endregion

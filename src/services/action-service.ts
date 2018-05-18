@@ -1,85 +1,90 @@
 import { ISvgAction } from '../models/isvg-action';
+import { ISvgActionService } from './isvg-action-service';
 import { SvgTypeService } from './svg-type-service';
-import { SvgUndoManagerService } from './svg-undo-manager-service';
 // import { Singleton } from 'typescript-ioc';
 
 // @Singleton
-export class SvgActionService {
+export class SvgActionService implements ISvgActionService {
     //#region Fields
 
-    private cached_categories: string[];
-    private registeredActions: ISvgAction[];
-    private svgTypeService: SvgTypeService;
-    private svgUndoManagerService: SvgUndoManagerService;
+    private actions: ISvgAction[];
+    private actionLimit: number;
+    private index: number;
 
     //#endregion
 
     //#region Ctor
 
     constructor() {
-        this.cached_categories = [];
-        this.registeredActions = [];
-        this.svgTypeService = new SvgTypeService();
-        this.svgUndoManagerService = new SvgUndoManagerService();
-    }
-
-    //#endregion
-
-    //#region Properties
-
-    /**
-     * Returns an array of categories
-     */
-    public get categories() {
-        return this.cached_categories;
+        this.actions = [];
+        this.actionLimit = 10;
+        this.index = -1;
     }
 
     //#endregion
 
     //#region Functions
 
-    /**
-     * Registers an action.
-     * @param action 
-     */
-    public registerAction(action: ISvgAction): void {
-        let unableToRegister = false;
-        for (let reg_action of this.registeredActions) {
-            
-            // Check for same names
-            let sameName = reg_action.name == action.name;
-            
-            // Check for any overlap in categories
-            let overlapCategories = false;
-            for (let category of action.categories) {
-                if (reg_action.categories.indexOf(category) != -1) {
-                    overlapCategories = true;
-                    break;
-                }
-            }
-
-            if (sameName && overlapCategories) {
-                unableToRegister = true;
-                break;
-            }
+    private trimActions(): void {
+        while (this.actions.length > this.getActionLimit()) {
+            this.actions.shift();
         }
-
-        if (unableToRegister) {
-            console.warn(`Already registered action of name ${action.name}`);
-            return;
-        }
-
-        // We're able to register the action
-        // Step 1: Add categories to cached_categories
-        this.cached_categories = this.cached_categories.concat(action.categories);
-
-        this.registeredActions.push(action);
     }
 
-    private wrapAction(action: ISvgAction): void {
-        function wrappedFunc() {
-
+    public setActionLimit(value: number): void {
+        if (value < 0) {
+            throw new Error("Argument 'value' cannot be less than zero.");
         }
+
+        this.actionLimit = value;
+        this.trimActions()
+    }
+
+    public getActionLimit(): number {
+        return this.actionLimit;
+    }
+
+    public getCurrentActionIndex(): number {
+        return this.index;
+    }
+
+    public applyAction(action: ISvgAction): void {
+
+        // Remove all operations after the current index.
+        this.actions.splice(this.getCurrentActionIndex() + 1)
+
+        // Increment index, add action, and execute it.
+        this.index++;
+        this.actions.push(action);
+        this.actions[this.index].applyOperation();
+
+        this.trimActions();
+    }
+
+    public undoAction(): boolean {
+        
+        // Check that the current index isn't zero (no more actions to undo).
+        if (this.getCurrentActionIndex() == 0) {
+            return false;
+        }
+
+        // Undo operation, then increment
+        this.actions[this.getCurrentActionIndex()].undoOperation();
+        this.index--;
+        return true;
+    }
+
+    redoAction(): boolean {
+
+        // Check that there are actions to redo
+        if (this.getCurrentActionIndex() == this.actions.length) {
+            return false;
+        }
+
+        // Increment index then apply operation
+        this.index++;
+        this.actions[this.getCurrentActionIndex()].applyOperation();
+        return true;
     }
 
     //#endregion

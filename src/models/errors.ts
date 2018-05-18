@@ -1,3 +1,20 @@
-export const NotImplementedError = new Error("Not implemented");
-export const InvalidCastError = new Error("Invalid cast.");
-export const InternalError = new Error("Internal error occurred.");
+export class NotImplementedError extends Error {
+    constructor() {
+        super();
+        this.message = "Not yet implemented.";
+    }
+}
+
+export class InvalidCastError extends Error {
+    constructor() {
+        super();
+        this.message = "Failed to cast object.";
+    }
+}
+
+export class InternalError extends Error {
+    constructor() {
+        super();
+        this.message = "An internal error occurred.";
+    }
+}

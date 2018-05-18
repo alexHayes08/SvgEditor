@@ -3,8 +3,8 @@ import { toDegrees, toRadians } from "../helpers/math-helpers";
 export interface IAngle {
     asDegrees(): number;
     asRadians(): number;
-    setWithDegrees(value: number): void;
-    setWithRadians(value: number): void;
+    setWithDegrees(value: number): IAngle;
+    setWithRadians(value: number): IAngle;
     normalizeAngle(): IAngle;
 }
 
@@ -44,14 +44,16 @@ export class Angle implements IAngle {
         return this.radians;
     }
 
-    public setWithDegrees(value: number): void {
+    public setWithDegrees(value: number): IAngle {
         this.degrees = value;
         this.radians = toRadians(value);
+        return this;
     }
 
-    public setWithRadians(value: number): void {
+    public setWithRadians(value: number): IAngle {
         this.degrees = toDegrees(value);
         this.radians = value;
+        return this;
     }
 
     normalizeAngle(): IAngle {
@@ -69,6 +71,14 @@ export class Angle implements IAngle {
         }
 
         return this;
+    }
+
+    public static fromDegrees(angle: number) {
+        return new Angle().setWithDegrees(angle);
+    }
+
+    public static fromRadians(angle: number) {
+        return new Angle().setWithRadians(angle);
     }
 
     //#endregion

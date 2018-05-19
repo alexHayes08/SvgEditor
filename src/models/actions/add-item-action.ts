@@ -166,7 +166,7 @@ export class AddItemAction implements ISvgAction {
 
         for (let item of this.elements) {
             this.editorDataMap.delete(item);
-            this.editor.appendChild(item);
+            this.editor.removeChild(item);
         }
 
         if (this.onAfterItemsRemoved) {

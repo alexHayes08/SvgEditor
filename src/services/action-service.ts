@@ -64,7 +64,7 @@ export class SvgActionService implements ISvgActionService {
     public undoAction(): boolean {
         
         // Check that the current index isn't zero (no more actions to undo).
-        if (this.getCurrentActionIndex() == 0) {
+        if (this.getCurrentActionIndex() < 0) {
             return false;
         }
 

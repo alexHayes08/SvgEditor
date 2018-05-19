@@ -14,6 +14,7 @@ import { NS } from "../helpers/namespaces-helper";
 import { InternalError, NotImplementedError } from "./errors";
 import { ISvgDefs } from './svg-defs-model';
 import { SvgActionService } from '../services/action-service';
+import { AddItemAction } from "./actions/add-item-action";
 
 export interface ITotal {
     colors: d3.ColorSpaceObject[];
@@ -288,6 +289,14 @@ export class SvgEditor {
      * @param items 
      */
     public add(items: DocumentFragment): void {
+        let addAction = new AddItemAction(this.getEditorNode(),
+            items,
+            this.dataMap,
+            this.handles ? this.handles.onBeforeItemsAdded : undefined,
+            this.handles ? this.handles.onAfterItemsAdded : undefined,
+            this.handles ? this.handles.onBeforeItemsRemoved : undefined,
+            this.handles ? this.handles.onAfterItemsRemoved : undefined);
+        
         let newSvgItems: SvgItem[] = [];
         let editorNode = this.getEditorNode();
         let svgCanvas = getFurthestSvgOwner(editorNode);

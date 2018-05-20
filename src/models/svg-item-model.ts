@@ -66,6 +66,8 @@ export class SvgItem {
         this.angle = 0;
         this.mapToColors = new WeakMap();
         this.scale = 1;
+
+        this.recalculateColors();
     }
 
     //#endregion
@@ -84,7 +86,9 @@ export class SvgItem {
      * Retrieves a Map<Element, SvgColors> of itself and each child-element.
      */
     get colors() {
-        return this.mapToColors;
+        return this.getAllElements()
+            .map(el => this.mapToColors.get(el))
+            .filter(c => c != undefined);
     }
 
     get originalTransformMatrix() {
@@ -98,6 +102,19 @@ export class SvgItem {
     //#endregion
     
     //#region Functions
+
+    private getAllElements(): SVGGraphicsElement[] {
+        let els = [ this.getElement() ];
+
+        d3.select(els[0])
+            .selectAll<SVGGraphicsElement, {}>("*")
+            .nodes()
+            .map(node => {
+                els.push(node)
+            });
+
+        return els;
+    }
 
     /**
      * Try to NOT modify the attributes of the returned element.
@@ -117,7 +134,7 @@ export class SvgItem {
 
         // Update ALL colors... this may be expensive
         d3.select(this.element)
-            .selectAll<SVGElement, null>("*")
+            .selectAll<SVGGraphicsElement, null>("*")
             .each(function() {
                 
                 /**
@@ -127,7 +144,7 @@ export class SvgItem {
                  * - stroke
                  * - stroke-width
                  */
-                let colorData = self.colors.get(<any>this);
+                let colorData = self.mapToColors.get(this);
                 if (colorData != undefined) {
 
                     if (colorData.fill) {
@@ -156,29 +173,32 @@ export class SvgItem {
 
     private recalculateColors(): void {
         let colors: ColorMap[] = [];
+        let els = this.getAllElements();
+        els.map(el => colors = colors.concat(SvgItem._GetColorsFromElement(el)));
+        // colors.concat(SvgItem._GetColorsFromElement(this.element))
 
-        switch(this.element.tagName.toLowerCase()) {
-            case "image": {
-                colors.concat(SvgItem._GetColorsFromImage(this.element));
-                break;
-            }
-            case "g": {
-                colors.concat(SvgItem._GetColorsFromGroup(this.element))
-                break;
-            }
-            case "use": {
-                colors.concat(SvgItem._GetColorsFromUse(this.element));
-                break;
-            }
-            case "svg": {
-                colors.concat(SvgItem._GetColorsFromUse(this.element));
-                break;
-            }
-            default: {
-                colors.concat(SvgItem._GetColorsFromGroup(this.element));
-                break;
-            }
-        }
+        // switch(this.element.tagName.toLowerCase()) {
+        //     case "image": {
+        //         colors.concat(SvgItem._GetColorsFromImage(this.element));
+        //         break;
+        //     }
+        //     case "g": {
+        //         colors.concat(SvgItem._GetColorsFromElement(this.element))
+        //         break;
+        //     }
+        //     case "use": {
+        //         colors.concat(SvgItem._GetColorsFromUse(this.element));
+        //         break;
+        //     }
+        //     case "svg": {
+        //         colors.concat(SvgItem._GetColorsFromUse(this.element));
+        //         break;
+        //     }
+        //     default: {
+        //         colors.concat(SvgItem._GetColorsFromElement(this.element));
+        //         break;
+        //     }
+        // }
 
         colors.map(color => {
             
@@ -213,10 +233,32 @@ export class SvgItem {
         return colors;
     }
 
-    private static _GetColorsFromGroup(element: SVGGraphicsElement): ColorMap[] {
-        let colors: ColorMap[] = [];
+    private static _GetColorsFromElement(element: SVGGraphicsElement): ColorMap[] {
+        // let colors: ColorMap[] = [];
+        let colors: SvgColors = {};
 
-        return colors;
+        if (element.hasAttribute("fill")) {
+            let fill = element.getAttribute("fill") || "";
+            colors.fill = d3.color(fill);
+        } else {
+            colors.fill = undefined;
+        }
+
+        if (element.hasAttribute("stroke")) {
+            let stroke = element.getAttribute("stroke") || "";
+            colors.stroke = d3.color(stroke);
+        } else {
+            colors.stroke = undefined;
+        }
+
+        if (element.hasAttribute("stroke-width")) {
+            let strokeWidth = element.getAttribute("stroke-width") || "1";
+            colors.strokeWidth = Number(strokeWidth);
+        } else {
+            colors.strokeWidth = colors.stroke ? 1 : 0;
+        }
+
+        return [{ element,colors }];
     }
 
     private static _GetColorsFromPathEl(element: SVGGraphicsElement): ColorMap[] {

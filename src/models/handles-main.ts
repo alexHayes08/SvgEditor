@@ -77,7 +77,7 @@ export class HandlesMain implements IContainer, IDrawable {
     private highlightEl: d3.Selection<SVGCircleElement, ITransformable, null, undefined>;
     private arcsContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private buttonsContainer: d3.Selection<SVGGElement, {}, null, undefined>;
-    private colorsContainer: d3.Selection<SVGGElement, {}, null, undefined>;
+    private colorsOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private rotationOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private scaleOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
 
@@ -236,7 +236,7 @@ export class HandlesMain implements IContainer, IDrawable {
 
         // Setup other overlays
 
-        this.colorsContainer = this.container
+        this.colorsOverlayContainer = this.container
             .append<SVGGElement>("g")
             .attr("id", uniqid())
             .attr("data-name",
@@ -266,7 +266,7 @@ export class HandlesMain implements IContainer, IDrawable {
                 ActivatableServiceSingleton.register(this, false);
             });
 
-        this.colorsOverlay = new HandlesColorsOverlay(this.scaleOverlayContainer, editor);
+        this.colorsOverlay = new HandlesColorsOverlay(this.colorsOverlayContainer, editor);
         this.rotationOverlay = new HandlesRotationOverlay(this.rotationOverlayContainer);
         this.scaleOverlay = new HandlesScaleOverlay(this.scaleOverlayContainer);
 
@@ -703,6 +703,7 @@ export class HandlesMain implements IContainer, IDrawable {
 
         switch(this.mode) {
             case HandleMode.COLORS:
+                this.colorsOverlay.radius = this.radius;
                 this.colorsOverlay.update();
                 break;
 

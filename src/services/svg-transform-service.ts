@@ -1014,10 +1014,6 @@ export class SvgTransformString implements ITransformable {
 
     //#endregion
 
-    //#region Properties
-
-    //#endregion
-
     //#region Functions
     private parseTransformString(transformStr: string): TransformType[] {
         let t_data: TransformType[] = [];

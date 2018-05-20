@@ -15,6 +15,7 @@ import { InternalError, NotImplementedError } from "./errors";
 import { ISvgDefs } from './svg-defs-model';
 import { SvgActionService } from '../services/action-service';
 import { AddItemAction } from "./actions/add-item-action";
+import { RemoveItemAction } from "./actions/remove-item-action";
 
 export interface ITotal {
     colors: d3.ColorSpaceObject[];
@@ -298,108 +299,6 @@ export class SvgEditor {
             this.handles ? this.handles.onAfterItemsRemoved.bind(this.handles) : undefined);
         
         this.actionService.applyAction(addAction);
-        // let newSvgItems: SvgItem[] = [];
-        // let editorNode = this.getEditorNode();
-        // let svgCanvas = getFurthestSvgOwner(editorNode);
-
-        // // This is also for IE9, would prefer to iterate over items.children but oh well
-        // while (items.childNodes.length > 0) {
-        //     let el = <Element>items.childNodes[0];
-
-        //     // If it's not a graphics element skip it
-        //     if (!isSvgGraphicsElement(el)) {
-        //         items.removeChild(el);
-        //         continue;
-        //     }
-
-        //     // Wrapper to all transforms originate on the upper left hand
-        //     // side of the parent element. Without this circles in
-        //     // particular will have their transform origin behave
-        //     // unexpectedly.
-        //     //
-        //     // Another benifit is that now calling
-        //     // this.editor.selectAll(`.${Names.Handles.} > g`) will select all items.
-        //     let itemWrapper = document.createElementNS(NS.SVG, "g");
-        //     itemWrapper.classList.add(Names.SvgEditor.Items.CLASS_NAME);
-        //     itemWrapper.appendChild(el);
-
-        //     if (!isSvgGraphicsElement(itemWrapper)) {
-        //         throw new Error("Internal error occurred.");
-        //     }
-
-        //     if (itemWrapper.id == "") {
-        //         itemWrapper.id = uniqid();
-        //     }
-
-        //     // Append to the canvas
-        //     editorNode.appendChild(itemWrapper);
-
-        //     let svgItem = new SvgItem(itemWrapper);
-        //     this.dataMap.set(itemWrapper, svgItem);
-
-        //     newSvgItems.push(svgItem);
-        // }
-
-        // if (this.handles != undefined) {
-        //     this.handles.onBeforeItemsAdded(newSvgItems)
-        // }
-
-        // // Add item to editor & editor_items
-
-        // // Scale the item so it doesn't take up more than 50% of the
-        // // editor-mask or canvas if the editor-mask isn't set.
-        // let canvas = this.mask ? this.editorMask.node() : svgCanvas;
-
-        // // Null check
-        // if (canvas == undefined) {
-        //     throw new InternalError();
-        // }
-
-        // // Try to scale the items to fit in the canvas. The scale ratio should
-        // // be the same for the x and y.
-        // let scaleRatio = 1;
-        // let canvasBBox = SvgTransformServiceSingleton.getBBox(canvas);
-        // let itemsBBox = SvgTransformServiceSingleton
-        //     .getBBox(...newSvgItems.map(svgItem => svgItem.getElement()));
-
-        // if (itemsBBox.height > (canvasBBox.height / 2)) {
-        //     scaleRatio = (canvasBBox.height / 2) / itemsBBox.height;
-        // }
-
-        // if (itemsBBox.width > (canvasBBox.width / 2) * scaleRatio) {
-        //     scaleRatio = (canvasBBox.width / 2) / itemsBBox.width;
-        // }
-
-        // newSvgItems.map(svgItem => {
-        //     svgItem.transforms.setScale({ x: scaleRatio, y: scaleRatio });
-
-        //     // This update is applied because scaling an object changes its
-        //     // translation which is needed for determining its center for the
-        //     // next step.
-        //     svgItem.update();
-        // });
-
-        // // Center the items
-        // let canvasCenter = SvgTransformServiceSingleton.getCenter(svgCanvas);
-        // let itemsCenter = SvgTransformServiceSingleton
-        //     .getCenter(...newSvgItems.map(svgItem => svgItem.getElement()));
-        // let itemsOffset: ICoords2D = {
-        //     x: Math.abs(canvasCenter.x - itemsCenter.x),
-        //     y: Math.abs(canvasCenter.y - itemsCenter.y)
-        // };
-
-        // newSvgItems.map(svgItem => {
-
-        //     // Apply offset to center element
-        //     svgItem.transforms.incrementTranslate(itemsOffset);
-
-        //     // Apply remaining transformations to the item.
-        //     svgItem.update();
-        // });
-
-        // if (this.handles != undefined) {
-        //     this.handles.onAfterItemsAdded(newSvgItems)
-        // }
     }
 
     public remove(...items: SvgItem[]): void {        
@@ -407,8 +306,14 @@ export class SvgEditor {
             this.handles.onBeforeItemsRemoved(items);
         }
 
-        d3.selectAll(items.map(item => SvgItem.GetElementOfSvgItem(item)))
-            .remove();
+        let removeAction = new RemoveItemAction(this.getEditorNode(),
+            items,
+            this.dataMap,
+            this.handles ? this.handles.onBeforeItemsAdded.bind(this.handles) : undefined,
+            this.handles ? this.handles.onAfterItemsAdded.bind(this.handles) : undefined,
+            this.handles ? this.handles.onBeforeItemsRemoved.bind(this.handles) : undefined,
+            this.handles ? this.handles.onAfterItemsRemoved.bind(this.handles) : undefined);
+        this.applyAction(removeAction);
 
         if (this.handles != undefined) {
             this.handles.onAfterItemsRemoved(items);
@@ -430,22 +335,6 @@ export class SvgEditor {
     public redo(): boolean {
         return this.actionService.redoAction();
     }
-
-    // /**
-    //  * Call this to apply updates to the items?
-    //  * 
-    //  * Possibly seperate this into updateTransforms, updateColors, and 
-    //  * update
-    //  */
-    // update() {
-    //     this.editor
-    //         .selectAll(`[data-name='${Names.SvgEditor.Editor.DATA_NAME}'] > .item`)
-    //         .data(this.editor_items)
-    //         .attr("transform", function(d) { return d.transforms.toTransformString() })
-    //         .each(function(d) {
-    //             // Update more specialized attributes like strokes/colors here
-    //         });
-    // }
 
     public getData(element: SVGElement): SvgItem|undefined {
         return this.dataMap.get(element);

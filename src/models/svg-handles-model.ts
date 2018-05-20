@@ -375,7 +375,6 @@ export class SvgHandles implements ISvgHandles {
     }
 
     private drawHandles(): void {
-
         let bbox = this.transformService.getBBox(...this.selectedObjects.map(so => SvgItem.GetElementOfSvgItem(so)));
 
         if (bbox == null) {
@@ -395,72 +394,6 @@ export class SvgHandles implements ISvgHandles {
             y: bbox.y + (bbox.height / 2)
         }
         this.mainHandlesOverlay.update();
-
-        // // Reset the position of the handles at (0,0)
-        // this.transformService.setTranslation(this.handlesContainer, { x: 0, y: 0 });
-
-        // let bbox = this.transformService.getBBox(...this.selectedObjects.map(so => so.element));
-
-        // if (bbox == null) {
-        //     return;
-        // }
-
-        // let hyp = (Math.sqrt((bbox.width * bbox.width) + (bbox.height * bbox.height)) / 2) + 10;
-
-        // // Min-width for hyp
-        // if (hyp < 50) {
-        //     hyp = 50;
-        // }
-
-        // handlesData.radius = hyp;
-        // handlesData.draw(this.arcsContainer);
-    }
-
-    private addEvtListeners(): void {
-        
-        // Retreive all elements without listeners
-        // let elementsWithOutListeners = this.selectedObjects
-        //     .filter(so => this.cachedElementsWithEvts.indexOf(so.element) == -1)
-        //     .map(so => so.element);
-
-        // let handlesModel = this;
-
-        // d3.selectAll<Element, {}>(elementsWithOutListeners)
-        //     .call(d3.drag().container(getFurthestSvgOwner(this.parentNode))
-        //         .on("start", function() {
-        //             console.log("drag start")
-        //         }).on("drag", function() {
-        //             handlesModel.selectedObjects.map(el => {
-        //                 if (isSvgGraphicsElement(this)) {
-        //                     let tr = handlesModel.transformService.getTranslation(this);
-        //                     tr.x += d3.event.dx;
-        //                     tr.y += d3.event.dy;
-        //                     handlesModel.transformService.setTranslation(el.element, tr);
-        //                 }
-        //             });
-                    
-        //             // Update the handles after translating all the selected items.
-        //             handlesModel.updateHandlesPosition();
-        //         }).on("end", function() {
-        //             console.log("drag end")
-        //         }));
-
-        // this.cachedElementsWithEvts = this.cachedElementsWithEvts
-        //     .concat(elementsWithOutListeners);
-    }
-
-    private removeEvtListeners(): void {
-
-        // // Retreive all elements with listeners
-        // let elementsWithListeners = this.cachedElementsWithEvts;
-
-        // d3.selectAll<Element, {}>("*")
-        //     .call(d3.drag()
-        //         .on("start", null)
-        //         .on("drag", null)
-        //         .on("end", null));
-
-        // this.cachedElementsWithEvts = [];
     }
 
     public selectObjects(...elements: SvgItem[]): void {

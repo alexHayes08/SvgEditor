@@ -81,6 +81,10 @@ Aperture.register("SvgEditorControls", {
 
     changeCanvasEl: $("#changeEditor"),
 
+    undoEl: $("#undo"),
+
+    redoEl: $("#redo"),
+
     loading: function(value) {
         if (value != null) {
             var command = value == true ? "add" : "remove";
@@ -387,13 +391,25 @@ Aperture.resolve(["SvgEditors"]).then(() => {
         console.log("TODO");
     });
 
-    // var canvas = Aperture.SvgEditors[0].canvases[0];
-    // Aperture.SvgEditors[0].svgCanvasService.magnifyCanvas(canvas, {
-    //     minX: 10, 
-    //     minY: 10,
-    //     width: 480,
-    //     height: 480
-    // }, 500);
+    Aperture.SvgEditorControls.undoEl.on("click", function() {
+        Aperture.SvgEditors.map(canvas => {
+            let result = canvas.editor.undo()
+            
+            if (!result) {
+                alert("Cannot undo");
+            }
+        });
+    });
+
+    Aperture.SvgEditorControls.redoEl.on("click", function() {
+        Aperture.SvgEditors.map(canvas => {
+            let result = canvas.editor.redo()
+
+            if (!result) {
+                alert("Cannot redo");
+            }
+        });
+    });
 
     // Setup what happens on canvas select el change evt
     Aperture.SvgEditorControls.changeCanvasEl.on("change", function(e) {

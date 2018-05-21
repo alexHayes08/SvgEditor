@@ -1,6 +1,60 @@
 const uniqid = require("uniqid");
 
+import * as d3 from "d3";
+
 import { IDrawable } from "./idrawable";
+import { NS } from "../helpers/namespaces-helper";
+
+class Stop implements IDrawable {
+    //#region Fields
+
+    private _color: d3.ColorSpaceObject;
+    private element: SVGStopElement;
+
+    //#endregion
+
+    //#region Ctor
+
+    public constructor() {
+        this._color = d3.color("rgb(0,0,0)");
+        this.element = <SVGStopElement>document.createElementNS(NS.SVG, "stop");
+    }
+
+    //#endregion
+
+    //#region Properties
+
+    public get color {
+        return this._color;
+    }
+
+    public set color(value: d3.ColorSpaceObject) {
+        this._color = value;
+        this.update();
+    }
+
+    //#endregion
+
+    //#region Functions
+
+    public getElement(): SVGStopElement {
+        return this.element;
+    }
+
+    public draw(): void {
+
+    }
+
+    public update(): void {
+
+    }
+
+    public erase(): void {
+
+    }
+
+    //#endregion
+}
 
 export class LinearGradient implements IDrawable {
     //#region Fields
@@ -32,6 +86,10 @@ export class LinearGradient implements IDrawable {
         }
 
         return this.element;
+    }
+
+    public setStop(): void {
+
     }
 
     public draw(): void {

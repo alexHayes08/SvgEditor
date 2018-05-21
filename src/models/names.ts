@@ -133,7 +133,18 @@ export const Names = {
                 DATA_NAME: "highlight-area"
             },
             ColorsHelperContainer: {
-                DATA_NAME: "colors-helpers-container"
+                DATA_NAME: "colors-helpers-container",
+                SubElements: {
+                    ColorRingContainer: {
+                        DATA_NAME: "color-ring-container"
+                    },
+                    ColorPickerContainer: {
+                        DATA_NAME: "color-picker-container"
+                    },
+                    ElementColorContainer: {
+                        DATA_NAME: "element-colors-container"
+                    }
+                }
             },
             RotationHelpersContainer: {
                 DATA_NAME: "rotation-helpers-container",

@@ -518,6 +518,8 @@ export class HandlesMain implements IContainer, IDrawable {
             case HandleMode.COLORS:
                 ActivatableServiceSingleton.activate(this.colorsOverlay.containerNode);
                 newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME;
+                this.colorsOverlay.radius = this.radius;
+                this.colorsOverlay.update();
                 break;
             case HandleMode.EDIT:
                 newName = Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME;
@@ -645,6 +647,7 @@ export class HandlesMain implements IContainer, IDrawable {
         this.buttonsContainer.select<Element>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME}']`)
             .on("click", function() {
                 self.collapseButtons = !self.collapseButtons;
+                self.mode = HandleMode.SELECT_MODE;
                 console.log(`Toggled collapse buttons: ${self.collapseButtons}`);
                 d3.event.stopPropagation();
             });

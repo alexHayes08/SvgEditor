@@ -205,6 +205,12 @@
                 animation: loading-spinner 4s linear infinite;
             }
 
+            .row {
+                align-items: center;
+                display: flex;
+                justify-content: center;
+            }
+
             #editor {
                 background-color: #efefef;
                 box-shadow: 2px 2px 4px rgba(0,0,0,.25);
@@ -216,12 +222,6 @@
                 display: flex;
                 justify-content: center;
                 padding: 8px;
-            }
-
-            #editorControlsContainer {
-                align-items: center;
-                display: flex;
-                justify-content: center;
             }
         </style>
         <!-- <link rel="stylesheet" href="ui.styles.css"> -->
@@ -237,36 +237,54 @@
             <div>Demo of the Svg Editor</div>
             <div id="editor" class="loading loading-on">
                 <div id="editorControlsContainer">
-                    <label>
-                        Change Mode
-                        <select id="changeMode">
-                            <option value="1" selected>Select</option>
-                            <option value="2">Zoom</option>
-                            <option value="3">Draw</option>
-                        </select>
-                    </label>
-                    <label>
-                        Change Editor
-                        <select id="changeEditor"></select>
-                    </label>
-                    <label>
-                        Change Current Mask
-                        <select id="changeCurrentEditorMask">
-                            <option selected value="-1">No mask</option>
-                        </select>
-                    </label>
-                    <button id="addSquare">Square+</button>
-                    <button id="addCircle">Circle+</button>
-                    <button id="addTriangle">Triangle+</button>
-                    <button id="addPath">Path+</button>
-                    <button id="addMultiShapes">Multi-Shape+</button>
-                    <div id="polygon-section">
-                        <label for="polygon-number-of-sides">Number of Sides</label>
-                        <input type="number" id="polygon-number-of-sides" name="polygon-number-of-sides" min="3" max="12" step="1" value="3">
-                        <button id="addPolygon">Polygon+</button>
+                    <div class="row">
+                        <label>
+                            Change Mode
+                            <select id="changeMode">
+                                <option value="1" selected>Select</option>
+                                <option value="2">Zoom</option>
+                                <option value="3">Draw</option>
+                            </select>
+                        </label>
+                        <label>
+                            Change Editor
+                            <select id="changeEditor"></select>
+                        </label>
+                        <label>
+                            Change Current Mask
+                            <select id="changeCurrentEditorMask">
+                                <option selected value="-1">No mask</option>
+                            </select>
+                        </label>
                     </div>
-                    <button id="undo">Undo</button>
-                    <button id="redo">Redo</button>
+                    <div class="row">
+                        <label for="addSquare">
+                            <button id="addSquare">Square+</button>
+                        </label>
+                        <label for="addCircle">
+                            <button id="addCircle">Circle+</button>
+                        </label>
+                        <label for="addTriangle">
+                            <button id="addTriangle">Triangle+</button>
+                        </label>
+                        <label for="addPath">
+                            <button id="addPath">Path+</button>
+                        </label>
+                        <label for="addMultiShapes">
+                            <button id="addMultiShapes">Multi-Shape+</button>
+                        </label>
+                        <label id="polygon-section" for="polygon-number-of-sides">
+                            Number of Sides
+                            <input type="number" id="polygon-number-of-sides" name="polygon-number-of-sides" min="3" max="12" step="1" value="3">
+                            <button id="addPolygon">Polygon+</button>
+                        </label>
+                        <label for="undo">
+                            <button id="undo">Undo</button>
+                        </label>
+                        <label for="redo">
+                            <button id="redo">Redo</button>
+                        </label>
+                    </div>
                 </div>
                 <hr>
                 <div id="editorCavasContainer">

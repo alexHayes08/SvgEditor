@@ -125,11 +125,9 @@ export class SvgHandles implements ISvgHandles {
         this.canvas = editor;
         this.parentNode = editor.canvasEl;
         this.selectedObjects = [];
-        // this.optionEls = [];
         this.transformService = SvgTransformServiceSingleton;
         this._lastSelectedSection = 0;
         this.cachedElementsWithEvts = [];
-        // this._mode = SvgHandlesModes.PAN;
         this.minHandlesRadius = 75;
         this.transformData = SvgTransformString.CreateDefaultTransform();
 

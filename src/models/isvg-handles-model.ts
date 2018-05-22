@@ -2,7 +2,7 @@ import { SvgItem } from "./svg-item-model";
 
 export interface ISvgHandles {
 
-    getSelectedObjects(): SvgItem[];
+    getSelectedObjects(): ReadonlyArray<SvgItem>;
 
     selectObjects(...elements: SvgItem[]): void;
 

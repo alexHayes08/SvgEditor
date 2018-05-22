@@ -5,6 +5,7 @@ import * as $ from "jquery";
 
 import { Names } from "./names";
 import { isSvgElement } from "../helpers/svg-helpers";
+import { InternalError } from "./errors";
 
 export interface ISvgDefs {
     //#region Functions
@@ -42,6 +43,12 @@ export interface ISvgDefs {
      * @param sectionName - The name of the section.
      */
     getContentsOfSection(sectionName: string): HTMLElement[];
+
+    /**
+     * Returns the section <g> element
+     * @param sectionName - Name of the seciton
+     */
+    getSectionElement(sectionName: string): SVGGElement;
 
     /**
      * Retrieves all sections.
@@ -201,6 +208,24 @@ export class SvgDefsV2 implements ISvgDefs {
         }
 
         return elements;
+    }
+
+    getSectionElement(sectionName: string): SVGGElement {
+
+        // Check if section exists
+        if (!this.sectionExists(sectionName)) {
+            throw new Error(`Failed to find section with the name "${sectionName}".`);
+        }
+
+        let sectionEl = this.defsSelection
+            .select<SVGGElement>(`g[data-section-name='${sectionName}']`)
+            .node();
+
+        if (sectionEl == undefined) {
+            throw new InternalError();
+        }
+
+        return sectionEl;
     }
 
     getAllSections(): SVGGElement[] {

@@ -18,14 +18,25 @@ import {
     TransformType
 } from "../services/svg-transform-service";
 import { getPolygonPointsString } from "../helpers/svg-helpers";
-import { SvgColors } from "./svg-item-model";
+import { SvgColors, SvgItem } from "./svg-item-model";
 import { toDegrees } from "../helpers/math-helpers";
+import { LinearGradient } from "./element-wrappers/linear-gradient";
+import { StopData } from "./element-wrappers/stop-data";
+import { SvgNumber } from "./svg-number";
+import { NS } from "../helpers/namespaces-helper";
 
 interface IColorsOverlayData {
     startOffsetAngle: number;
     color: d3.ColorSpaceObject;
     transforms: ITransformable;
 }
+
+interface SvgItemToColor {
+    item: SvgItem,
+    color: SvgColors
+}
+
+const LinearGradientsContainerName = "linear-gradients-container";
 
 export class HandlesColorsOverlay implements IContainer, IDrawable {
     //#region Fields
@@ -34,6 +45,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
     private readonly colorBtnTransform: ITransformable;
     private readonly colorPickerTransform: ITransformable;
     private readonly colorRingTransform: ITransformable;
+    private readonly svgItemToLinearGradientMap: Map<SvgColors,LinearGradient>;
     private data: IColorsOverlayData[];
     
     private colorRingContainer?: d3.Selection<SVGGElement, {}, null, undefined>;
@@ -70,12 +82,15 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         this.data = [];
         this.canvas = canvas;
         this.radius = 100;
+        this.svgItemToLinearGradientMap = new Map();
         
         let containerNode = this.container.node();
         if (containerNode == undefined) {
             throw new Error("The container was undefined.");
         }
         this.containerNode = containerNode;
+
+        this.canvas.defs.createSection(LinearGradientsContainerName);
     }
 
     //#endregion
@@ -115,11 +130,69 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
             return;
         }
 
-        let colorGroups: SvgColors[] = [];
+        let colorGroups: SvgItemToColor[] = [];
         this.canvas.handles
-            .getSelectedObjects();
+            .getSelectedObjects()
+            .map(so => {
+                so.colors.map(c => {
+                    if (c != undefined) {
+                        colorGroups.push({ item: so, color: c });
+                    }
+                });
+            });
 
         console.log(colorGroups);
+
+        // Update
+        let update = d3.select(this.canvas.defs.getSectionElement(LinearGradientsContainerName))
+            .selectAll<SVGLinearGradientElement, {}>("linearGradient")
+            .data(colorGroups)
+            .each(function(d) {
+                
+            });
+
+        // Draw
+        update.enter().append<SVGLinearGradientElement>(function(d) {
+            return <SVGLinearGradientElement>document
+                .createElementNS(NS.SVG, "linearGradient");
+        });
+
+        // Erase extras
+        update.exit().remove();
+
+        // // Clear out color map?
+        // this.svgItemToLinearGradientMap.clear();
+
+        // colorGroups.map(cg => {
+        //     let id = uniqid();
+        //     let linearGradient = new LinearGradient();
+            
+        //     let fill: d3.ColorSpaceObject;
+        //     if (cg.fill && typeof cg.fill != "number") {
+        //         fill = cg.fill;
+        //     } else {
+        //         fill = d3.color("transparent");
+        //     }
+        //     linearGradient.setStop(0, new StopData(fill, new SvgNumber("0%")));
+        //     linearGradient.setStop(1, new StopData(fill, new SvgNumber("50%")));
+
+        //     let stroke: d3.ColorSpaceObject;
+        //     if (cg.stroke && typeof cg.stroke != "number") {
+        //         stroke = cg.stroke;
+        //     } else {
+        //         stroke = d3.color("transparent");
+        //     }
+        //     linearGradient.setStop(2, new StopData(fill, new SvgNumber("51%")));
+        //     linearGradient.setStop(3, new StopData(fill, new SvgNumber("100%")));
+        //     linearGradient.draw();
+
+        //     let linearGradientEl = linearGradient.getElement();
+        //     linearGradientEl.id = id;
+        //     this.svgItemToLinearGradientMap.set(cg, linearGradient);
+
+        //     this.canvas.defs.pushToSection(linearGradientEl,
+        //         LinearGradientsContainerName);
+        // });
 
         let colorBtns = this.colorRingContainer
             .selectAll<SVGPolygonElement, {}>("polygon")
@@ -128,7 +201,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
                 if (d == undefined) {
                     return "";
                 } else {
-                    return d.fill ? d.fill.toString() : "";
+                    return d.color.fill ? d.color.fill.toString() : "";
                 }
             })
             .attr("transform", function(d, i) {
@@ -147,7 +220,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
                 if (d == undefined) {
                     return "";
                 } else {
-                    return d.fill ? d.fill.toString() : "";
+                    return d.color.fill ? d.color.fill.toString() : "";
                 }
             })
             .attr("transform", function(d, i) {

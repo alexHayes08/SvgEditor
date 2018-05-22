@@ -5,6 +5,7 @@ import * as mathHelpers from "../helpers/math-helpers";
 import { Aperture, EVT_NAMES } from "./aperture.main";
 import { Angle } from "../models/angle";
 import { getPolygonPointsString } from "../helpers/svg-helpers";
+import { GroupAction } from "../models/actions/group-action";
 import { NS } from "../helpers/namespaces-helper";
 import { SvgColorService } from "../services/svg-color-service";
 import { SvgEditors } from "../index";
@@ -84,6 +85,10 @@ Aperture.register("SvgEditorControls", {
     undoEl: $("#undo"),
 
     redoEl: $("#redo"),
+
+    groupEl: $("#group"),
+
+    ungroupEl: $("#ungroup"),
 
     loading: function(value) {
         if (value != null) {
@@ -408,6 +413,24 @@ Aperture.resolve(["SvgEditors"]).then(() => {
             if (!result) {
                 alert("Cannot redo");
             }
+        });
+    });
+
+    Aperture.SvgEditorControls.groupEl.on("click", function() {
+        Aperture.SvgEditors.map(canvas => {
+            console.log("Grouping is still a WIP");
+            if (canvas.handles) {
+                let groupAction = new GroupAction(canvas,
+                    canvas.handles.getSelectedObjects(),
+                    canvas.editor.getEditorNode());
+                canvas.editor.applyAction(groupAction);
+            }
+        });
+    });
+
+    Aperture.SvgEditorControls.ungroupEl.on("click", function() {
+        Aperture.SvgEditors.map(canvas => {
+            console.log("Un-grouping is still a WIP");
         });
     });
 

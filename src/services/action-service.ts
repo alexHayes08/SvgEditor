@@ -75,8 +75,7 @@ export class SvgActionService implements ISvgActionService {
         }
 
         // Undo operation, then increment
-        this.actions[this.getCurrentActionIndex()].undoOperation();
-        this.index--;
+        this.actions[this.index--].undoOperation();
         return true;
     }
 

@@ -121,20 +121,8 @@ export class SvgCanvas {
         return this._defs;
     }
 
-    get symbols() {
-        return {};
-    }
-
-    get underEditor() {
-        return {};
-    }
-
     get editor() {
         return this._editor;
-    }
-
-    get overEditor() {
-        return {};
     }
 
     get handles() {

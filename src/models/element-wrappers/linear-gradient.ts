@@ -11,22 +11,16 @@ export class LinearGradient implements IDrawable {
 
     private _id: string;
     private element?: SVGLinearGradientElement;
-    private parent: d3.Selection<Element, {}, null, undefined>;
     private stopData: StopData[];
 
     //#endregion
 
     //#region Ctor
 
-    public constructor(parent: d3.Selection<Element, {}, null, undefined>) {
+    public constructor() {
         this._id = uniqid();
-        this.parent = parent;
         this.stopData = [];
     }
-
-    //#endregion
-
-    //#region Properties
 
     //#endregion
 
@@ -41,7 +35,7 @@ export class LinearGradient implements IDrawable {
     }
 
     public setStop(index: number = 0, stop: StopData): void {
-        if (this.stopData.length - 1 > index) {
+        if (this.stopData.length < index) {
             return;
         }
 

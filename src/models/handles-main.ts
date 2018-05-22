@@ -66,6 +66,7 @@ export class HandlesMain implements IContainer, IDrawable {
     private highlightData: ITransformable;
     private minRadius: number;
     private startAngleOffset: number;
+    private lastUsedMode: HandleMode;
 
     private _collapseButtons: boolean;
     private _mode: HandleMode;
@@ -187,12 +188,13 @@ export class HandlesMain implements IContainer, IDrawable {
         this.defaultWidth = 4;
         this.elementDataMap = new WeakMap();
         this.highlightData = SvgTransformString.CreateDefaultTransform();
+        this.lastUsedMode = HandleMode.PAN;
         this.minRadius = 100;
         this.onDeleteClickedHandlers = [];
         this.onRotationEventHandlers = [];
         this.startAngleOffset = 45 + 180;
         
-        this._collapseButtons = false;
+        this._collapseButtons = true;
         this._mode = HandleMode.PAN;
         this._radius = 100;
 
@@ -297,8 +299,22 @@ export class HandlesMain implements IContainer, IDrawable {
 
     set mode(value: HandleMode) {
         let oldMode = this.mode;
-        this._mode = value;
-        this.modeChanged(oldMode, value);
+        
+        // The lastUsedMode cannot be the select mode.
+        if (oldMode != HandleMode.SELECT_MODE) {
+            this.lastUsedMode = oldMode;
+        }
+
+        if (oldMode == HandleMode.SELECT_MODE
+            && value == HandleMode.SELECT_MODE)
+        {
+            this._mode = this.lastUsedMode;
+        } else {
+            this._mode = value;
+        }
+        
+        this.modeChanged(this.lastUsedMode, this.mode);
+        this.collapseButtons = !this.collapseButtons;
     }
 
     get radius() {
@@ -514,7 +530,7 @@ export class HandlesMain implements IContainer, IDrawable {
 
         switch(newMode) {
             case HandleMode.SELECT_MODE:
-                oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME;
+                newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME;
                 break;
             case HandleMode.COLORS:
                 ActivatableServiceSingleton.activate(this.colorsOverlay.containerNode);
@@ -544,10 +560,17 @@ export class HandlesMain implements IContainer, IDrawable {
                 break;
         }
         
-        this.buttonsContainer.select(`*[data-name='${oldName}']`).classed("active", false);
-        this.buttonsContainer.select(`*[data-name='${newName}']`).classed("active", true);
+        // Only remove the old modes active class if the new mode isn't the
+        // select mode.
+        if (newMode != HandleMode.SELECT_MODE) {
+            this.buttonsContainer
+                .selectAll(`*.active:not([data-name='${newName}'])`)
+                .classed("active", false);
+        }
 
-        this.collapseButtons = newMode != HandleMode.SELECT_MODE;
+        this.buttonsContainer
+            .select(`*[data-name='${newName}']`)
+            .classed("active", true);
     }
 
     public draw(): void {
@@ -585,7 +608,7 @@ export class HandlesMain implements IContainer, IDrawable {
             .attr("id", () => uniqid())
             .attr("data-name", function(d) { return d.buttonDataName })
             .attr("transform", function(d) {
-                d.buttonTransformData.setTranslate({x: 0, y: self.radius + 20}, 0);
+                d.buttonTransformData.setTranslate({x: 0, y: self.radius}, 0);
 
                 if (self.collapseButtons) {
                     d.buttonTransformData.setRotation({a: 0}, 0);
@@ -635,7 +658,7 @@ export class HandlesMain implements IContainer, IDrawable {
     
                     buttonsTransformService.setRotation(this, { a: d.middleAngle });
                     buttonsTransformService.setRotation(this, { a: -1 * d.middleAngle }, 2)
-                    buttonsTransformService.setTranslation(this, { x: 0, y: self.radius + 20 })
+                    buttonsTransformService.setTranslation(this, { x: 0, y: self.radius })
             });
 
         // Add event listeners to the buttons
@@ -647,7 +670,6 @@ export class HandlesMain implements IContainer, IDrawable {
 
         this.buttonsContainer.select<Element>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME}']`)
             .on("click", function() {
-                self.collapseButtons = !self.collapseButtons;
                 self.mode = HandleMode.SELECT_MODE;
                 console.log(`Toggled collapse buttons: ${self.collapseButtons}`);
                 d3.event.stopPropagation();
@@ -767,7 +789,7 @@ export class HandlesMain implements IContainer, IDrawable {
             .selectAll<SVGGElement, IMainOverlayData>("g")
             .data(this.buttonsData)
             .attr("transform", function(d) {
-                d.buttonTransformData.setTranslate({ x: 0, y: self.radius + 20 })
+                d.buttonTransformData.setTranslate({ x: 0, y: self.radius })
                 return d.buttonTransformData.toTransformString();
             });
     }

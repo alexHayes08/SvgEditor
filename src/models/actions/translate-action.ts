@@ -22,60 +22,52 @@ export class TranslateAction implements ISvgAction {
     //#region Ctor
 
     public constructor(matrix: ITranslationMatrix, items: SvgItem[]) {
-        this.items = items;
+        
+        // Create copy of items
+        this.items = [...items];
         this.matrix = matrix;
     }
 
     //#endregion
 
-    //#region Properties
-
-    //#endregion
-
     //#region Functions
-
-    public undoOperation(): void {
-        let self = this;
-        this.items.map(item => {
-            let element = item.getElement();
-            d3.select(element)
-                .attr("transform", function() {
-                    let newTransform = new SvgTransformString([
-                        TransformType.TRANSLATE,
-                        TransformType.MATRIX
-                    ]);
-                    newTransform.setMatrix(item.transforms
-                            .consolidate()
-                            .getMatrix())
-                        .setTranslate({
-                            x: -1 * self.matrix.x,
-                            y: -1 * self.matrix.y
-                        });
-
-                    newTransform.consolidate();
-                    item.transforms = newTransform;
-                    return item.transforms.toTransformString();
-                });
-        });
-    }
 
     public applyOperation(): void {
         let self = this;
         this.items.map(item => {
             let element = item.getElement();
-            d3.select(element)
-                .attr("transform", function() {
-                    let newTransform = new SvgTransformString([
-                        TransformType.TRANSLATE,
-                        TransformType.MATRIX
-                    ]);
-                    newTransform.setMatrix(item.transforms
-                            .consolidate()
-                            .getMatrix())
-                        .setTranslate(self.matrix);
-                    item.transforms = newTransform.consolidate();
-                    return item.transforms.toTransformString();
+            let newTransform = new SvgTransformString([
+                TransformType.TRANSLATE,
+                TransformType.MATRIX
+            ]);
+            newTransform.setMatrix(item.transforms
+                    .consolidate()
+                    .getMatrix())
+                .setTranslate(self.matrix);
+            item.transforms = newTransform.consolidate();
+            item.update();
+        });
+    }
+    
+    public undoOperation(): void {
+        let self = this;
+        this.items.map(item => {
+            let element = item.getElement();
+            let newTransform = new SvgTransformString([
+                TransformType.TRANSLATE,
+                TransformType.MATRIX
+            ]);
+            newTransform.setMatrix(item.transforms
+                    .consolidate()
+                    .getMatrix())
+                .setTranslate({
+                    x: -1 * self.matrix.x,
+                    y: -1 * self.matrix.y
                 });
+
+            newTransform.consolidate();
+            item.transforms = newTransform;
+            item.update();
         });
     }
 

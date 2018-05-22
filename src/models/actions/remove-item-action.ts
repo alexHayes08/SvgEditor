@@ -40,7 +40,7 @@ export class RemoveItemAction implements ISvgAction {
         this.editor = editor;
         this.editorDataMap = dataMap;
         this.elementDataMap = positionMap;
-        this.items = items;
+        this.items = [...items];
         this.onBeforeItemsAdded = onBeforeItemsAdded;
         this.onAfterItemsAdded = onAfterItemsAdded;
         this.onBeforeItemsRemoved = onBeforeItemsAdded;

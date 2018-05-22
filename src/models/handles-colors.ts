@@ -148,51 +148,106 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
             .selectAll<SVGLinearGradientElement, {}>("linearGradient")
             .data(colorGroups)
             .each(function(d) {
-                
+                let fill = d.color.fill || d3.color("transparent");
+                let stroke = d.color.stroke || d3.color("transparent");
+                let data = [fill, fill, stroke, stroke];
+
+                // Update
+                let update = d3.select(this)
+                    .selectAll("stop")
+                    .data(data)
+                    .attr("offset", function(d,i) {
+                        switch (i) {
+                            case 0:
+                                return "0%";
+                            case 1:
+                                return "50%";
+                            case 2:
+                                return "51%";
+                            case 3:
+                                return "100%";
+                            default:
+                                return "";
+                        }
+                    })
+                    .attr("stop-color", fill.toString());
+
+                // Draw
+                update.enter()
+                    .attr("offset", function(d,i) {
+                        switch (i) {
+                            case 0:
+                                return "0%";
+                            case 1:
+                                return "50%";
+                            case 2:
+                                return "51%";
+                            case 3:
+                                return "100%";
+                            default:
+                                return "";
+                        }
+                    })
+                    .attr("stop-color", fill.toString());
+
+                // Erase
+                update.exit().remove();
             });
 
         // Draw
         update.enter().append<SVGLinearGradientElement>(function(d) {
-            return <SVGLinearGradientElement>document
-                .createElementNS(NS.SVG, "linearGradient");
-        });
+                return <SVGLinearGradientElement>document
+                    .createElementNS(NS.SVG, "linearGradient");
+            }).each(function(d) {
+                let fill = d.color.fill || d3.color("transparent");
+                let stroke = d.color.stroke || d3.color("transparent");
+                let data = [fill, fill, stroke, stroke];
+
+                // Update
+                let update = d3.select(this)
+                    .selectAll("stop")
+                    .data(data)
+                    .attr("offset", function(d,i) {
+                        switch (i) {
+                            case 0:
+                                return "0%";
+                            case 1:
+                                return "50%";
+                            case 2:
+                                return "51%";
+                            case 3:
+                                return "100%";
+                            default:
+                                return "";
+                        }
+                    })
+                    .attr("stop-color", fill.toString());
+
+                // Draw
+                update.enter()
+                    .append("stop")
+                    .attr("offset", function(d,i) {
+                        switch (i) {
+                            case 0:
+                                return "0%";
+                            case 1:
+                                return "50%";
+                            case 2:
+                                return "51%";
+                            case 3:
+                                return "100%";
+                            default:
+                                return "";
+                        }
+                    })
+                    .attr("stop-color", fill.toString());
+
+                // Erase
+                update.exit().remove();
+            });
 
         // Erase extras
         update.exit().remove();
-
-        // // Clear out color map?
-        // this.svgItemToLinearGradientMap.clear();
-
-        // colorGroups.map(cg => {
-        //     let id = uniqid();
-        //     let linearGradient = new LinearGradient();
-            
-        //     let fill: d3.ColorSpaceObject;
-        //     if (cg.fill && typeof cg.fill != "number") {
-        //         fill = cg.fill;
-        //     } else {
-        //         fill = d3.color("transparent");
-        //     }
-        //     linearGradient.setStop(0, new StopData(fill, new SvgNumber("0%")));
-        //     linearGradient.setStop(1, new StopData(fill, new SvgNumber("50%")));
-
-        //     let stroke: d3.ColorSpaceObject;
-        //     if (cg.stroke && typeof cg.stroke != "number") {
-        //         stroke = cg.stroke;
-        //     } else {
-        //         stroke = d3.color("transparent");
-        //     }
-        //     linearGradient.setStop(2, new StopData(fill, new SvgNumber("51%")));
-        //     linearGradient.setStop(3, new StopData(fill, new SvgNumber("100%")));
-        //     linearGradient.draw();
-
-        //     let linearGradientEl = linearGradient.getElement();
-        //     linearGradientEl.id = id;
-        //     this.svgItemToLinearGradientMap.set(cg, linearGradient);
-
-        //     this.canvas.defs.pushToSection(linearGradientEl,
-        //         LinearGradientsContainerName);
-        // });
 
         let colorBtns = this.colorRingContainer
             .selectAll<SVGPolygonElement, {}>("polygon")

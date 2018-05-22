@@ -1,10 +1,10 @@
-import { HandleMode } from './../models/ihandle-button';
 import { DOMMatrix } from "geometry-interfaces";
 
 import { toDegrees, toRadians } from "../helpers/math-helpers";
 import { getAllGroups, replaceNthOccurance, getNthOccurance } from "../helpers/regex-helper";
 import { getDOMMatrix } from "../helpers/node-helper";
 import { getFurthestSvgOwner } from "../helpers/svg-helpers";
+import { NS } from '../helpers/namespaces-helper';
 
 export interface ICoords2D {
     x: number;
@@ -101,7 +101,7 @@ export interface ISvgTransformServiceData {
 const translateRegex = /translate\(\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*\)/g;
 const rotateRegex = /rotate\(\s*([\-\d\.]+)\s*,?([\-\d\.]+)?,?([\-\d\.]+)?\)/g;
 const scaleRegex = /scale\(\s*([\-\d\.]+)\s*,([\-\d\.]+)\)/g;
-const matrixRegex = /matrix\(\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*,\s*([\d\.]+)\s*\)/g;
+const matrixRegex = /matrix\(\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*\)/g;
 const skewXRegex = /skewX\(\s*([\-\d\.]+)\s*\)/g;
 const skewYRegex = /skewY\(\s*([\-\d\.]+)\s*\)/g;
 
@@ -951,12 +951,16 @@ export interface ITransformable {
     getSkewY(index?: number): number;
     setSkewY(value: number, index?: number): ITransformable;
     incrementSkewY(value: number, index?: number): ITransformable;
+    consolidate(): ITransformable;
     toTransformString(): string;
     //#endregion
 }
 
 export class SvgTransformString implements ITransformable {
     //#region Fields
+
+    private static SVGCanvasElement: SVGSVGElement
+        = <SVGSVGElement>document.createElementNS(NS.SVG, "svg");
 
     private transformString: string;
     private data: TransformType[];
@@ -971,7 +975,7 @@ export class SvgTransformString implements ITransformable {
 
     //#region Ctor
 
-    public constructor(svgTransform: string|TransformType[]) {
+    public constructor(svgTransform: string|TransformType[]) {        
         if (Array.isArray(svgTransform)) {
             this.data = svgTransform;
             this.transformString = "";
@@ -1239,6 +1243,75 @@ export class SvgTransformString implements ITransformable {
         translation.x += value.x;
         translation.y += value.y;
         this.setTranslate(translation, index);
+        return this;
+    }
+    public consolidate(): ITransformable {
+        let svgcanvasEl = SvgTransformString.SVGCanvasElement;
+        let matrix = svgcanvasEl.createSVGMatrix();
+
+        let matrixCount = 0;
+        let rotationCount = 0;
+        let scaleCount = 0;
+        let skewXCount = 0;
+        let skewYCount = 0;
+        let translateCount = 0;
+        
+        for (let type of this.data) {
+            switch (type) {
+                case TransformType.MATRIX: {
+                    let { a,b,c,d,e,f } = this.getMatrix(matrixCount++);
+                    let secondMatrix = svgcanvasEl.createSVGMatrix();
+                    secondMatrix.a = a;
+                    secondMatrix.b = b;
+                    secondMatrix.c = c;
+                    secondMatrix.d = d;
+                    secondMatrix.e = e;
+                    secondMatrix.f = f;
+                    matrix = matrix.multiply(secondMatrix);
+                    break;
+                }
+                case TransformType.ROTATE: {
+                    let { a, cx = 0, cy = 0 } = this.getRotation(rotationCount++);
+                    matrix = matrix
+                        .translate(cx, cy)
+                        .rotate(a)
+                        .translate(-1 * cx, -1 * cy);
+                    break;
+                }
+                case TransformType.SCALE: {
+                    let { x, y } = this.getScale(scaleCount++);
+                    matrix = matrix.scaleNonUniform(x, y);
+                    break;
+                }
+                case TransformType.SKEW_X: {
+                    let x = this.getSkewX(skewXCount++);
+                    matrix = matrix.skewX(x);
+                    break;
+                }
+                case TransformType.SKEW_Y: {
+                    let x = this.getSkewY(skewYCount++);
+                    matrix = matrix.skewY(x);
+                    break;
+                }
+                case TransformType.TRANSLATE: {
+                    let { x, y } = this.getTranslate(translateCount++);
+                    matrix = matrix.translate(x, y);
+                }
+            }
+        }
+
+        this.data = [ TransformType.MATRIX ];
+        this._hasMatrix = true;
+        this._hasRotate = false;
+        this._hasScale = false;
+        this._hasScale = false;
+        this._hasSkewX = false;
+        this._hasSkewY = false;
+        this._hasTranslate = false;
+        this.data = [ TransformType.MATRIX ];
+        let { a, b, c, d, e, f } = matrix;
+        this.transformString = `matrix(${a},${b},${c},${d},${e},${f})`;        
+
         return this;
     }
     public toTransformString(): string {

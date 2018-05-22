@@ -26,6 +26,7 @@ import {
 } from "../services/svg-transform-service";
 import { InternalError } from "./errors";
 import { SvgEditor } from "./svg-editor-model";
+import { SvgCanvas } from "./svg-canvas-model";
 
 interface IMainOverlayData {
     angle: number;
@@ -179,7 +180,7 @@ export class HandlesMain implements IContainer, IDrawable {
 
     //#region Ctor
 
-    public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>, editor: SvgEditor) {
+    public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>, canvas: SvgCanvas) {
         this.animationDuration = 200;
         this.center = { x: 0, y: 0};
         this.container = container;
@@ -266,7 +267,7 @@ export class HandlesMain implements IContainer, IDrawable {
                 ActivatableServiceSingleton.register(this, false);
             });
 
-        this.colorsOverlay = new HandlesColorsOverlay(this.colorsOverlayContainer, editor);
+        this.colorsOverlay = new HandlesColorsOverlay(this.colorsOverlayContainer, canvas);
         this.rotationOverlay = new HandlesRotationOverlay(this.rotationOverlayContainer);
         this.scaleOverlay = new HandlesScaleOverlay(this.scaleOverlayContainer);
 

@@ -14,7 +14,7 @@ import { SvgCanvas } from "./svg-canvas-model";
 import { SvgDefs } from "./svg-defs-model";
 import { SvgEditor } from "./svg-editor-model";
 import { SvgItem } from "./svg-item-model";
-import { SvgTransformService, SvgTransformServiceSingleton, IBBox, IRotationMatrix, ITransformable, SvgTransformString } from "../services/svg-transform-service";
+import { SvgTransformService, SvgTransformServiceSingleton, IBBox, IRotationMatrix, ITransformable, SvgTransformString, TransformType } from "../services/svg-transform-service";
 import { toRadians } from "../helpers/math-helpers";
 import { 
     drawCubicBezierArc, 
@@ -28,6 +28,7 @@ import {
     isSvgGraphicsElement 
 } from "../helpers/svg-helpers";
 import { HandlesMain } from "./handles-main";
+import { TranslateAction } from "./actions/translate-action";
 
 export enum SvgHandlesModes {
     INACTIVE = 0,
@@ -161,7 +162,7 @@ export class SvgHandles implements ISvgHandles {
         ActivatableServiceSingleton.register(this.handlesContainer, false);
 
         // Create main handles overlay
-        this.mainHandlesOverlay = new HandlesMain(d3.select(handleContainer), this.canvas.editor);
+        this.mainHandlesOverlay = new HandlesMain(d3.select(handleContainer), this.canvas   );
         this.mainHandlesOverlay.onDeleteClickedHandlers
             .push(this.onDeleteClicked.bind(this));
         this.mainHandlesOverlay.onRotationEventHandlers
@@ -258,7 +259,7 @@ export class SvgHandles implements ISvgHandles {
             .call(d3.drag()
                 .container(<any>self.canvas.canvasEl)
                 .on("start", function() {
-                    console.log("Drag start.");
+                    console.log("Drag start. Recording intial positions.");
 
                     let data = self.canvas.editor.getData(<any>this);
 
@@ -269,31 +270,59 @@ export class SvgHandles implements ISvgHandles {
                     if (!d3.event.sourceEvent.ctrlKey) {
                         
                         // Check if the target is already selected, if not then
-                        // deselect all objects
+                        // deselect all objects.
                         if (!self.selectedObjects.find(so => so == data)) {
                             self.deselectObjects();
                         }
                     }
     
-                    // Only select the item it's not already selected
+                    // Only select the item it's not already selected.
                     if (!self.selectedObjects.find(so => so == data)) {
                         self.selectObjects(data);
                     }
+
+                    self.selectedObjects.map(item => {
+                        // Create a new ITransformable
+                        let newTransform = new SvgTransformString([
+                            TransformType.TRANSLATE,
+                            TransformType.MATRIX
+                        ]);
+
+                        // Condense the previous transforms
+                        newTransform.setMatrix(item.transforms
+                            .consolidate()
+                            .getMatrix());
+                        
+                        // Replace data.transforms with tne newly create transform.
+                        item.transforms = newTransform;
+                        item.update();
+                    });
                 }).on("drag", function() {
                     let increment = {
                         x: d3.event.dx,
                         y: d3.event.dy
                     };
+
+                    // Update all selected items.
                     self.selectedObjects.map(item => {
                         item.transforms.incrementTranslate(increment);
                         item.update();
                     });
 
+                    // Update the handles.
                     self.transformData.incrementTranslate(increment);
                     d3.select(self.handlesContainer)
                         .attr("transform", self.transformData.toTransformString());
                 }).on("end", function() {
-                    console.log("Drag end.");
+                    console.log("Drag ended. Now applying action.");
+                    let firstItem = self.selectedObjects[0];
+                    let translate = firstItem.transforms.getTranslate();
+
+                    // Remove translates
+                    self.getSelectedObjects().map(so => so.transforms.setTranslate({ x:0,y:0 }));
+
+                    let action = new TranslateAction(translate, self.selectedObjects);
+                    self.canvas.editor.applyAction(action);
                 }));
     }
 

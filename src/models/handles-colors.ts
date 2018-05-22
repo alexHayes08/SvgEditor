@@ -9,6 +9,7 @@ import { IContainer } from "./icontainer";
 import { IDrawable } from './idrawable';
 import { Names } from "./names";
 import { SvgEditor } from "./svg-editor-model";
+import { SvgCanvas } from "./svg-canvas-model";
 import { 
     SvgTransformServiceSingleton, 
     ICoords2D, 
@@ -29,7 +30,7 @@ interface IColorsOverlayData {
 export class HandlesColorsOverlay implements IContainer, IDrawable {
     //#region Fields
 
-    private readonly editor: SvgEditor;
+    private readonly canvas: SvgCanvas;
     private readonly colorBtnTransform: ITransformable;
     private readonly colorPickerTransform: ITransformable;
     private readonly colorRingTransform: ITransformable;
@@ -48,7 +49,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
     //#region Ctor
 
     public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>,
-        editor: SvgEditor)
+        canvas: SvgCanvas)
     {
         this.colorBtnTransform = new SvgTransformString([
             TransformType.ROTATE,
@@ -67,7 +68,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         ]);
         this.container = container;
         this.data = [];
-        this.editor = editor;
+        this.canvas = canvas;
         this.radius = 100;
         
         let containerNode = this.container.node();
@@ -106,7 +107,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
 
     public update(): void {
         let self = this;
-        if (this.editor.handles == undefined
+        if (this.canvas.handles == undefined
             || this.colorRingContainer == undefined
             || this.elementColorContainer == undefined
             || this.colorPickerContainer == undefined) 
@@ -115,7 +116,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         }
 
         let colorGroups: SvgColors[] = [];
-        this.editor.handles
+        this.canvas.handles
             .getSelectedObjects();
 
         console.log(colorGroups);

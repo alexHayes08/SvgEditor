@@ -17,7 +17,7 @@ export class SvgActionService implements ISvgActionService {
 
     constructor() {
         this.actions = [];
-        this.actionLimit = 10;
+        this.actionLimit = 3;
         this.index = -1;
     }
 
@@ -28,6 +28,13 @@ export class SvgActionService implements ISvgActionService {
     private trimActions(): void {
         while (this.actions.length > this.getActionLimit()) {
             this.actions.shift();
+            this.index--;
+        }
+
+        if (this.index < -1) {
+            this.index = -1;
+        } else if (this.index >= this.actions.length) {
+            this.index = this.actions.length - 1;
         }
     }
 
@@ -56,9 +63,8 @@ export class SvgActionService implements ISvgActionService {
         // Increment index, add action, and execute it.
         this.index++;
         this.actions.push(action);
-        this.actions[this.index].applyOperation();
-
         this.trimActions();
+        this.actions[this.index].applyOperation();
     }
 
     public undoAction(): boolean {
@@ -77,7 +83,7 @@ export class SvgActionService implements ISvgActionService {
     redoAction(): boolean {
 
         // Check that there are actions to redo
-        if (this.getCurrentActionIndex() == this.actions.length
+        if (this.getCurrentActionIndex() == (this.actions.length - 1)
             || this.actions.length == 0)
         {
             return false;

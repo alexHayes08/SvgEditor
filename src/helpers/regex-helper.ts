@@ -1,10 +1,20 @@
 /**
+ * Used to 'reset' a RegExp object before using it. Pretty much just sets the
+ * 'lastIndex' property to zero.
+ * @param regex 
+ */
+export function resetRegexExp(regex: RegExp): void {
+    regex.lastIndex = 0;
+}
+
+/**
  * Only returns the matched groups of the regex.
  * @param regex 
  * @param str 
  */
 export function getAllGroups(regex: RegExp, str: string): string[][] {
-   let groups: string[][] = [];
+   resetRegexExp(regex);
+    let groups: string[][] = [];
 
    for (let group: RegExpExecArray|null = regex.exec(str)
        ; group != null
@@ -15,10 +25,12 @@ export function getAllGroups(regex: RegExp, str: string): string[][] {
        groups.push(group);
    }
 
+   resetRegexExp(regex);
    return groups;
 }
 
 export function getAllGroupsV2(regex: RegExp, str: string): string[] {
+    resetRegexExp(regex);
     let groups: string[] = [];
 
     for (let group: RegExpExecArray|null = regex.exec(str)
@@ -30,12 +42,44 @@ export function getAllGroupsV2(regex: RegExp, str: string): string[] {
         groups.concat(group);
     }
 
+    resetRegexExp(regex);
     return groups;
 }
 
+export function* getAllGroupsV3(regex: RegExp, 
+    str: string, 
+    namedGroups: boolean = false): Iterator<string[]|Map<string, string>>
+{
+    resetRegexExp(regex);
+    let groups: string[] = [];
+
+    for (let group: RegExpExecArray|null = regex.exec(str)
+        ; group != null
+        ; group = regex.exec(str))
+    {
+        // Since RegExpExecArray ts definition doesn't contain a groups
+        // property, need to cast to <any>
+        let group_any = <any>group;
+
+        if (namedGroups && ("groups" in group_any)) {
+
+            // Return the groups obj
+            yield group_any.groups;
+        } else {
+
+            // Ignore the first result
+            group.shift();
+            yield group;
+        }
+    }
+
+    resetRegexExp(regex);
+}
+
 export function replaceNthOccurance(str: string, regex: RegExp, replaceWith: string, occurance: number = 0): string {
+    resetRegexExp(regex);
     let index = 0;
-    return str.replace(regex, function(match: string) {
+    let result = str.replace(regex, function(match: string) {
         let result = "";
 
         if (index == occurance) {
@@ -47,12 +91,15 @@ export function replaceNthOccurance(str: string, regex: RegExp, replaceWith: str
         index++;
         return result;
     });
+    resetRegexExp(regex);
+    return result;
 }
 
 export function getNthOccurance(str: string, 
     regex: RegExp, 
     occurance: number = 0): RegExpExecArray 
 {
+    resetRegexExp(regex);
     let result: RegExpExecArray|null = null;
     
     for (let index = 0, match = regex.exec(str)
@@ -71,5 +118,6 @@ export function getNthOccurance(str: string,
         throw new Error(`Regex failed to match the ${occurance}`)
     }
 
+    resetRegexExp(regex);
     return result;
 }

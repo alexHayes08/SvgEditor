@@ -45,11 +45,11 @@ export class SvgItem {
     private _circleBBox: ICircleBBox;
     private _originalTransformMatrix: string;
     private _restrictions: IRestriction[];
-    private _transforms: ITransformable;
     private mapToColors: WeakMap<SVGGraphicsElement, SvgColors>;
 
     public angle: number;
     public scale: number;
+    public transforms: ITransformable;
 
     //#endregion
 
@@ -61,11 +61,11 @@ export class SvgItem {
         this._circleBBox = { r: 0, cx: 0, cy: 0 };
         this._originalTransformMatrix = "";
         this._restrictions = [];
-        this._transforms = SvgTransformString.CreateDefaultTransform();
 
         this.angle = 0;
         this.mapToColors = new WeakMap();
         this.scale = 1;
+        this.transforms = SvgTransformString.CreateDefaultTransform();
 
         this.recalculateColors();
     }
@@ -93,10 +93,6 @@ export class SvgItem {
 
     get originalTransformMatrix() {
         return this._originalTransformMatrix;
-    }
-
-    get transforms() {
-        return this._transforms;
     }
 
     //#endregion

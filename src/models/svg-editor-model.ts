@@ -329,11 +329,19 @@ export class SvgEditor {
     }
 
     public undo(): boolean {
-        return this.actionService.undoAction();
+        let result = this.actionService.undoAction();
+        if (result && this.handles) {
+            this.handles.selectObjects();
+        }
+        return result;
     }
 
     public redo(): boolean {
-        return this.actionService.redoAction();
+        let result = this.actionService.redoAction();
+        if (result && this.handles) {
+            this.handles.selectObjects();
+        }
+        return result;
     }
 
     public getData(element: SVGElement): SvgItem|undefined {

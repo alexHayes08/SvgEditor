@@ -147,6 +147,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         let update = d3.select(this.canvas.defs.getSectionElement(LinearGradientsContainerName))
             .selectAll<SVGLinearGradientElement, {}>("linearGradient")
             .data(colorGroups)
+            .attr("data-for", function(d) { return d.item.getElement().id })
             .each(function(d) {
                 let fill = d.color.fill || d3.color("transparent");
                 let stroke = d.color.stroke || d3.color("transparent");
@@ -170,7 +171,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
                                 return "";
                         }
                     })
-                    .attr("stop-color", fill.toString());
+                    .attr("stop-color", fill.toString())
 
                 // Draw
                 update.enter()
@@ -198,7 +199,10 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         update.enter().append<SVGLinearGradientElement>(function(d) {
                 return <SVGLinearGradientElement>document
                     .createElementNS(NS.SVG, "linearGradient");
-            }).each(function(d) {
+            })
+            .attr("id", () => uniqid())
+            .attr("data-for", function(d) { return d.item.getElement().id })
+            .each(function(d) {
                 let fill = d.color.fill || d3.color("transparent");
                 let stroke = d.color.stroke || d3.color("transparent");
                 let data = [fill, fill, stroke, stroke];
@@ -253,10 +257,14 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
             .selectAll<SVGPolygonElement, {}>("polygon")
             .data(colorGroups)
             .attr("fill", function(d) {
-                if (d == undefined) {
-                    return "";
+                
+                // Locate the linearGradient with the matching data-for attr.
+                let el = d3.select<Element, {}>(`*[data-for='${this.id}']`).node();
+
+                if (el != undefined) {
+                    return `url(#${el.id})`;
                 } else {
-                    return d.color.fill ? d.color.fill.toString() : "";
+                    return "test";
                 }
             })
             .attr("transform", function(d, i) {
@@ -269,13 +277,18 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
             });
 
         colorBtns.enter()
-            .append("polygon")
+            .append<SVGPolygonElement>("polygon")
             .attr("points", getPolygonPointsString(6, 20))
+            .attr("id", () => uniqid())
             .attr("fill", function(d) {
-                if (d == undefined) {
-                    return "";
+                
+                // Locate the linearGradient with the matching data-for attr.
+                let el = d3.select<Element, {}>(`*[data-for='${this.id}']`).node();
+
+                if (el != undefined) {
+                    return `url(#${el.id})`;
                 } else {
-                    return d.color.fill ? d.color.fill.toString() : "";
+                    return "test";
                 }
             })
             .attr("transform", function(d, i) {

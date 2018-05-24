@@ -83,4 +83,10 @@ declare module "geometry-interfaces" {
         public z: number
         public w: number
     }
+    export interface SVGGeometryElement {
+        isPointInFill(point: DOMPoint): boolean;
+        isPointInStroke(point: DOMPoint): boolean;
+        getTotalLength(): number;
+        getPointAtLength(): DOMPoint;
+    }
 }

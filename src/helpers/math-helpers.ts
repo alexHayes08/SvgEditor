@@ -1,10 +1,18 @@
+/**
+ * Helper objects for Math
+ */
+
 import { ICoords2D, IBBox } from "../services/svg-transform-service";
 import { CacheService } from "../services/cache-service";
 import { isKeyOf, convertToEnum } from "./enum-helper";
 
-/**
- * Helper functions for Math
- */
+export enum CardinalDirections {
+    EAST,
+    NORTH,
+    SOUTH,
+    WEST
+};
+
 export function toDegrees(value: number) {
     return value * 180 / Math.PI;
 }
@@ -27,6 +35,22 @@ export function normalizeAngle(angle: number): number {
     }
 
     return angle;
+}
+
+/**
+ * Helper function for the cotangent.
+ * @param value 
+ */
+export function cotangent(value: number) {
+    return 1 / Math.tan(value);
+}
+
+/**
+ * Helper function for the arc-cotangent.
+ * @param value 
+ */
+export function arcCotangent(value: number) {
+    return (Math.PI / 2) - Math.atan(value);
 }
 
 interface TempData {

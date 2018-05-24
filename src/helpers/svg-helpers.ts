@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 
-import { getAllGroups } from "../helpers/regex-helper";
+import { getAllGroups, getAllGroupsV2 } from "../helpers/regex-helper";
 import { ICoords2D, IBBox, SvgTransformService } from "../services/svg-transform-service";
 import { MathServiceSingleton } from "../services/math-service";
 import { normalizeAngle, toDegrees, toRadians } from "../helpers/math-helpers";
@@ -60,6 +60,8 @@ export function convertToSvgGraphicsElement(element: Element): SVGGraphicsElemen
     }
 }
 
+//#region Casting
+
 export function isSvgElement(element: any): element is SVGGraphicsElement {
     return element!= undefined && element.ownerSVGElement;
 }
@@ -78,6 +80,25 @@ export function isSvgSvgElement(element: any): element is SVGSVGElement {
         && element.getCurrentTime != undefined
         && element.tagName.toLowerCase() == "svg";
 }
+
+// export function isSvgGeometryElement(element: any): element is SVGGeometryElement {
+//     return element != undefined
+//         && element.pathLength
+//         && element.isPointInFill
+//         && element.isPointInStroke
+//         && element.getTotalLength
+//         && element.getPointAtLength;
+// }
+
+export function isSvgPathElement(element: any): element is SVGPathElement {
+    return element != undefined
+        && element.pathLength
+        && element.getTotalLength
+        && element.getPointAtLength
+        && element.tagName.toLowerCase() == "path";
+}
+
+//#endregion
 
 export function getAllSubElementWhichInheritColors(parentElement: SVGGraphicsElement) {
 
@@ -102,7 +123,7 @@ export function getElementAttrPointsTo(element: JQuery<HTMLElement>, attr: strin
     let result: JQuery<HTMLElement>|null = null;
 
     // Checks for a url() in the attribute
-    let regex = /url\((#.*)\)/;
+    let regex = /url\((#.*)\)/g;
 
     // Need to check href and xlink:href (not all clipart has been updated
     // to use href yet)
@@ -117,6 +138,26 @@ export function getElementAttrPointsTo(element: JQuery<HTMLElement>, attr: strin
     }
 
     return result;
+}
+
+/**
+ * Retrieves the reference to the element pointed to by a url(#...) string.
+ * @param url - Must be in the format 'url(#...)'.
+ */
+export function getElementUrlPointsTo(url: string): Element {
+    
+    // Checks for a url() in the attribute
+    let regex = /url\((#.*)\)/g;
+
+    let matches = getAllGroupsV2(regex, url);
+    let firstMatch = matches[0];
+
+    let node = d3.select<Element, {}>(firstMatch).node();
+    if (node == undefined) {
+        throw new Error(`Failed to find element matching selector "${firstMatch}".`);
+    }
+
+    return node;
 }
 
 export interface ISlice {

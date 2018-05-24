@@ -4,7 +4,7 @@ import * as d3 from "d3";
 
 import { ActivatableServiceSingleton } from "../services/activatable-service";
 import { getNewPointAlongAngle, getPolygonPointsString } from "../helpers/svg-helpers";
-import { HandlesColorsOverlay } from "./handles-colors";
+import { HandlesColorsOverlay, HandlesColorMode } from "./handles-colors";
 import { HandlesRotationOverlay } from "./handles-rotation";
 import { HandlesScaleOverlay } from "./handles-scale";
 import { IContainer } from "./icontainer";
@@ -96,7 +96,11 @@ export class HandlesMain implements IContainer, IDrawable {
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.ColorsArc.DATA_NAME,
             arcTransformData: new SvgTransformString(arcTransformService),
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME,
-            modes: [{ label: "Colors", selected: true }],
+            modes: [
+                { label: "Colors (all)", selected: true },
+                { label: "Colors (non-empty)", selected: false },
+                { label: "Colors (unique)", selected: false }
+            ],
             buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.ColorsBtnArcPath.DATA_NAME,
             buttonTransformData: new SvgTransformString(buttonTransformOrder),
             handleMode: HandleMode.COLORS
@@ -189,7 +193,7 @@ export class HandlesMain implements IContainer, IDrawable {
         this.elementDataMap = new WeakMap();
         this.highlightData = SvgTransformString.CreateDefaultTransform();
         this.lastUsedMode = HandleMode.PAN;
-        this.minRadius = 100;
+        this.minRadius = 120;
         this.onDeleteClickedHandlers = [];
         this.onRotationEventHandlers = [];
         this.startAngleOffset = 45 + 180;
@@ -333,6 +337,16 @@ export class HandlesMain implements IContainer, IDrawable {
 
     //#region Functions
 
+    private getSelectedSubMode(data: IMainOverlayData): IMode {
+        let selectedMode = data.modes.find(m => m.selected);
+
+        if (selectedMode == undefined) {
+            throw new Error("There were no selected modes.");
+        }
+
+        return selectedMode;
+    }
+
     private updateButtonsAndArcs() {
         let self = this;
 
@@ -359,8 +373,9 @@ export class HandlesMain implements IContainer, IDrawable {
                         if (self.collapseButtons) {
                             btnTransformData.setTranslate({ x: 0, y: 0 });
                         } else {
-                            if (d.modes.length > 1) {
-                                btnTransformData.setTranslate({ x: i * 35, y: Math.pow(-1, i + 1) * 10 });
+                            if (d.modes.length > 1 && d.middleAngle) {
+                                let onLeft = d.middleAngle > 180 ? 1 : -1;
+                                btnTransformData.setTranslate({ x: onLeft * i * 35, y: Math.pow(-1, i + 1) * 10 });
                             } else {
                                 btnTransformData.setTranslate({ x: i * 40, y: 0});
                             }
@@ -536,6 +551,30 @@ export class HandlesMain implements IContainer, IDrawable {
                 ActivatableServiceSingleton.activate(this.colorsOverlay.containerNode);
                 newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME;
                 this.colorsOverlay.radius = this.radius;
+                this.data.find(d => {
+                    if (d.buttonDataName == Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME) {
+                        let selectedMode = d.modes.find(_d => _d.selected);
+                        console.log(selectedMode);
+                        if (selectedMode != undefined) {
+                            switch (selectedMode.label) {
+                                case "Colors (all)":
+                                    this.colorsOverlay.mode = HandlesColorMode.ALL;
+                                    break;
+                                case "Colors (non-empty)":
+                                    this.colorsOverlay.mode = HandlesColorMode.MUST_HAVE_FILL_OR_STROKE;
+                                    break;
+                                case "Colors (unique)":
+                                    this.colorsOverlay.mode = HandlesColorMode.UNIQUE_COLORS_ONLY;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
                 this.colorsOverlay.update();
                 break;
             case HandleMode.EDIT:
@@ -576,6 +615,7 @@ export class HandlesMain implements IContainer, IDrawable {
     public draw(): void {
         let self = this;
         let rotateData = self.buttonsData.find(d => d.arcDataName == Names.Handles.SubElements.ArcsContainer.SubElements.RotateArc.DATA_NAME);
+        let colorData = self.buttonsData.find(d => d.arcDataName == Names.Handles.SubElements.ArcsContainer.SubElements.ColorsArc.DATA_NAME);
         const defaultTransformStr = SvgTransformServiceSingleton.defaultTransformString;
 
         // Update the highlight element
@@ -675,8 +715,18 @@ export class HandlesMain implements IContainer, IDrawable {
                 d3.event.stopPropagation();
             });
 
-        this.buttonsContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME}']`)
+        this.buttonsContainer.selectAll<Element, {}>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME}'] > *[data-mode]`)
             .on("click", function() {
+
+                if (colorData == undefined) {
+                    throw new InternalError();
+                }
+
+                let thisDataMode = this.getAttribute("data-mode");
+                colorData.modes.map(mode => {
+                    mode.selected = mode.label == thisDataMode;
+                });
+
                 self.mode = HandleMode.COLORS;
                 d3.event.stopPropagation();
             });
@@ -693,17 +743,16 @@ export class HandlesMain implements IContainer, IDrawable {
                 d3.event.stopPropagation();
             });
 
-        this.buttonsContainer.selectAll<Element, {}>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME}'] > *:not(rect)`)
+        this.buttonsContainer.selectAll<Element, {}>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME}'] > *[data-mode]`)
             .on("click", function() {
 
                 if (rotateData == undefined) {
-                    throw InternalError;
+                    throw new InternalError();
                 }
 
                 let thisDataMode = this.getAttribute("data-mode");
-                rotateData.modes = rotateData.modes.map(mode => {
-                    mode.selected = mode.label == this.getAttribute("data-mode");
-                    return mode;
+                rotateData.modes.map(mode => {
+                    mode.selected = mode.label == thisDataMode;
                 });
 
                 self.mode = HandleMode.ROTATE;

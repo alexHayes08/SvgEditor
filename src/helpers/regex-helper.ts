@@ -13,23 +13,35 @@ export function resetRegexExp(regex: RegExp): void {
  * @param str 
  */
 export function getAllGroups(regex: RegExp, str: string): string[][] {
-   resetRegexExp(regex);
+    
+    // Verify that the global flag is active, else this will not work
+    if (!regex.global) {
+        throw new Error("The global flag MUST be present.");
+    }
+    
+    resetRegexExp(regex);
     let groups: string[][] = [];
 
-   for (let group: RegExpExecArray|null = regex.exec(str)
+    for (let group: RegExpExecArray|null = regex.exec(str)
        ; group != null
        ; group = regex.exec(str))
-   {    
-       // Ignore first result, it's always the entire match not the groups.
-       group.shift();
-       groups.push(group);
-   }
+    {
+        // Ignore first result, it's always the entire match not the groups.
+        group.shift();
+        groups.push(group);
+    }
 
-   resetRegexExp(regex);
-   return groups;
+    resetRegexExp(regex);
+    return groups;
 }
 
 export function getAllGroupsV2(regex: RegExp, str: string): string[] {
+    
+    // Verify that the global flag is active, else this will not work
+    if (!regex.global) {
+        throw new Error("The global flag MUST be present.");
+    }
+    
     resetRegexExp(regex);
     let groups: string[] = [];
 
@@ -39,7 +51,7 @@ export function getAllGroupsV2(regex: RegExp, str: string): string[] {
     {
         // Ignore the first result
         group.shift();
-        groups.concat(group);
+        groups = groups.concat(group);
     }
 
     resetRegexExp(regex);

@@ -32,6 +32,12 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     opacity: 1;
 }
 
+*[data-name="highlight-area"] {
+    fill: rgba(0, 225, 255, 0.295);
+    stroke: rgb(25, 0, 255);
+    stroke-width: 1;
+}
+
 *[data-name="handles-area"] path {
     stroke-width: 0;
     transition: all .2s linear;

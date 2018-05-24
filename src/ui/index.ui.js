@@ -364,24 +364,36 @@ Aperture.resolve(["SvgEditors"]).then(() => {
         rectA.setAttribute("y", "50");
         rectA.setAttribute("width", "100");
         rectA.setAttribute("height", "100");
+        rectA.setAttribute("fill", "red");
+        rectA.setAttribute("stroke", "orange");
+        rectA.setAttribute("stroke-width", "4")
 
         let rectB = document.createElementNS(NS.SVG, "rect");
         rectB.setAttribute("x", "350");
         rectB.setAttribute("y", "50");
         rectB.setAttribute("width", "100");
-        rectB.setAttribute("height", "100")
+        rectB.setAttribute("height", "100");
+        rectB.setAttribute("fill", "purple");
+        rectB.setAttribute("stroke", "orange");
+        rectB.setAttribute("stroke-width", "4")
 
         let rectC = document.createElementNS(NS.SVG, "rect");
         rectC.setAttribute("x", "50");
         rectC.setAttribute("y", "350");
         rectC.setAttribute("width", "100");
-        rectC.setAttribute("height", "100")
+        rectC.setAttribute("height", "100");
+        rectC.setAttribute("fill", "blue");
+        rectC.setAttribute("stroke", "green");
+        rectC.setAttribute("stroke-width", "4")
 
         let rectD = document.createElementNS(NS.SVG, "rect");
         rectD.setAttribute("x", "350");
         rectD.setAttribute("y", "350");
         rectD.setAttribute("width", "100");
-        rectD.setAttribute("height", "100")
+        rectD.setAttribute("height", "100");
+        rectD.setAttribute("fill", "red");
+        rectD.setAttribute("stroke", "orange");
+        rectD.setAttribute("stroke-width", "4")
 
         frag.appendChild(rectA);
         frag.appendChild(rectB);

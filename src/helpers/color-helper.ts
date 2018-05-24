@@ -59,20 +59,20 @@ export function getGradient(attrVal: string): any {
     let blah = $(`#${attrVal}`);
 }
 
-/**
- * Returns the element pointed at by the attribute if it's value is a url(...).
- * @param attrVal - Should match 'url(#...)'.
- */
-export function getElementUrlPointsTo(attrVal: string): JQuery<Element> {
-    let reg = /url\((#.*)\)/;
-    let cssQuery = "";
-    let matches = reg.exec(attrVal);
+// /**
+//  * Returns the element pointed at by the attribute if it's value is a url(...).
+//  * @param attrVal - Should match 'url(#...)'.
+//  */
+// export function getElementUrlPointsTo(attrVal: string): JQuery<Element> {
+//     let reg = /url\((#.*)\)/;
+//     let cssQuery = "";
+//     let matches = reg.exec(attrVal);
 
-    if (matches != null) {
+//     if (matches != null) {
 
-        // Only need to use the first element
-        cssQuery = matches[1];
-    }
+//         // Only need to use the first element
+//         cssQuery = matches[1];
+//     }
 
-    return $(cssQuery);
-}
+//     return $(cssQuery);
+// }

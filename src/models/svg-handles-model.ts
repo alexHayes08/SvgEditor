@@ -12,7 +12,7 @@ import { ISvgHandles } from "./isvg-handles-model";
 import { ISlice, isISlice, DefaultCircleArc, ICircleArc } from "../models/islice";
 import { SvgCanvas } from "./svg-canvas-model";
 import { SvgDefs } from "./svg-defs-model";
-import { SvgEditor } from "./svg-editor-model";
+import { SvgEditor, EditorLocation } from "./svg-editor-model";
 import { SvgItem } from "./svg-item-model";
 import { SvgTransformService, SvgTransformServiceSingleton, IBBox, IRotationMatrix, ITransformable, SvgTransformString, TransformType, ITranslationMatrix } from "../services/svg-transform-service";
 import { toRadians } from "../helpers/math-helpers";
@@ -146,7 +146,7 @@ export class SvgHandles implements ISvgHandles {
 
     private handlesContainer: SVGGElement;
     private mainHandlesOverlay: HandlesMain;
-    private highlightRectEl: SVGRectElement;
+    private highlightPathEl: SVGPathElement;
 
     //#endregion
 
@@ -164,7 +164,7 @@ export class SvgHandles implements ISvgHandles {
 
         // Create the highlight rect
         let highlightRectEl = d3.select(this.parentNode)
-            .append<SVGRectElement>("rect")
+            .append<SVGPathElement>("path")
             .attr("id", uniqid())
             .attr("data-name", Names.Handles.SubElements.HightlightRect.DATA_NAME)
             .node();
@@ -173,8 +173,9 @@ export class SvgHandles implements ISvgHandles {
             throw new Error("Failed to create the highlight rectangle.");
         }
 
-        this.highlightRectEl = highlightRectEl;
-        this.transformService.standardizeTransforms(this.highlightRectEl);
+        this.highlightPathEl = highlightRectEl;
+        this.transformService.standardizeTransforms(this.highlightPathEl);
+        ActivatableServiceSingleton.register(this.highlightPathEl);
 
         // Create handle elements
         let handleContainer = d3.select(this.parentNode)
@@ -398,6 +399,25 @@ export class SvgHandles implements ISvgHandles {
             y: bbox.y + (bbox.height / 2)
         }
         this.mainHandlesOverlay.update();
+    }
+
+    public highlightObjects(...elements: SVGGraphicsElement[]): void {
+        let self = this;
+
+        if (elements.length == 0) {
+
+            // If no elements were provided, hide the highlight
+            ActivatableServiceSingleton.deactivate(this.highlightPathEl);
+            return;
+        } else {
+
+            // Get outline
+            let pathEl = self.canvas.editor.getOutlineAroundElements(elements, 10);
+            this.highlightPathEl.setAttribute("d", 
+                pathEl.getAttribute("d") || "");
+
+            ActivatableServiceSingleton.activate(this.highlightPathEl);
+        }
     }
 
     /**

@@ -12,6 +12,12 @@ export interface ColorMap {
     colors: SvgColors;
 }
 
+export function isColorMap(value: any): value is ColorMap {
+    return (value != undefined
+        && value.element != undefined
+        && value.colors != undefined);
+}
+
 export interface SvgColors {
     stroke?: ColorValue;
     strokeWidth?: number;
@@ -78,20 +84,31 @@ export class SvgItem {
      * Returns a bounding circle around the element, the cx and cy properties
      * are relative to the elements center, not the canvas.
      */
-    get circleBBox() {
+    public get circleBBox() {
         return this._circleBBox;
     }
 
     /**
      * Retrieves a Map<Element, SvgColors> of itself and each child-element.
      */
-    get colors() {
-        return this.getAllElements()
-            .map(el => this.mapToColors.get(el))
-            .filter(c => c != undefined);
+    public get colors(): ColorMap[] {
+        let colorMapArr: ColorMap[] = [];
+
+        this.getAllElements()
+            .map(el => {
+                let color = this.mapToColors.get(el);
+                if (color != undefined) {
+                    colorMapArr.push({
+                        colors: color,
+                        element: el
+                    });
+                }
+            });
+
+        return colorMapArr;
     }
 
-    get originalTransformMatrix() {
+    public get originalTransformMatrix() {
         return this._originalTransformMatrix;
     }
 
@@ -263,7 +280,8 @@ export class SvgItem {
             element: element,
             colors: {
                 fill: null,
-                stroke: null
+                stroke: null,
+                element: element
             }
         }
 

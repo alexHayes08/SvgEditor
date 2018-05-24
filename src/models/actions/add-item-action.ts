@@ -1,5 +1,7 @@
 const uniqid = require("uniqid");
 
+import * as d3 from "d3";
+
 import { ISvgAction } from "../isvg-action";
 import { SvgCanvas } from "../svg-canvas-model";
 import { SvgItem } from "../svg-item-model";
@@ -7,6 +9,7 @@ import { isSvgGraphicsElement, getFurthestSvgOwner } from "../../helpers/svg-hel
 import { Names } from "../names";
 import { NS } from "../../helpers/namespaces-helper";
 import { SvgTransformServiceSingleton, ICoords2D } from "../../services/svg-transform-service";
+import { EditorLocation } from "../svg-editor-model";
 
 // import { Singleton } from 'typescript-ioc';
 
@@ -64,12 +67,22 @@ export class AddItemAction implements ISvgAction {
             itemWrapper.classList.add(Names.SvgEditor.Items.CLASS_NAME);
             itemWrapper.appendChild(el);
 
-            if (!isSvgGraphicsElement(itemWrapper)) {
-                throw new Error("Internal error occurred.");
-            }
-
+            // Assign a unique id to each element if it doesn't have one
             if (itemWrapper.id == "") {
                 itemWrapper.id = uniqid();
+            }
+            d3.select(itemWrapper)
+                .selectAll<Element, {}>("*")
+                .attr("id", function() {
+                    if (this.id == "") {
+                        return uniqid();
+                    } else {
+                        return this.id;
+                    }
+                });
+
+            if (!isSvgGraphicsElement(itemWrapper)) {
+                throw new Error("Internal error occurred.");
             }
 
             this.elements.push(itemWrapper);

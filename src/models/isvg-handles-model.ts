@@ -6,6 +6,8 @@ export interface ISvgHandles {
 
     selectObjects(...elements: SvgItem[]): void;
 
+    highlightObjects(...elements: SVGGraphicsElement[]): void;
+
     deselectObjects(): void;
 
     onBeforeItemsAdded(items: SvgItem[]): void;

@@ -2,7 +2,7 @@ const uniqid = require("uniqid");
 
 import * as d3 from "d3";
 import { ActivatableServiceSingleton } from "../services/activatable-service";
-import { isSvgGraphicsElement, getFurthestSvgOwner } from "./../helpers/svg-helpers";
+import { isSvgGraphicsElement, getFurthestSvgOwner, isSvgPathElement } from "./../helpers/svg-helpers";
 import { nodeListToArray } from "../helpers/node-helper";
 import { ICoords2D, SvgTransformService, SvgTransformServiceSingleton, ITransformable } from "./../services/svg-transform-service";
 import { isSvgElement } from "../helpers/svg-helpers";
@@ -20,7 +20,13 @@ import { RemoveItemAction } from "./actions/remove-item-action";
 export interface ITotal {
     colors: d3.ColorSpaceObject[];
     items: SVGGraphicsElement[];
-}
+};
+
+export enum EditorLocation {
+    UNDER_EDITOR,
+    EDITOR,
+    OVER_EDITOR
+};
 
 /**
  * Used for managing the underEditor, editor, and overEditor group elements
@@ -212,6 +218,41 @@ export class SvgEditor {
             .replace(reg2, "");
     }
 
+    private getOutlineOfPath(element: SVGPathElement): ICoords2D[] {
+        let coords: ICoords2D[] = [];
+
+        return coords;
+    }
+
+    /**
+     * Used to create a path that outlines the passed in elements.
+     * @param elements 
+     */
+    public getOutlineAroundElements(elements: SVGGraphicsElement[],
+        padding: number = 0): SVGPathElement 
+    {
+        let path = <SVGPathElement>document.createElementNS(NS.SVG, "path");
+        let pathDString = "";
+
+        for (let element of elements) {
+            if (isSvgGraphicsElement(element)) {
+                
+                // For now just get the bbox around each item
+                let bbox = this.transformService.getBBox(element);
+                let path = ` M${bbox.x - padding},${bbox.y - padding}`;
+                path += ` h${bbox.width + (2 * padding)}`;
+                path += ` v${bbox.height + (2 * padding)}`;
+                path += ` h${-1 * (bbox.width + (2 * padding))}`;
+                path += ` Z`;
+
+                pathDString += path;
+            }
+        }
+
+        path.setAttribute("d", pathDString.trimLeft());
+        return path;
+    }
+
     /**
      * Returns all child nodes of the editor that intersect a point.
      * @param point - This is relative to the svg element.
@@ -289,8 +330,30 @@ export class SvgEditor {
      * non-SVGGraphics element will be ignored.
      * @param items 
      */
-    public add(items: DocumentFragment): void {
-        let addAction = new AddItemAction(this.getEditorNode(),
+    public add(items: DocumentFragment, location: EditorLocation = EditorLocation.EDITOR): void {
+        let editor: SVGGElement = this.getEditorNode();
+        switch (location) {
+            case EditorLocation.OVER_EDITOR: {
+                let e = this.overEditor.node();
+                if (e == undefined) {
+                    throw new InternalError();
+                }
+                break;
+            }
+            case EditorLocation.UNDER_EDITOR: {
+                let e = this.underEditor.node();
+                if (e == undefined) {
+                    throw new InternalError();
+                }
+            }
+            case EditorLocation.EDITOR:
+            default: {
+                editor = this.getEditorNode();
+                break;
+            }
+        }
+
+        let addAction = new AddItemAction(editor,
             items,
             this.dataMap,
             this.handles ? this.handles.onBeforeItemsAdded.bind(this.handles) : undefined,
@@ -301,7 +364,7 @@ export class SvgEditor {
         this.actionService.applyAction(addAction);
     }
 
-    public remove(...items: SvgItem[]): void {        
+    public remove(...items: SvgItem[]): void {
         if (this.handles != undefined) {
             this.handles.onBeforeItemsRemoved(items);
         }

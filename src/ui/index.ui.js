@@ -4,7 +4,7 @@ import * as mathHelpers from "../helpers/math-helpers";
 
 import { Aperture, EVT_NAMES } from "./aperture.main";
 import { Angle } from "../models/angle";
-import { getPolygonPointsString } from "../helpers/svg-helpers";
+import { getPolygonPointsString } from "../helpers/polygon-helpers";
 import { GroupAction } from "../models/actions/group-action";
 import { NS } from "../helpers/namespaces-helper";
 import { SvgColorService } from "../services/svg-color-service";
@@ -340,8 +340,11 @@ Aperture.resolve(["SvgEditors"]).then(() => {
 
         // Create path
         let polygon = document.createElementNS(NS.SVG, "polygon");
+        let offsetAngle = numberOfSides % 2 == 0 
+            ? Angle.fromDegrees(0) 
+            : Angle.fromDegrees(-90);
         $(polygon).attr({
-            points: getPolygonPointsString(numberOfSides, 50, Angle.fromDegrees(-90)),
+            points: getPolygonPointsString(numberOfSides, 50, offsetAngle),
             fill: colorService.randomColor,
             stroke: colorService.randomColor,
             "stroke-width": 4

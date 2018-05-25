@@ -59,9 +59,9 @@ export function getAllGroupsV2(regex: RegExp, str: string): string[] {
 }
 
 export function* getAllGroupsV3(regex: RegExp, 
-    str: string, 
-    namedGroups: boolean = false): Iterator<string[]|Map<string, string>>
+    str: string): IterableIterator<string[]>
 {
+    // let namedGroups: boolean = false
     resetRegexExp(regex);
     let groups: string[] = [];
 
@@ -71,18 +71,24 @@ export function* getAllGroupsV3(regex: RegExp,
     {
         // Since RegExpExecArray ts definition doesn't contain a groups
         // property, need to cast to <any>
-        let group_any = <any>group;
+        // let group_any = <any>group;
 
-        if (namedGroups && ("groups" in group_any)) {
+        // if (namedGroups && ("groups" in group_any)) {
 
-            // Return the groups obj
-            yield group_any.groups;
-        } else {
+        //     // Return the groups obj
+        //     yield group_any.groups;
+        // } else {
 
-            // Ignore the first result
-            group.shift();
-            yield group;
-        }
+        //     // Ignore the first result
+        //     group.shift();
+        //     yield group;
+        // }
+
+        // Ignore the first result.
+        group.shift();
+
+        // Return copy of the array.
+        yield [...group];
     }
 
     resetRegexExp(regex);

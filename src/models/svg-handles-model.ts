@@ -30,6 +30,7 @@ import {
 import { HandlesMain } from "./handles-main";
 import { TranslateAction } from "./actions/translate-action";
 import { IOperationCallbacks } from "./ioperation-callback";
+import { HexagonTilingService } from "../services/hexagon-tiling-service";
 
 export enum SvgHandlesModes {
     INACTIVE = 0,
@@ -214,6 +215,20 @@ export class SvgHandles implements ISvgHandles {
         this.canvas.defs.pushToSection(filter, "shadows");
         this.handlesContainer.style.filter = this.canvas.defs
             .getUrlOfSectionItem("shadow-1", "shadows");
+
+        // Testing out new handles layout
+        let hexContainer = d3.select(this.parentNode)
+            .append<SVGGElement>("g")
+            .attr("id", uniqid())
+            .attr("data-name", "hex-container")
+            .node();
+
+        if (hexContainer == undefined) {
+            throw new Error("Failed to create the handles container element.");
+        }
+
+        let hexagonTilingService = new HexagonTilingService(hexContainer, this, this.canvas.defs);
+        hexagonTilingService.draw();
     }
 
     //#endregion

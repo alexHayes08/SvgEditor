@@ -17,7 +17,7 @@ import {
     SvgTransformString,
     TransformType
 } from "../services/svg-transform-service";
-import { getPolygonPointsString } from "../helpers/svg-helpers";
+import { getPolygonPointsString } from "../helpers/polygon-helpers";
 import { SvgColors, SvgItem, ColorMap, isColorMap } from "./svg-item-model";
 import { toDegrees, CardinalDirections } from "../helpers/math-helpers";
 import { LinearGradient } from "./element-wrappers/linear-gradient";

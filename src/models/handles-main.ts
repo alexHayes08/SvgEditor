@@ -3,7 +3,8 @@ const uniqid = require("uniqid");
 import * as d3 from "d3";
 
 import { ActivatableServiceSingleton } from "../services/activatable-service";
-import { getNewPointAlongAngle, getPolygonPointsString } from "../helpers/svg-helpers";
+import { getNewPointAlongAngle } from "../helpers/svg-helpers";
+import { getPolygonPointsString } from "../helpers/polygon-helpers";
 import { HandlesColorsOverlay, HandlesColorMode } from "./handles-colors";
 import { HandlesRotationOverlay } from "./handles-rotation";
 import { HandlesScaleOverlay } from "./handles-scale";

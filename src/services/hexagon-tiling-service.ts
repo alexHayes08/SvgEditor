@@ -66,16 +66,13 @@ export class HexagonTilingService implements IDrawable {
 
         d3.select(this.hexagonTemplate)
             .attr("id", uniqid())
-            // .attr("fill", "rgba(0,0,0,0")
-            // .attr("stroke", "rgba(25, 25, 25, 1)")
-            // .attr("stroke-width", 2)
             .attr("points", getPolygonPointsString(6, this.tileCircumRadius));
 
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 24; i++) {
             let useEl = <SVGUseElement>document.createElementNS(NS.SVG, "use");
             d3.select(useEl)
                 .attr("id", uniqid())
-                .attr("fill", "none")
+                .attr("fill", "rgba(255,0,255,0.25")
                 .attr("stroke", "red")
                 .attr("stroke-width", 2);
             this.hexagonsV2.push(useEl);
@@ -318,9 +315,9 @@ export class HexagonTilingService implements IDrawable {
         let apothem = calculateApothem(6, sideLength);
 
         // Need to round up, don't want half a hexagon.
-        // Also the +2 is to avoid the hexagon intersecting the circle with
+        // Also the +1 is to avoid the hexagon intersecting the circle with
         // radius equal to the mainApothem.
-        let d = Math.ceil(this.mainApothem / (2 * apothem)) + 1;
+        let d = Math.ceil(this.mainApothem / (2 * this.tileCircumRadius - (this.tileCircumRadius / 2))) + 1;
         let d_is_odd = d % 2 == 0 ? false : true;
 
         //#region Test
@@ -355,14 +352,16 @@ export class HexagonTilingService implements IDrawable {
         // This is an arrow function just to avoid cluttering the context.
         let start_x = (() => {
             // let by = Math.floor(d / 2);
-            return ((d_is_odd ? d : d + 1) * apothem) + (d * sideLength);
+            return (d * this.tileCircumRadius) + (d * (sideLength / 2));
         })();
 
         // Determine the starting position
         let lastUsedCoord: ICoords2D = {
             x: start_x,
-            y: d_is_odd ? 0 : -1 * apothem
+            y: d_is_odd ? 1 * apothem : 0
         }
+
+        console.log(lastUsedCoord);
 
         // -2 is a special case where the starting hexagon has a y
         // translation of zero.
@@ -380,7 +379,12 @@ export class HexagonTilingService implements IDrawable {
                         HexagonSide.TOP_CENTER ];
 
             // Set the transform
+            // if ((lastUsedCoord.x == 0 && lastUsedCoord.y > 0)
+                // || (lastUsedCoord.y == 0 && lastUsedCoord.x >= 0)
+                // || (lastUsedCoord.y != 0 && lastUsedCoord.x != 0))
+            // {
             hex.setAttribute("transform", `translate(${lastUsedCoord.x},${lastUsedCoord.y})`);
+            // }
 
             switch(subIteration) {
                 case -2: {

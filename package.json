@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "webpack",
-    "test": "mocha -r ts-node/register tests/*spec.ts",
+    "test": "webpack && mocha -r ts-node/register tests/*spec.ts",
     "watch": "webpack --watch",
     "start:dev": "webpack-serve"
   },
@@ -31,6 +31,7 @@
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "chai": "^4.1.2",
+    "clean-webpack-plugin": "^0.1.19",
     "file-loader": "^1.1.11",
     "html-webpack-plugin": "^3.2.0",
     "mocha": "^5.1.1",

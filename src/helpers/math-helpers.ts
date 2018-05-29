@@ -13,6 +13,19 @@ export enum CardinalDirections {
     WEST
 };
 
+export function roundToSigFig(value: number, sigFig: number): number {
+    return Number(value.toPrecision(sigFig));
+}
+
+/**
+ * sqrt(a^2 + b^2)
+ * @param a 
+ * @param b 
+ */
+export function pythagoreanTheroem(a: number, b: number): number {
+    return Math.sqrt(Math.pow(a, 2) + Math.pow(b, 2));
+}
+
 export function toDegrees(value: number) {
     return value * 180 / Math.PI;
 }
@@ -21,19 +34,18 @@ export function toRadians(value: number) {
     return value / 180 * Math.PI;
 }
 
+/**
+ * Returns the angle in degrees within the range 0deg-359deg.
+ * @param angle - In degrees.
+ */
 export function normalizeAngle(angle: number): number {
     if (!Number.isFinite(angle)) {
         throw new Error("Number must be finite.");
     }
 
-    while (angle >= 360) {
-        angle -= 360;
-    }
-
-    while (angle <= -360) {
-        angle += 360;
-    }
-
+    let multiplesOf360 = Number(Number(Math.floor(angle/360)).toFixed(0));
+    angle -= 360 * multiplesOf360;
+    
     return angle;
 }
 

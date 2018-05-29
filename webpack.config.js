@@ -1,6 +1,7 @@
 // const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const path = require("path");
 const webpack = require("webpack");
+const CleanWebpackPlugin = require("clean-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 // var serverConfig = {
@@ -134,6 +135,7 @@ var clientConfig = {
         ]
     },
     plugins: [
+        // new CleanWebpackPlugin(["dist"]),
         // new ExtractTextPlugin({
         //     filename: "ui.styles.css",
         //     allChunks: true

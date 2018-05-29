@@ -4,6 +4,7 @@ import * as mathHelpers from "../helpers/math-helpers";
 
 import { Aperture, EVT_NAMES } from "./aperture.main";
 import { Angle } from "../models/angle";
+import { getCenterOfAdjacentHexagon } from "../helpers/polygon-helpers";
 import { getPolygonPointsString } from "../helpers/polygon-helpers";
 import { GroupAction } from "../models/actions/group-action";
 import { NS } from "../helpers/namespaces-helper";
@@ -13,6 +14,7 @@ import { SvgEditors } from "../index";
 export { Aperture } from "./aperture.main";
 
 Aperture.Math = mathHelpers;
+Aperture.getCenterOfAdjacentHexagon = getCenterOfAdjacentHexagon;
 
 // [Private]
 

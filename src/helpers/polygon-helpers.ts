@@ -1,4 +1,4 @@
-import { cotangent, toRadians } from "./math-helpers";
+import { cotangent, toRadians, pythagoreanTheroem } from "./math-helpers";
 import { ICoords2D } from "../services/svg-transform-service";
 import { IAngle, Angle } from "../models/angle";
 import { getAllGroupsV3 } from "./regex-helper";
@@ -6,6 +6,28 @@ import { getAllGroupsV3 } from "./regex-helper";
 /**
  * Subset of math-helpers.ts
  */
+
+export interface HexagonFromVerticies {
+    center: ICoords2D;
+    x1: ICoords2D;
+}
+
+export interface HexagonFromApothem {
+    center: ICoords2D;
+    apothem: ICoords2D;
+}
+
+export function isHexagonFromVerticies(value: any): value is HexagonFromVerticies {
+    return value != undefined
+        && value.center != undefined
+        && value.x1 != undefined;
+}
+
+export function isHexagonFromApothem(value: any): value is HexagonFromApothem {
+    return value != undefined
+        && value.center != undefined
+        && value.apothem != undefined;
+}
 
 /**
  * Calculates the internal angle of a regular convex polygon.
@@ -155,6 +177,55 @@ export function coordsToPointsStr(points: ICoords2D[]): string {
 }
 
 /**
+ * Returns an array of argument 'n' length containing all verticies in an
+ * n-polygon.
+ * @param center - The coordinates of the center of the polygon.
+ * @param x0 - The coordinates of the first vertex.
+ * @param n - Number of sides.
+ */
+export function calculatePolygonVerticies(center: ICoords2D, 
+    x0: ICoords2D, 
+    n: number): ICoords2D[] 
+{
+    // Validate arguments
+    if (!Number.isInteger(n)) {
+        throw new Error("The argument 'n' must be an integer.")
+    }
+    
+    if (n < 3) {
+        throw new Error("The argument 'n' must be an integer greater than or equal to three");
+    }
+
+    if (center.x == x0.x
+        && center.y == x0.y) 
+    {
+        throw new Error("The arguments 'center' and 'x0' cannot use the same point.");
+    }
+
+    let coords: ICoords2D[] = [ x0 ];
+    let dx_0 = (x0.x - center.x);
+    let dy_0 = (x0.y - center.y);
+    let R = pythagoreanTheroem((x0.x - center.x), (x0.y - center.y));
+    let offsetAngle = Angle.fromRadians(Math.atan2(dx_0, dy_0));
+
+    for (let i = 1; i < n; i++) {
+        let x_n: ICoords2D = {
+            x: center.x,
+            y: center.y
+        };
+
+        let incrementAngle = Angle.fromDegrees((60 * i) 
+            + offsetAngle.asDegrees());
+        x_n.x += Math.cos(incrementAngle.asRadians());
+        x_n.y += Math.sin(incrementAngle.asRadians());
+
+        coords.push(x_n);
+    }
+
+    return coords;
+}
+
+/**
  * http://forumgeom.fau.edu/FG2016volume16/FG201627.pdf
  * @param n - Number of sides
  * @param r - The circumradius or radius from the center of the polygon to each
@@ -198,4 +269,35 @@ export function getPolygonPointsString(n: number, r: number, startAngle?: IAngle
 
     // Remove extra whitespace at start of string and return it.
     return pointsStr.trimLeft();
+}
+
+/**
+ * Returns the center of a hexagon adjacent to the hexagon centered around c1.
+ * @param c1 - Center of the initial hexagon.
+ * @param x1 - One of the verticies which is connected to both hexagons.
+ * @param x2_IsClockwise - Whether x2 is +-60deg from x1. 
+ */
+export function getCenterOfAdjacentHexagon(c1: ICoords2D, 
+    x1: ICoords2D, 
+    x2_IsClockwise: boolean): ICoords2D 
+{
+    let c2: ICoords2D = {
+        x: c1.x,
+        y: c1.y
+    };
+
+    let dx_1 = x1.x - c1.x;
+    let dy_1 = x1.y - c1.y;
+
+    let double_R = pythagoreanTheroem(dx_1, dy_1) * 2;
+    let a_x1 = Angle.fromRadians(Math.atan2(dy_1, dx_1))
+        .normalizeAngle();
+    let a_c2 = Angle.fromDegrees(((x2_IsClockwise ? -30 : 30))
+            + a_x1.asDegrees())
+        .normalizeAngle();
+
+    c2.x += Math.cos(a_c2.asRadians()) * double_R;
+    c2.y += Math.sin(a_c2.asRadians()) * double_R;
+
+    return c2;
 }

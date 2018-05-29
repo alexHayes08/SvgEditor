@@ -229,6 +229,7 @@ export class SvgHandles implements ISvgHandles {
 
         let hexagonTilingService = new HexagonTilingService(hexContainer, this, this.canvas.defs);
         hexagonTilingService.draw();
+        hexagonTilingService.update();
     }
 
     //#endregion

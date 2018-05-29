@@ -1,4 +1,4 @@
-import { toDegrees, toRadians } from "../helpers/math-helpers";
+import { toDegrees, toRadians, normalizeAngle } from "../helpers/math-helpers";
 
 export interface IAngle {
     asDegrees(): number;
@@ -57,19 +57,7 @@ export class Angle implements IAngle {
     }
 
     normalizeAngle(): IAngle {
-        let multiples = Number((this.asDegrees() / 360).toFixed(0));
-
-        // Check for positive multiples
-        if (multiples >= 1) {
-            let newDeg = this.asDegrees() - (multiples * 360);
-            this.setWithDegrees(newDeg);
-
-        // Check for negative multiples
-        } else if (multiples <= -1) {
-            let newDeg = this.asDegrees() + (multiples * 360);
-            this.setWithDegrees(newDeg);
-        }
-
+        this.setWithDegrees(normalizeAngle(this.asDegrees()));
         return this;
     }
 

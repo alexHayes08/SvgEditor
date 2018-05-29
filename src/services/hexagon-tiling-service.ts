@@ -5,10 +5,13 @@ import * as d3 from "d3";
 import { IDrawable } from "../models/idrawable";
 import { SvgTransformServiceSingleton, SvgTransformString, TransformType, ITransformable, ICoords2D } from "./svg-transform-service";
 import { NS } from "../helpers/namespaces-helper";
-import { getPolygonPointsString, calculateApothem, calculateSideLength } from "../helpers/polygon-helpers";
+import { getPolygonPointsString, calculateApothem, calculateSideLength, getCircumradius } from "../helpers/polygon-helpers";
 import { ISvgDefs } from "../models/svg-defs-model";
 import { ISvgHandles } from "../models/isvg-handles-model";
 import { InternalError } from "../models/errors";
+import { pythagoreanTheroem } from "../helpers/math-helpers";
+import { IAngle } from "../models/angle";
+import { Polygon, PolygonData } from "../models/polygon";
 
 /**
  * Represents each side of a hexagon.
@@ -33,29 +36,37 @@ export class HexagonTilingService implements IDrawable {
     private readonly container: SVGGElement;
     private readonly defs: ISvgDefs;
     private readonly handles: ISvgHandles;
-    private readonly hexagons: HexagonTile[];
+    private readonly hexagons: Polygon[];
     private readonly hexagonTemplate: SVGPolygonElement;
 
     private circleRef: SVGCircleElement;
     private hexagonsV2: SVGUseElement[];
 
+    public numberOfLayers: number;
     public mainApothem: number;
     public mainCircumRadius: number;
     public tileCircumRadius: number;
+    public canPlaceTile: (polygon: Polygon) => boolean;
 
     //#endregion
 
     //#region Ctor
 
     public constructor(container: SVGGElement, handles: ISvgHandles, defs: ISvgDefs) {
+        let self = this;
+        
         this.container = container;
         this.defs = defs;
         this.handles = handles;
         this.hexagons = [];
         this.hexagonsV2 = [];
-        this.mainApothem = 90;
+        this.mainApothem = 130;
         this.mainCircumRadius = Number.POSITIVE_INFINITY;
+        this.numberOfLayers = 5;
         this.tileCircumRadius = 20;
+        this.canPlaceTile = () => {
+            return true;
+        }
 
         // Center container
         container.setAttribute("transform", "translate(250,250)");
@@ -296,16 +307,36 @@ export class HexagonTilingService implements IDrawable {
     }
     
     public draw(): void {
+        let self = this;
         this.defs.createSection("hexagon-defs");
         let hexTemplateId = this.defs.pushToSection(this.hexagonTemplate, "hexagon-defs");
 
-        for (let hex of this.hexagonsV2) {
-            hex.setAttribute("href", `#${hexTemplateId.id}`);
-            this.container.appendChild(hex);
+        // for (let hex of this.hexagonsV2) {
+        //     hex.setAttribute("href", `#${hexTemplateId.id}`);
+        //     this.container.appendChild(hex);
+        // }
+
+        for (let layer = 1; layer <= this.numberOfLayers; layer++) {
+
+            let numberOfHexesInLayer = layer == 1 ? 1 : 6 * layer;
+            for (let hexNo = 0; hexNo < numberOfHexesInLayer; hexNo++) {
+                let polygon = new Polygon({
+                    numberOfSides: 6,
+                    center: { x: 0, y: 0 },
+                    x0: { x: 20, y: 0 }
+                });
+    
+                this.hexagons.push(new Tile({
+                    isDisplayed: self.canPlaceTile(polygon),
+                    polygon: polygon,
+                    layer: layer
+                }));
+            }
         }
 
+        console.log(this.hexagons);
+
         this.container.appendChild(this.circleRef);
-        this.update();
     }
 
     public update(): void {
@@ -313,6 +344,7 @@ export class HexagonTilingService implements IDrawable {
 
         let sideLength = calculateSideLength(6, this.tileCircumRadius);
         let apothem = calculateApothem(6, sideLength);
+        let layer = 1;
 
         // Need to round up, don't want half a hexagon.
         // Also the +1 is to avoid the hexagon intersecting the circle with
@@ -351,7 +383,6 @@ export class HexagonTilingService implements IDrawable {
 
         // This is an arrow function just to avoid cluttering the context.
         let start_x = (() => {
-            // let by = Math.floor(d / 2);
             return (d * this.tileCircumRadius) + (d * (sideLength / 2));
         })();
 
@@ -369,6 +400,20 @@ export class HexagonTilingService implements IDrawable {
 
         // Draw from both sides (favor right), distribute evenly between top
         // and bottom (favor top when uneven).
+        let hexagons = d3.select(this.container)
+            .selectAll<SVGUseElement, Tile>("use")
+            .data(this.hexagons)
+            .attr("transform", function(d) {
+                return `translate(${d.center.x},${d.center.y})`;
+            });
+
+        // Enter
+        hexagons.enter()
+            .append<SVGUseElement>("use")
+            .attr("href", `#${this.hexagonTemplate.id}`);
+
+        // Exit
+
         this.hexagonsV2.map((hex, i) => {
             let sidePrecedence = lastUsedCoord.y == 0
                     ? [ HexagonSide.TOP_LEFT,
@@ -467,113 +512,26 @@ export class HexagonTilingService implements IDrawable {
     }
 
     public erase(): void {
-
+        this.hexagons.splice(0, this.hexagons.length - 1);
     }
 
     //#endregion
 }
 
-export class HexagonTile implements IDrawable {
-    //#region Fields
-    private readonly _element: SVGPolygonElement;
-    private _top_right?: HexagonTile;
-    private _top_middle?: HexagonTile;
-    private _top_left?: HexagonTile;
-    private _bottom_left?: HexagonTile;
-    private _bottom_middle?: HexagonTile;
-    private _bottom_right?: HexagonTile;
-    private _circumradius: number;
+export interface TileData {
+    isDisplayed: boolean;
+    layer: number;
+    polygon: Polygon;
+}
 
-    public transforms: ITransformable;
-    //#endregion
+export class Tile extends Polygon {
+    public layer: number;
+    public isDisplayed: boolean;
 
-    //#region Ctor
+    public constructor(data: TileData) {
+        super(data.polygon);
 
-    public constructor() {
-        this._circumradius = 10;
-        this.transforms = new SvgTransformString([
-            TransformType.ROTATE,
-            TransformType.TRANSLATE,
-            TransformType.ROTATE
-        ]);
-        
-        // Create element
-        this._element = <SVGPolygonElement>document
-            .createElementNS(NS.SVG, "polygon");
-
-        // Assign points to it
-        this._element.setAttribute("points", 
-            getPolygonPointsString(6, this._circumradius));
-
-        // Apply transforms
-        this._element.setAttribute("transform", 
-            this.transforms.toTransformString());
+        this.layer = data.layer;
+        this.isDisplayed = data.isDisplayed;
     }
-
-    //#endregion
-    
-    //#region Properties
-    public get circumradius(): number {
-        return this._circumradius;
-    }
-    public set circumradius(value: number) {
-        if (value <= 0) {
-            throw new Error("Value cannot be less than or equal to zero.");
-        }
-        this._circumradius = value;
-    }
-
-    public get topRight(): HexagonTile|undefined {
-        return this._top_right;
-    }
-
-    public get topMiddle(): HexagonTile|undefined {
-        return this._top_middle;
-    }
-
-    public get topLeft(): HexagonTile|undefined {
-        return this._top_left;
-    }
-
-    public get bottomLeft(): HexagonTile|undefined {
-        return this._bottom_left;
-    }
-
-    public get bottomMiddle(): HexagonTile|undefined {
-        return this._bottom_middle;
-    }
-
-    public get bottomRight(): HexagonTile|undefined {
-        return this._bottom_right;
-    }
-
-    public get hasAvailbleSide(): boolean {
-        return this.topLeft == undefined
-            && this.topMiddle == undefined
-            && this.topRight == undefined
-            && this.bottomLeft == undefined
-            && this.bottomMiddle == undefined
-            && this.bottomRight == undefined;
-    }
-    //#endregion
-    
-    //#region Functions
-    public getElement(): SVGPolygonElement {
-        return this._element;
-    }
-
-    public draw(): void {
-        d3.select(this.getElement())
-            .attr("transform", this.transforms.toTransformString());
-    }
-
-    public update(): void {
-        d3.select(this.getElement())
-            .attr("transform", this.transforms.toTransformString());
-    }
-    
-    public erase(): void {
-
-    }
-    //#endregion
 }

@@ -4,8 +4,10 @@ import * as mathHelpers from "../helpers/math-helpers";
 
 import { Aperture, EVT_NAMES } from "./aperture.main";
 import { Angle } from "../models/angle";
-import { getCenterOfAdjacentHexagon } from "../helpers/polygon-helpers";
-import { getPolygonPointsString } from "../helpers/polygon-helpers";
+import { 
+    getPolygonPointsString, 
+    getCenterOfAdjacentHexagon 
+} from "../helpers/geometry-helpers";
 import { GroupAction } from "../models/actions/group-action";
 import { NS } from "../helpers/namespaces-helper";
 import { SvgColorService } from "../services/svg-color-service";

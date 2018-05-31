@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 
-import { getCenterOfAdjacentHexagon } from "../src/helpers/polygon-helpers";
+import { getCenterOfAdjacentHexagon } from "../src/helpers/geometry-helpers";
 import { ICoords2D } from "../src/services/svg-transform-service";
 import { roundToSigFig } from "../src/helpers/math-helpers";
 

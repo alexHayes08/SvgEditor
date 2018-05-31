@@ -11,11 +11,25 @@ export interface ICoords2D {
     y: number;
 }
 
+export function isICoords2D(value: any): value is ICoords2D {
+    return value != undefined
+        && value.x != undefined
+        && value.y != undefined;
+}
+
 export interface IBBox {
     x: number;
     y: number;
     width: number;
     height: number;
+}
+
+export function isIBBox(value: any): value is IBBox {
+    return value != undefined
+        && value.x != undefined
+        && value.y != undefined
+        && value.width != undefined
+        && value.height != undefined;
 }
 
 export type IScaleMatrix = ICoords2D;

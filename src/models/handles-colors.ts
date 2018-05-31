@@ -17,7 +17,7 @@ import {
     SvgTransformString,
     TransformType
 } from "../services/svg-transform-service";
-import { getPolygonPointsString } from "../helpers/polygon-helpers";
+import { getPolygonPointsString } from "../helpers/geometry-helpers";
 import { SvgColors, SvgItem, ColorMap, isColorMap } from "./svg-item-model";
 import { toDegrees, CardinalDirections } from "../helpers/math-helpers";
 import { LinearGradient } from "./element-wrappers/linear-gradient";
@@ -354,7 +354,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         //#endregion
 
         let colorBtns = this.colorRingContainer
-            .selectAll<SVGPolygonElement, {}>("polygon")
+            .selectAll<SVGCircleElement, {}>("circle")
             .data<ColorMap|string>(data)
             .attr("stroke", "black")
             .attr("stroke-width", "2")
@@ -390,10 +390,13 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
             });
 
         colorBtns.enter()
-            .append<SVGPolygonElement>("polygon")
+            .append<SVGCircleElement>("circle")
             .attr("stroke", "black")
             .attr("stroke-width", "2")
-            .attr("points", getPolygonPointsString(6, 20))
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", 20)
+            // .attr("points", getPolygonPointsString(6, 20))
             .attr("id", () => uniqid())
             .attr("fill", function(d) {
                 if (self.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
@@ -422,7 +425,8 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
                     .setTranslate({ x: 0, y: self.radius })
                     .setRotation({ a: -1 * angle }, 1);
                 return self.colorRingTransform.toTransformString();
-            }).on("click", function (d, i) {
+            })
+            .on("click", function (d, i) {
                 console.log(`Clicked:`);
                 console.log(d);
                 d3.event.stopPropagation();
@@ -445,7 +449,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
                         ? CardinalDirections.EAST
                         : CardinalDirections.WEST;
 
-                    // Draw three hexagons
+                    // Draw three circles
                     // 1) Fill
                     // 2) Stroke
                     // 3) Stroke-width
@@ -458,7 +462,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
 
                     // Update
                     let elementColors = self.elementColorContainer
-                        .selectAll<SVGPolygonElement, {}>("polygon")
+                        .selectAll<SVGCircleElement, {}>("circle")
                         .data([d])
                         .attr("transform", function(d) {
                             return self.colorRingTransform.toTransformString();
@@ -466,8 +470,11 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
 
                     // Enter
                     elementColors.enter()
-                        .append<SVGPolygonElement>("polygon")
-                        .attr("points", getPolygonPointsString(6, 20))
+                        .append<SVGCircleElement>("circle")
+                        // .attr("points", getPolygonPointsString(6, 20))
+                        .attr("cx", 0)
+                        .attr("cy", 0)
+                        .attr("r", 20)
                         .attr("transform", function(d) {
                             return self.colorRingTransform.toTransformString();
                         });

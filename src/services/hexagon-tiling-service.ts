@@ -3,15 +3,26 @@ const uniqid = require("uniqid");
 import * as d3 from "d3";
 
 import { IDrawable } from "../models/idrawable";
-import { SvgTransformServiceSingleton, SvgTransformString, TransformType, ITransformable, ICoords2D } from "./svg-transform-service";
+import { 
+    SvgTransformServiceSingleton, 
+    SvgTransformString, 
+    TransformType, 
+    ITransformable, 
+    ICoords2D 
+} from "./svg-transform-service";
 import { NS } from "../helpers/namespaces-helper";
-import { getPolygonPointsString, calculateApothem, calculateSideLength, getCircumradius } from "../helpers/polygon-helpers";
+import { 
+    getPolygonPointsString, 
+    calculateApothem, 
+    calculateSideLength, 
+    getCircumradius 
+} from "../helpers/geometry-helpers";
 import { ISvgDefs } from "../models/svg-defs-model";
 import { ISvgHandles } from "../models/isvg-handles-model";
 import { InternalError } from "../models/errors";
 import { pythagoreanTheroem } from "../helpers/math-helpers";
 import { IAngle } from "../models/angle";
-import { Polygon, PolygonData } from "../models/polygon";
+import { Polygon, PolygonData } from "../models/shapes/polygon";
 
 /**
  * Represents each side of a hexagon.

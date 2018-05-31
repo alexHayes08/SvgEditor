@@ -2,31 +2,73 @@ import { cotangent, toRadians, pythagoreanTheroem } from "./math-helpers";
 import { ICoords2D } from "../services/svg-transform-service";
 import { IAngle, Angle } from "../models/angle";
 import { getAllGroupsV3 } from "./regex-helper";
+import { Polygon } from "../models/shapes/polygon";
 
 /**
  * Subset of math-helpers.ts
  */
 
-export interface HexagonFromVerticies {
-    center: ICoords2D;
-    x1: ICoords2D;
+export const SQRT_OF_2 = Math.sqrt(2);
+export const SQRT_OF_3 = Math.sqrt(3);
+
+/**
+ * Calculates concentric polygons where each circumradius is incremented by
+ * (2 * s) where the inner most polygons circumradius is the min amount to
+ * evenly fit the sidelengths into a regular polygon. If there are any left
+ * over verticies that cannot fit onto the initial polygon, concentric polygons
+ * will be generated until all verticies are accounted for.
+ * @param numberOfVerticies 
+ * @param sideLength 
+ * @param minCircumRadius 
+ * @param center 
+ */
+export function calculateConcentricPolygons(
+    numberOfVerticies: number,
+    sideLength: number,
+    minCircumRadius: number = 0,
+    center: ICoords2D = {x: 0, y: 0}): Polygon[]
+{
+    let polygons: Polygon[] = [];
+    
+    // Caculate the minimum possible value for the circumradius.
+    let minValidCircumradius = sideLength / (2 * SQRT_OF_3);
+    let currentRadius = minCircumRadius > minValidCircumradius 
+        ? minCircumRadius
+        : minValidCircumradius;
+
+    // Round up
+    let startingNumberOfSides = Math.ceil(calculateNumberOfSides(sideLength,
+        currentRadius));
+
+    // Recalculate circumradius
+    currentRadius = getCircumradius(startingNumberOfSides, sideLength)
+        - (2 * sideLength);
+
+    let remainingVerticies = numberOfVerticies;
+    do {
+        
+        // Increment currentRadius by 2 * sideLength
+        currentRadius += (2 * sideLength);
+
+        // Create polygon
+        let polygon = new Polygon({
+            center: center,
+            x0: getCoordsOfPointInPolygon(startingNumberOfSides, 0, currentRadius, center),
+            numberOfSides: startingNumberOfSides
+        });
+        polygons.push(polygon);
+
+        remainingVerticies -= polygon.verticies.length;
+
+    } while (remainingVerticies > 0);
+
+    return polygons;
 }
 
-export interface HexagonFromApothem {
-    center: ICoords2D;
-    apothem: ICoords2D;
-}
-
-export function isHexagonFromVerticies(value: any): value is HexagonFromVerticies {
-    return value != undefined
-        && value.center != undefined
-        && value.x1 != undefined;
-}
-
-export function isHexagonFromApothem(value: any): value is HexagonFromApothem {
-    return value != undefined
-        && value.center != undefined
-        && value.apothem != undefined;
+export function calculateNumberOfSides(sideLength: number,
+    circumradius: number): number
+{
+    return Math.PI / (Math.asin(sideLength / (2 * circumradius)));
 }
 
 /**
@@ -82,34 +124,30 @@ export function calculateSideLength(n: number, r: number): number {
 /**
  * 
  * @param sides - Number of sides
- * @param index - The nth point to draw. 0 <= index < sides.
- * @param radius - The circumradius of the polygon.
+ * @param index - The nth point to draw. 0 <= index < (sides + 1).
+ * @param circumradius - The circumradius of the polygon.
  * @param center - Center of the polygon.
  * @param offsetAngle - If the polygon isn't centered where 0deg is east, 90deg
  * is is north, etc...
  */
 export function getCoordsOfPointInPolygon(sides: number,
     index: number,
-    radius: number,
+    circumradius: number,
     center?: ICoords2D,
     offsetAngle?: IAngle): ICoords2D 
 {
     let result: ICoords2D = {
-        x: 0,
-        y: 0
+        x: center ? center.x : 0,
+        y: center ? center.y : 0
     };
 
-    center = center || { x: 0, y: 0 };
     offsetAngle = offsetAngle || Angle.fromRadians(0);
     let halved_internal_angle = getInternalAngle(sides);
 
-    result.x = Math.cos(offsetAngle.asRadians() 
-        + (halved_internal_angle * index)) * radius;
-    result.y = Math.cos(offsetAngle.asRadians() 
-        + (halved_internal_angle * index)) * radius;
-
-    // Apply center offset
-    
+    result.x += Math.cos(offsetAngle.asRadians() 
+        + (halved_internal_angle * index)) * circumradius;
+    result.y += Math.cos(offsetAngle.asRadians() 
+        + (halved_internal_angle * index)) * circumradius;
 
     return result;
 }

@@ -3,8 +3,9 @@ const uniqid = require("uniqid");
 import * as d3 from "d3";
 
 import { ActivatableServiceSingleton } from "../services/activatable-service";
+import { CacheService } from "../services/cache-service";
 import { getNewPointAlongAngle } from "../helpers/svg-helpers";
-import { getPolygonPointsString } from "../helpers/polygon-helpers";
+import { getPolygonPointsString, calculateConcentricPolygons } from "../helpers/geometry-helpers";
 import { HandlesColorsOverlay, HandlesColorMode } from "./handles-colors";
 import { HandlesRotationOverlay } from "./handles-rotation";
 import { HandlesScaleOverlay } from "./handles-scale";
@@ -28,6 +29,7 @@ import {
 import { InternalError } from "./errors";
 import { SvgEditor } from "./svg-editor-model";
 import { SvgCanvas } from "./svg-canvas-model";
+import { Polygon } from "./shapes/polygon";
 
 interface IMainOverlayData {
     angle: number;
@@ -63,6 +65,7 @@ export class HandlesMain implements IContainer, IDrawable {
     //#region Fields
 
     private readonly elementDataMap: WeakMap<Element, ITransformable>;
+    private readonly cache: CacheService<String>;
     private defaultWidth: number;
     private highlightData: ITransformable;
     private minRadius: number;
@@ -188,6 +191,7 @@ export class HandlesMain implements IContainer, IDrawable {
 
     public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>, canvas: SvgCanvas) {
         this.animationDuration = 200;
+        this.cache = new CacheService();
         this.center = { x: 0, y: 0};
         this.container = container;
         this.defaultWidth = 4;
@@ -357,12 +361,17 @@ export class HandlesMain implements IContainer, IDrawable {
             .call(arcOpacity)
             .call(arcTransforms);
 
+        // Draw modes
+        // Three groups
+        // 1) The main button to open mode picker.
+        // 2) Cocentric circles to align mode circles to.
+        // 3) Mode circles.
         this.buttonsContainer
             .selectAll<SVGGElement, IMainOverlayData>("g")
             .data(this.buttonsData)
             .each(function(d) {
                 d3.select(this)
-                    .selectAll<SVGPolygonElement, {}>("polygon")
+                    .selectAll<SVGCircleElement, {}>("circle")
                     .data(d.modes)
                     .attr("transform", function(_d, i) {
                         let btnTransformData = self.elementDataMap.get(this);
@@ -665,13 +674,37 @@ export class HandlesMain implements IContainer, IDrawable {
             .each(function(d) {
 
                 // Draw buttons
+                // Three groups
+                // 1) The main button to open mode picker (if any modes).
+                // 2) Cocentric circles to align mode circles to.
+                // 3) Mode circles.
+                let mainButtonGroup = d3.select(this)
+                    .append<SVGGElement>("g")
+                    .attr("data-name", "mode-main-button-container");
+
+                let concentricGroup = d3.select(this)
+                    .append<SVGGElement>("g")
+                    .attr("data-name", "concentric-circle-container");
+
+                let modeCirclesGroup = d3.select(this)
+                    .append<SVGGElement>("g")
+                    .attr("data-name", "mode-buttons-container");
+
+                self.cache.get<Polygon[]>(modeCirclesGroup.attr("data-name"), 
+                    () => {
+                        return calculateConcentricPolygons(d.modes.length, 20);
+                    });
+
                 d3.select(this)
-                    .selectAll<SVGPolygonElement, {}>("polygon")
+                    .selectAll<SVGCircleElement, {}>("circle")
                     .data(d.modes)
                     .enter()
-                    .append<SVGPolygonElement>("polygon")
+                    .append<SVGCircleElement>("circle")
                     .attr("id", () => uniqid())
-                    .attr("points", getPolygonPointsString(6, 20))
+                    // .attr("points", getPolygonPointsString(6, 20))
+                    .attr("cx", 0)
+                    .attr("cy", 0)
+                    .attr("r", 20)
                     .attr("data-mode", function(d) { return d.label })
                     .classed("selected", (d, i) => { return d.selected; })
                     .each(function(_d, i) {

@@ -78,7 +78,7 @@ export function sortByPointsClosestToCircumfrence(r: number,
     cy: number,
     points: ICoords2D[]): ICoords2D[]
 {
-    let cache = new CacheService<ICoords2D, TempData>();
+    let cache = new CacheService<ICoords2D>();
     return points.sort((a, b) => {
         let tempData_a = cache.get(a, () => {
             let angle_rad = Math.atan2(a.x, a.y);

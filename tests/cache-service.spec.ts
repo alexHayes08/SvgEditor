@@ -7,7 +7,7 @@ describe("cache-service", () => {
     describe("#size", () => {
         it ("After storing three items, the size should be three.", () => {
             let expected = 3;
-            let cache = new CacheService<String, number>();
+            let cache = new CacheService<String>();
             cache.set("test a", 42);
             cache.set("test b", 41);
             cache.set("test c", 40);
@@ -24,7 +24,7 @@ describe("cache-service", () => {
         it ("Clears out all stored items, size should be zero.", () => {
             let expected = 0;
 
-            let cache = new CacheService<String, number>();
+            let cache = new CacheService<String>();
             cache.set("test a", 42);
             cache.set("test b", 41);
             cache.set("test c", 40);
@@ -43,7 +43,7 @@ describe("cache-service", () => {
             let expectedIterations = 3;
             let actualIterations = 0;
             
-            let cache = new CacheService<String, number>();
+            let cache = new CacheService<String>();
             cache.set("test a", 42);
             cache.set("test b", 41);
             cache.set("test c", 40);
@@ -55,7 +55,7 @@ describe("cache-service", () => {
 
     describe("#get", () => {
         it ("Able to retrieve each stored item by its key.", () => {
-            let cache = new CacheService<String, number>();
+            let cache = new CacheService<String>();
             let val_0 = 42;
             let val_1 = 43;
             let val_2 = 44;
@@ -78,7 +78,7 @@ describe("cache-service", () => {
             let futureDate = new Date();
             futureDate.setFullYear(futureDate.getFullYear() + 1);
 
-            let cache = new CacheService<String, number>();
+            let cache = new CacheService<String>();
             cache.set("test a", val_0, pastDate);
             cache.set("test b",val_1, pastDate);
             cache.set("test c", val_2, futureDate);

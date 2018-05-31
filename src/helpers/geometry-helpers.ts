@@ -26,12 +26,13 @@ export function calculateConcentricPolygons(
     numberOfVerticies: number,
     sideLength: number,
     minCircumRadius: number = 0,
+    startAngle: IAngle = Angle.fromDegrees(0),
     center: ICoords2D = {x: 0, y: 0}): Polygon[]
 {
     let polygons: Polygon[] = [];
     
     // Caculate the minimum possible value for the circumradius.
-    let minValidCircumradius = sideLength / (2 * SQRT_OF_3);
+    let minValidCircumradius = sideLength * (2 * SQRT_OF_3);
     let currentRadius = minCircumRadius > minValidCircumradius 
         ? minCircumRadius
         : minValidCircumradius;
@@ -53,7 +54,10 @@ export function calculateConcentricPolygons(
         // Create polygon
         let polygon = new Polygon({
             center: center,
-            x0: getCoordsOfPointInPolygon(startingNumberOfSides, 0, currentRadius, center),
+            x0: getCoordsOfPointInPolygon(startingNumberOfSides, 0, 
+                currentRadius, 
+                center, 
+                startAngle),
             numberOfSides: startingNumberOfSides
         });
         polygons.push(polygon);

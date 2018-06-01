@@ -5,7 +5,7 @@ import * as d3 from "d3";
 import { ActivatableServiceSingleton } from "../services/activatable-service";
 import { CacheService } from "../services/cache-service";
 import { getNewPointAlongAngle } from "../helpers/svg-helpers";
-import { getPolygonPointsString, calculateConcentricPolygons } from "../helpers/geometry-helpers";
+import { getPolygonPointsString, calcConcentricPolygons, coordsToPointsStr } from "../helpers/geometry-helpers";
 import { HandlesColorsOverlay, HandlesColorMode } from "./handles-colors";
 import { HandlesRotationOverlay } from "./handles-rotation";
 import { HandlesScaleOverlay } from "./handles-scale";
@@ -39,9 +39,9 @@ interface IMainOverlayData {
     buttonDataName: string;
     buttonPathArcDataName?: string;
     buttonTransformData: ITransformable;
-    modes: IMode[],
+    modes: IMode[];
 
-    handleMode?: HandleMode
+    handleMode?: HandleMode;
     middleAngle?: IAngle;
 };
 
@@ -74,6 +74,7 @@ export class HandlesMain implements IContainer, IDrawable {
     private lastUsedMode: HandleMode;
 
     private _collapseButtons: boolean;
+    private _expandedMode?: IMainOverlayData;
     private _mode: HandleMode;
     private _radius: number;
 
@@ -316,23 +317,54 @@ export class HandlesMain implements IContainer, IDrawable {
 
     //#region Properties
 
-    get collapseButtons() {
+    private get expandedMode() {
+        return this._expandedMode;
+    }
+
+    private set expandedMode(value: IMainOverlayData|undefined) {
+
+        // Contract the old mode.
+        if (this._expandedMode != undefined) {
+            this.contractMode(this._expandedMode)
+        }
+        
+        // Expand the new mode IF it's not the same as the old node.
+        if (value != undefined && value != this._expandedMode) {
+            this.expandMode(value);
+        }
+
+        // If the value and old value are equal, set the expanded mode to undefined.
+        if (value == this._expandedMode) {
+            this._expandedMode = undefined;
+        } else {
+
+            // Assign new value
+            this._expandedMode = value;
+        }
+    }
+
+    public get collapseButtons() {
         return this._collapseButtons;
     }
 
-    set collapseButtons(value: boolean) {
+    public set collapseButtons(value: boolean) {
         if (value != this.collapseButtons) {
+
+            // Make sure the expanded mode is collapsed.
+            this.expandedMode = undefined;
+
+            // Update the class on the container.
             this.container.classed("collapsed", value);
             this._collapseButtons = value;
             this.updateButtonsAndArcs();
         }
     }
 
-    get mode() {
+    public get mode() {
         return this._mode;
     }
 
-    set mode(value: HandleMode) {
+    public set mode(value: HandleMode) {
         let oldMode = this.mode;
         
         // The lastUsedMode cannot be the select mode.
@@ -352,11 +384,11 @@ export class HandlesMain implements IContainer, IDrawable {
         this.collapseButtons = !this.collapseButtons;
     }
 
-    get radius() {
+    public get radius() {
         return this._radius
     }
 
-    set radius(value: number) {
+    public set radius(value: number) {
         if (value < this.minRadius) {
             this._radius = this.minRadius;
         } else {
@@ -367,6 +399,14 @@ export class HandlesMain implements IContainer, IDrawable {
     //#endregion
 
     //#region Functions
+
+    private expandMode(mode: IMainOverlayData): void {
+        d3.select(`[data-name='${mode.buttonDataName}']`).classed("expanded", true);
+    }
+
+    private contractMode(mode: IMainOverlayData): void {
+        d3.select(`[data-name='${mode.buttonDataName}']`).classed("expanded", false);
+    }
 
     private getSelectedSubMode(data: IMainOverlayData): IMode {
         let selectedMode = data.modes.find(m => m.selected);
@@ -399,7 +439,7 @@ export class HandlesMain implements IContainer, IDrawable {
 
         // Draw main buttons.
         this.modeContainer
-            .selectAll<SVGGElement, IMainOverlayData>("g")
+            .selectAll<SVGGElement, IMainOverlayData>("g[data-name='handles-button-container'] > g[data-name]")
             .data(this.buttonsData)
             .call(bttnOpacity)
             .call(bttnTransform)
@@ -416,79 +456,6 @@ export class HandlesMain implements IContainer, IDrawable {
                     .select<SVGGElement>("g[data-name='concentric-container']");
                 let submodesContainer = modeContainer
                     .select<SVGGElement>("g[data-name='submodes-button-container']");
-
-                // If there is more than one mode draw concentrics and sub-modes
-                if (d.modes.length > 1) {
-                    
-                    // Retrieve the concentric data
-                    let polygonData = self.cache
-                        .get<Polygon[]>(d.buttonDataName, () => {
-                            return calculateConcentricPolygons(d.modes.length,
-                                20, 40, d.middleAngle);
-                        });
-
-                    // Verify the polygon data isn't undefined
-                    if (polygonData == undefined) {
-                        throw new InternalError()
-                    }
-
-                    // Draw concentrics
-                    concentricContainer
-                        .selectAll<SVGCircleElement, Polygon>("circle")
-                        .data(polygonData)
-                        .attr("r", function(_d) { return _d.circumRadius })
-                        .classed("concentric-submode-ring", true);
-
-                    // Track which vertex to use from the polygons
-                    let currentPolygonVertexIndex = 0;
-                    let currentPolygonIndex = 0;
-
-                    // Draw sub-modes
-                    submodesContainer
-                        .selectAll<SVGGElement, IMainOverlayData>("g")
-                        .data(d.modes)
-                        .each(function(_d, _i) {
-                            d3.select(this)
-                                .selectAll<SVGCircleElement, {}>("circle")
-                                .data(d.modes)
-                                .attr("transform", function(_d, _i) {
-                                    let btnTransformData = self
-                                        .elementDataMap.get(this);
-
-                                    if (btnTransformData == undefined
-                                        || polygonData == undefined) {
-                                        return "";
-                                    }
-
-                                    if (self.collapseButtons) {
-                                        btnTransformData.setTranslate({ x: 0, y: 0 });
-                                    } else {
-                                        if (d.modes.length > 1 && d.middleAngle) {
-                                            let onLeft = d.middleAngle
-                                                .asDegrees() > 180 ? 1 : -1;
-                                            btnTransformData.setTranslate({ 
-                                                x: onLeft * _i * 35, 
-                                                y: Math.pow(-1, _i + 1) * 10 
-                                            });
-                                        } else {
-                                            btnTransformData.setTranslate({ x: _i * 40, y: 0});
-                                        }
-                                    }
-
-                                    // Increment which polygon/vertex is being used
-                                    currentPolygonVertexIndex++;
-                                    if (currentPolygonVertexIndex >= 
-                                        polygonData[currentPolygonIndex].verticies.length)
-                                    {
-                                        currentPolygonIndex++;
-                                        currentPolygonVertexIndex = 0;
-                                    }
-
-                                    return btnTransformData.toTransformString();
-                                })
-                                .classed("selected", (d, i) => { return d.selected; });
-                    });
-                }
             });
 
         function arcTransforms(selection: d3.Selection<SVGPathElement, IMainOverlayData, SVGGElement, {}>) {
@@ -816,6 +783,7 @@ export class HandlesMain implements IContainer, IDrawable {
                 // 3) Submodes container
                 let mainButtonContainer = modeContainer
                     .append<SVGGElement>("g")
+                    .data([d.handleMode])
                     .attr("data-name", "main-button-container");
                 let concentricContainer = modeContainer
                     .append<SVGGElement>("g")
@@ -846,12 +814,25 @@ export class HandlesMain implements IContainer, IDrawable {
 
                     // Multiple sub-modes
                     // Calculate how many polygons are needed for each mode.
-                    let concentricPolygons = self.cache
-                        .get<Polygon[]>(d.buttonDataName,
-                            () => {
-                                return calculateConcentricPolygons(
-                                    d.modes.length, 20, 40, d.middleAngle);
-                            });
+                    // let concentricPolygons = self.cache
+                    //     .get<Polygon[]>(d.buttonDataName,
+                    //         () => {
+                    //             return calculateConcentricPolygons(
+                    //                 d.modes.length, 20, 60, d.middleAngle);
+                    //         });
+                    let concentricPolygons = calcConcentricPolygons({
+                        numberOfVerticies: d.modes.length, 
+                        sideLength: 20, 
+                        minCircumRadius: 10,
+                        keepVerticiesEquidistant: true
+                        // startAngle: d.middleAngle
+                    });
+                    let verticies: ICoords2D[] = [];
+                    concentricPolygons.map(p => {
+                        verticies = verticies.concat(p.verticies);
+                    });
+
+                    console.log(verticies);
 
                     // Throw error if polygons is undefined.
                     if (concentricPolygons == undefined) {
@@ -859,12 +840,22 @@ export class HandlesMain implements IContainer, IDrawable {
                     }
 
                     // Draw concentrics
+                    // let concentricPolygonsEls = concentricContainer
+                    //     .selectAll<SVGCircleElement, {}>("circle")
+                    //     .data(concentricPolygons)
+                    //     .enter()
+                    //     .append<SVGCircleElement>("circle")
+                    //     .attr("r", function(d) { return d.circumRadius })
+                    //     .classed("concentric-submode-ring", true);
+
                     let concentricPolygonsEls = concentricContainer
-                        .selectAll<SVGCircleElement, {}>("circle")
+                        .selectAll<SVGPolygonElement, {}>("polygon")
                         .data(concentricPolygons)
                         .enter()
-                        .append<SVGCircleElement>("circle")
-                        .attr("r", function(d) { return d.circumRadius })
+                        .append<SVGPolygonElement>("polygon")
+                        .attr("points", function(d) {
+                            return coordsToPointsStr(d.verticies);
+                        })
                         .classed("concentric-submode-ring", true);
 
                     // Draw each sub-mode button if available
@@ -873,24 +864,33 @@ export class HandlesMain implements IContainer, IDrawable {
                         .data(d.modes)
                         .enter()
                         .append<SVGCircleElement>("circle")
-                        .attr("data-mode", function(d) { return d.label })
+                        .attr("data-mode", function(_d) { return _d.label })
                         .attr("r", 20)
                         .attr("cx", 0)
                         .attr("cy", 0)
-                        .classed("selected", function(d) { return d.selected })
-                        .each(function(_d) {
-                            let buttonCircleTransform = new SvgTransformString([TransformType.TRANSLATE]);
-                            self.elementDataMap.set(this, buttonCircleTransform);
-                            this.setAttribute("transform", buttonCircleTransform.toTransformString());
-                        });
+                        .attr("transform", function(_d, _i) {
+
+                            // Check that there is a placement for this
+                            // submode button.
+                            if (_i >= verticies.length) {
+                                return "";
+                            } else {
+                                let vertex = verticies[_i];
+                                return `translate(${vertex.x},${vertex.y})`;
+                            }
+                        })
+                        .classed("mode-button", true)
+                        .classed("selected", function(d) { return d.selected });
 
                     // Add event listener to the main button to display the
                     // sub-modes.
                     mainButtonContainer.on("click", function(_d, _i) {
                         console.log(`Toggled display of sub-modes of mode ${d.buttonDataName}`);
+                        self.expandedMode = d;
                         d3.event.stopPropagation();
                     });
                 }
+
                     // .attr("r", function(d, i) {
                  
                     //     // Throw error if polygons is undefined.
@@ -930,21 +930,21 @@ export class HandlesMain implements IContainer, IDrawable {
                 d3.event.stopPropagation();
             });
 
-        this.modeContainer.selectAll<Element, {}>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME}'] > *[data-mode]`)
-            .on("click", function() {
+        // this.modeContainer.selectAll<Element, {}>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME}'] > *[data-mode]`)
+        //     .on("click", function() {
 
-                if (colorData == undefined) {
-                    throw new InternalError();
-                }
+        //         if (colorData == undefined) {
+        //             throw new InternalError();
+        //         }
 
-                let thisDataMode = this.getAttribute("data-mode");
-                colorData.modes.map(mode => {
-                    mode.selected = mode.label == thisDataMode;
-                });
+        //         let thisDataMode = this.getAttribute("data-mode");
+        //         colorData.modes.map(mode => {
+        //             mode.selected = mode.label == thisDataMode;
+        //         });
 
-                self.mode = HandleMode.COLORS;
-                d3.event.stopPropagation();
-            });
+        //         self.mode = HandleMode.COLORS;
+        //         d3.event.stopPropagation();
+        //     });
 
         this.modeContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME}']`)
             .on("click", function() {
@@ -1050,7 +1050,7 @@ export class HandlesMain implements IContainer, IDrawable {
             });
 
         let buttons = this.modeContainer
-            .selectAll<SVGGElement, IMainOverlayData>("g")
+            .selectAll<SVGGElement, IMainOverlayData>("g[data-name='handles-button-container'] > g")
             .data(this.buttonsData)
             .attr("transform", function(d) {
                 d.buttonTransformData.setTranslate({ x: 0, y: self.radius })

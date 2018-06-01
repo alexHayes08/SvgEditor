@@ -11,54 +11,70 @@ import { Polygon } from "../models/shapes/polygon";
 export const SQRT_OF_2 = Math.sqrt(2);
 export const SQRT_OF_3 = Math.sqrt(3);
 
+export interface IConcentricPolygons {
+    numberOfVerticies: number;
+    sideLength: number;
+    minCircumRadius?: number;
+    center?: ICoords2D;
+    startAngle?: IAngle;
+    keepVerticiesEquidistant?: boolean;
+}
+
 /**
  * Calculates concentric polygons where each circumradius is incremented by
  * (2 * s) where the inner most polygons circumradius is the min amount to
  * evenly fit the sidelengths into a regular polygon. If there are any left
  * over verticies that cannot fit onto the initial polygon, concentric polygons
  * will be generated until all verticies are accounted for.
- * @param numberOfVerticies 
- * @param sideLength 
- * @param minCircumRadius 
- * @param center 
+ * @param data 
  */
-export function calculateConcentricPolygons(
-    numberOfVerticies: number,
-    sideLength: number,
-    minCircumRadius: number = 0,
-    startAngle: IAngle = Angle.fromDegrees(0),
-    center: ICoords2D = {x: 0, y: 0}): Polygon[]
+export function calcConcentricPolygons(
+    data: IConcentricPolygons): Polygon[]
 {
+    // Extract properties and set defaults.
+    let {
+        numberOfVerticies,
+        sideLength,
+        minCircumRadius = 0,
+        center = { x: 0, y: 0 },
+        startAngle = Angle.fromDegrees(0),
+        keepVerticiesEquidistant = false
+    } = data;
     let polygons: Polygon[] = [];
     
     // Caculate the minimum possible value for the circumradius.
-    let minValidCircumradius = sideLength * (2 * SQRT_OF_3);
+    let minValidCircumradius = sideLength / SQRT_OF_3;
     let currentRadius = minCircumRadius > minValidCircumradius 
         ? minCircumRadius
         : minValidCircumradius;
 
     // Round up
-    let startingNumberOfSides = Math.ceil(calculateNumberOfSides(sideLength,
+    let numberOfSides = Math.ceil(calcNumberOfSides(sideLength,
         currentRadius));
 
     // Recalculate circumradius
-    currentRadius = getCircumradius(startingNumberOfSides, sideLength)
-        - (2 * sideLength);
+    currentRadius = calcCircumradius(numberOfSides, sideLength)
+        - (sideLength);
 
     let remainingVerticies = numberOfVerticies;
     do {
         
-        // Increment currentRadius by 2 * sideLength
-        currentRadius += (2 * sideLength);
+        // Increment currentRadius by sideLength
+        currentRadius += (sideLength);
+
+        // Increment number of sides.
+        if (keepVerticiesEquidistant && numberOfSides > remainingVerticies) {
+            numberOfSides = remainingVerticies;
+        } else {
+            numberOfSides = Math.ceil(calcNumberOfSides(sideLength, currentRadius));
+        }
 
         // Create polygon
         let polygon = new Polygon({
             center: center,
-            x0: getCoordsOfPointInPolygon(startingNumberOfSides, 0, 
-                currentRadius, 
-                center, 
-                startAngle),
-            numberOfSides: startingNumberOfSides
+            numberOfSides: numberOfSides,
+            circumRadius: currentRadius,
+            startAngle: Angle.fromDegrees(90)
         });
         polygons.push(polygon);
 
@@ -69,7 +85,7 @@ export function calculateConcentricPolygons(
     return polygons;
 }
 
-export function calculateNumberOfSides(sideLength: number,
+export function calcNumberOfSides(sideLength: number,
     circumradius: number): number
 {
     return Math.PI / (Math.asin(sideLength / (2 * circumradius)));
@@ -79,8 +95,17 @@ export function calculateNumberOfSides(sideLength: number,
  * Calculates the internal angle of a regular convex polygon.
  * @param n - Number of sides.
  */
-export function getInternalAngle(n: number): number {
-    return ((180 * (n - 2)) / 2);
+export function calcInternalAngle(n: number): IAngle {
+    return Angle.fromDegrees((180 * (n - 2)) / n);
+}
+
+/**
+ * Calculates the angle between adjacent verticies using the center of the
+ * polygon as the common point. 
+ * @param n - Number of sides.
+ */
+export function calcAngleBetweenVerticies(n: number): IAngle {
+    return Angle.fromDegrees(180 - calcInternalAngle(n).asDegrees());
 }
 
 /**
@@ -89,7 +114,7 @@ export function getInternalAngle(n: number): number {
  * @param n - Number of sides.
  * @param s - Side length.
  */
-export function getInscribedCircleDiameter(n: number, s: number): number {
+export function calcInscribedCircleDiameter(n: number, s: number): number {
     return s * cotangent(Math.PI / n);
 }
 
@@ -99,7 +124,7 @@ export function getInscribedCircleDiameter(n: number, s: number): number {
  * @param n - Number of sides.
  * @param s - Side length.
  */
-export function getCircumradius(n: number, s: number): number {
+export function calcCircumradius(n: number, s: number): number {
     return (s / (2 * Math.sin(Math.PI / n)));
 }
 
@@ -108,11 +133,11 @@ export function getCircumradius(n: number, s: number): number {
  * @param n - Number of sides.
  * @param s - Side length.
  */
-export function getAreaOfRegularConvexPolygon(n: number, s: number): number {
+export function calcAreaOfRegularConvexPolygon(n: number, s: number): number {
     return (1/4 * n * Math.pow(s, 2) * cotangent(Math.PI / n));
 }
 
-export function calculateApothem(n: number, s: number): number {
+export function calcApothem(n: number, s: number): number {
     return (s / (2 * Math.tan(Math.PI / n)));
 }
 
@@ -121,7 +146,7 @@ export function calculateApothem(n: number, s: number): number {
  * @param n - Number of sides
  * @param r - Circumradius.
  */
-export function calculateSideLength(n: number, r: number): number {
+export function calcSideLength(n: number, r: number): number {
     return (r * 2 * Math.sin(Math.PI / n));
 }
 
@@ -134,7 +159,7 @@ export function calculateSideLength(n: number, r: number): number {
  * @param offsetAngle - If the polygon isn't centered where 0deg is east, 90deg
  * is is north, etc...
  */
-export function getCoordsOfPointInPolygon(sides: number,
+export function calcCoordsOfPointInPolygon(sides: number,
     index: number,
     circumradius: number,
     center?: ICoords2D,
@@ -146,12 +171,12 @@ export function getCoordsOfPointInPolygon(sides: number,
     };
 
     offsetAngle = offsetAngle || Angle.fromRadians(0);
-    let halved_internal_angle = getInternalAngle(sides);
+    let angle = calcAngleBetweenVerticies(sides).asRadians() * index;
 
     result.x += Math.cos(offsetAngle.asRadians() 
-        + (halved_internal_angle * index)) * circumradius;
-    result.y += Math.cos(offsetAngle.asRadians() 
-        + (halved_internal_angle * index)) * circumradius;
+        + angle) * circumradius;
+    result.y += Math.sin(offsetAngle.asRadians() 
+        + angle) * circumradius;
 
     return result;
 }
@@ -165,7 +190,7 @@ export function getCoordsOfPointInPolygon(sides: number,
  * @param pointOffsetAngle - The angle offset applied to the hexagon. 0deg is
  * east, 90deg is north, etc...
  */
-export function getHexagonalCenterTiledClosestTo(point: ICoords2D, 
+export function calcHexagonalCenterTiledClosestTo(point: ICoords2D, 
     r: number, 
     angle: IAngle, 
     pointOffsetAngle?: IAngle): ICoords2D {
@@ -175,8 +200,8 @@ export function getHexagonalCenterTiledClosestTo(point: ICoords2D,
     };
     
     pointOffsetAngle = pointOffsetAngle || Angle.fromDegrees(0);
-    let sideLength = calculateSideLength(6, r);
-    let apothem = calculateApothem(6, sideLength);
+    let sideLength = calcSideLength(6, r);
+    let apothem = calcApothem(6, sideLength);
 
     // let x = Math.cos() * r;
 
@@ -225,7 +250,7 @@ export function coordsToPointsStr(points: ICoords2D[]): string {
  * @param x0 - The coordinates of the first vertex.
  * @param n - Number of sides.
  */
-export function calculatePolygonVerticies(center: ICoords2D, 
+export function calcPolygonVerticies(center: ICoords2D, 
     x0: ICoords2D, 
     n: number): ICoords2D[] 
 {
@@ -247,8 +272,9 @@ export function calculatePolygonVerticies(center: ICoords2D,
     let coords: ICoords2D[] = [ x0 ];
     let dx_0 = (x0.x - center.x);
     let dy_0 = (x0.y - center.y);
-    let R = pythagoreanTheroem((x0.x - center.x), (x0.y - center.y));
+    let R = pythagoreanTheroem(dx_0, dy_0);
     let offsetAngle = Angle.fromRadians(Math.atan2(dx_0, dy_0));
+    let angle = calcAngleBetweenVerticies(n);
 
     for (let i = 1; i < n; i++) {
         let x_n: ICoords2D = {
@@ -256,10 +282,11 @@ export function calculatePolygonVerticies(center: ICoords2D,
             y: center.y
         };
 
-        let incrementAngle = Angle.fromDegrees((60 * i) 
-            + offsetAngle.asDegrees());
-        x_n.x += Math.cos(incrementAngle.asRadians());
-        x_n.y += Math.sin(incrementAngle.asRadians());
+        let incrementAngle = Angle.fromDegrees((angle.asDegrees() * i)
+                + offsetAngle.asDegrees())
+            .normalizeAngle();
+        x_n.x += Math.cos(incrementAngle.asRadians()) * R;
+        x_n.y += Math.sin(incrementAngle.asRadians()) * R;
 
         coords.push(x_n);
     }
@@ -319,7 +346,7 @@ export function getPolygonPointsString(n: number, r: number, startAngle?: IAngle
  * @param x1 - One of the verticies which is connected to both hexagons.
  * @param x2_IsClockwise - Whether x2 is +-60deg from x1. 
  */
-export function getCenterOfAdjacentHexagon(c1: ICoords2D, 
+export function calcCenterOfAdjacentHexagon(c1: ICoords2D, 
     x1: ICoords2D, 
     x2_IsClockwise: boolean): ICoords2D 
 {

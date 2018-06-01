@@ -13,9 +13,9 @@ import {
 import { NS } from "../helpers/namespaces-helper";
 import { 
     getPolygonPointsString, 
-    calculateApothem, 
-    calculateSideLength, 
-    getCircumradius 
+    calcApothem, 
+    calcSideLength, 
+    calcCircumradius 
 } from "../helpers/geometry-helpers";
 import { ISvgDefs } from "../models/svg-defs-model";
 import { ISvgHandles } from "../models/isvg-handles-model";
@@ -115,8 +115,8 @@ export class HexagonTilingService implements IDrawable {
     //#region Properties
 
     public get multipleH0(): boolean {
-        let sideLength = calculateSideLength(6, this.tileCircumRadius);
-        let apothem = calculateApothem(6, sideLength);
+        let sideLength = calcSideLength(6, this.tileCircumRadius);
+        let apothem = calcApothem(6, sideLength);
         let d = this.mainCircumRadius / (2 * apothem);
 
         // If d is odd then there are multiple h0 else there will only be one
@@ -133,8 +133,8 @@ export class HexagonTilingService implements IDrawable {
         circumradius: number,
         circleRadius: number): HexagonSide|undefined 
     {
-        let sideLength = calculateSideLength(6, circumradius);
-        let apothem = calculateApothem(6, sideLength);
+        let sideLength = calcSideLength(6, circumradius);
+        let apothem = calcApothem(6, sideLength);
 
         return sides.find(s => {
             let newHexCoords = {
@@ -205,8 +205,8 @@ export class HexagonTilingService implements IDrawable {
                 + "hexagon that is not intersection the circle.");
         }
 
-        let sideLength: number = calculateSideLength(6, circumradius);
-        let apothem: number = calculateApothem(6, sideLength);
+        let sideLength: number = calcSideLength(6, circumradius);
+        let apothem: number = calcApothem(6, sideLength);
         let side: HexagonSide;
         let yOffset: number;
         let xOffset: number;
@@ -353,8 +353,8 @@ export class HexagonTilingService implements IDrawable {
     public update(): void {
         this.circleRef.setAttribute("r", `${this.mainApothem}`);
 
-        let sideLength = calculateSideLength(6, this.tileCircumRadius);
-        let apothem = calculateApothem(6, sideLength);
+        let sideLength = calcSideLength(6, this.tileCircumRadius);
+        let apothem = calcApothem(6, sideLength);
         let layer = 1;
 
         // Need to round up, don't want half a hexagon.

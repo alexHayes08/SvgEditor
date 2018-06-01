@@ -108,6 +108,14 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     z-index: 1;
 } */
 
+*[data-name="handles-button-container"] > g[data-name] > *:not([data-name="main-button-container"]) {
+    display: none;
+}
+
+*[data-name="handles-button-container"] > g.expanded[data-name] > *:not([data-name="main-button-container"]) {
+    display: unset;
+}
+
 .btn-handle {
     rect {
         opacity: .25;
@@ -121,6 +129,12 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     display: none;
 }
 
+.concentric-submode-ring {
+    fill: none;
+    stroke: greenyellow;
+    stroke-width: 2;
+}
+
 .btn-handle:not(.active) {
     // transition: all .2s;
 
@@ -131,7 +145,6 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
 
     .mode-button:not(:hover) {
         fill: transparent;
-        stroke: aliceblue;
         stroke-width: 2px;
         opacity: 1;
     }
@@ -139,7 +152,7 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
 
 .btn-handle.active {
     .mode-button:not(.selected) {
-        fill: transparent;
+        // fill: transparent;
         opacity: 1;
     }
     

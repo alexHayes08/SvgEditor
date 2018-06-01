@@ -3,10 +3,10 @@ import { IAngle, Angle } from "./../angle";
 import { InvalidCastError } from "./../errors";
 import { pythagoreanTheroem } from "../../helpers/math-helpers";
 import { 
-    calculateApothem, 
-    calculateSideLength, 
-    calculatePolygonVerticies, 
-    getCoordsOfPointInPolygon 
+    calcApothem, 
+    calcSideLength, 
+    calcPolygonVerticies, 
+    calcCoordsOfPointInPolygon 
 } from "../../helpers/geometry-helpers";
 
 export interface PolygonFromVerticiesData {
@@ -101,16 +101,16 @@ export class Polygon {
             throw new InvalidCastError();
         }
 
-        this.sideLength = calculateSideLength(this.numberOfSides,
+        this.sideLength = calcSideLength(this.numberOfSides,
             this.circumRadius);
-        this.apothem = calculateApothem(this.numberOfSides, this.sideLength);
+        this.apothem = calcApothem(this.numberOfSides, this.sideLength);
         
-        let x0 = getCoordsOfPointInPolygon(this.numberOfSides, 0,
+        let x0 = calcCoordsOfPointInPolygon(this.numberOfSides, 0,
             this.circumRadius,
             this.center,
             this.startAngle);
 
         // Populate verticies
-        this.verticies = calculatePolygonVerticies(this.center, x0, this.numberOfSides);
+        this.verticies = calcPolygonVerticies(this.center, x0, this.numberOfSides);
     }
 }

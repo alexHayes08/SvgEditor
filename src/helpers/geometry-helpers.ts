@@ -273,7 +273,7 @@ export function calcPolygonVerticies(center: ICoords2D,
     let dx_0 = (x0.x - center.x);
     let dy_0 = (x0.y - center.y);
     let R = pythagoreanTheroem(dx_0, dy_0);
-    let offsetAngle = Angle.fromRadians(Math.atan2(dx_0, dy_0));
+    let offsetAngle = Angle.fromRadians(Math.asin(dy_0 / R));
     let angle = calcAngleBetweenVerticies(n);
 
     for (let i = 1; i < n; i++) {

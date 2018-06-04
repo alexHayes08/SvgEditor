@@ -823,7 +823,7 @@ export class HandlesMain implements IContainer, IDrawable {
                     let concentricPolygons = calcConcentricPolygons({
                         numberOfVerticies: d.modes.length, 
                         sideLength: 20, 
-                        minCircumRadius: 10,
+                        minCircumRadius: 50,
                         keepVerticiesEquidistant: true
                         // startAngle: d.middleAngle
                     });
@@ -840,15 +840,15 @@ export class HandlesMain implements IContainer, IDrawable {
                     }
 
                     // Draw concentrics
-                    // let concentricPolygonsEls = concentricContainer
-                    //     .selectAll<SVGCircleElement, {}>("circle")
-                    //     .data(concentricPolygons)
-                    //     .enter()
-                    //     .append<SVGCircleElement>("circle")
-                    //     .attr("r", function(d) { return d.circumRadius })
-                    //     .classed("concentric-submode-ring", true);
-
                     let concentricPolygonsEls = concentricContainer
+                        .selectAll<SVGCircleElement, {}>("circle")
+                        .data(concentricPolygons)
+                        .enter()
+                        .append<SVGCircleElement>("circle")
+                        .attr("r", function(d) { return d.circumRadius })
+                        .classed("concentric-submode-ring", true);
+
+                    let concentricPolygonsElsV2 = concentricContainer
                         .selectAll<SVGPolygonElement, {}>("polygon")
                         .data(concentricPolygons)
                         .enter()

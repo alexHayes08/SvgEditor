@@ -39,8 +39,7 @@ export function isPolygonFromValuesData(value: any): value is PolygonFromValuesD
 {
     return value != undefined
         && value.circumRadius != undefined
-        && value.numberOfSides != undefined
-        && value.startAngle != undefined;
+        && value.numberOfSides != undefined;
 }
 
 export function isPolygonFromSideLength(value: any): value is PolygonFromSideLength
@@ -74,11 +73,13 @@ export class Polygon {
     //#region Ctor
 
     public constructor(data: PolygonData) {
+        console.log(data);
         if (isPolygonFromValuesData(data)) {
             this.center = { x: 0, y: 0 };
             this.circumRadius = data.circumRadius;
             this.numberOfSides = data.numberOfSides;
             this.startAngle = data.startAngle || Angle.fromDegrees(0);
+            console.log(`startAngle: ${this.startAngle.asDegrees()}`);
         } else if (isPolygonFromVerticiesData(data)) {
             this.center = data.center;
             this.numberOfSides = data.numberOfSides;
@@ -89,8 +90,8 @@ export class Polygon {
             this.circumRadius = pythagoreanTheroem(dx, dy);
             this.startAngle = Angle.fromRadians(Math.atan2(dx, dy))
                 .normalizeAngle();
-        } else if (isPolygonFromSideLength) {
-            this.center = data.center;
+        } else if (isPolygonFromSideLength(data)) {
+            this.center = data.center || { x: 0, y: 0 };
             let dx_0 = data.x0.x - this.center.x;
             let dy_0 = data.x0.y - this.center.y;
             this.startAngle = Angle.fromRadians(Math.atan2(dx_0, dy_0));
@@ -109,6 +110,9 @@ export class Polygon {
             this.circumRadius,
             this.center,
             this.startAngle);
+
+        console.log(`x0: ${x0.x}`);
+        console.log(`x0: ${x0.y}`);
 
         // Populate verticies
         this.verticies = calcPolygonVerticies(this.center, x0, this.numberOfSides);

@@ -145,6 +145,7 @@ export class SvgHandles implements ISvgHandles {
     private minHandlesRadius: number;
     private transformData: ITransformable;
 
+    private htmlHandlesContainer: HTMLDivElement;
     private handlesContainer: SVGGElement;
     private mainHandlesOverlay: HandlesMain;
     private highlightPathEl: SVGPathElement;
@@ -162,6 +163,14 @@ export class SvgHandles implements ISvgHandles {
         this.cachedElementsWithEvts = [];
         this.minHandlesRadius = 75;
         this.transformData = SvgTransformString.CreateDefaultTransform();
+
+        // Create the html handles section
+        this.htmlHandlesContainer = <HTMLDivElement>document
+            .createElement("div");
+        this.htmlHandlesContainer
+            .setAttribute("data-name", "handles-html-container");
+        this.canvas.canvasEl.insertAdjacentElement("afterend",
+            this.htmlHandlesContainer);
 
         // Create the highlight rect
         let highlightRectEl = d3.select(this.parentNode)
@@ -194,7 +203,7 @@ export class SvgHandles implements ISvgHandles {
         ActivatableServiceSingleton.register(this.handlesContainer, false);
 
         // Create main handles overlay
-        this.mainHandlesOverlay = new HandlesMain(d3.select(handleContainer), this.canvas   );
+        this.mainHandlesOverlay = new HandlesMain(d3.select(handleContainer), this.canvas, this.htmlHandlesContainer);
         this.mainHandlesOverlay.onDeleteClickedHandlers
             .push(this.onDeleteClicked.bind(this));
         this.mainHandlesOverlay.onRotationEventHandlers

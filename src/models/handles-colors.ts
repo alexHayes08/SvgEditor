@@ -4,6 +4,7 @@ import * as d3 from "d3";
 
 import { ActivatableServiceSingleton } from "../services/activatable-service";
 import { Angle } from "./angle";
+import { convertToEnum } from "../helpers/enum-helper";
 import { HandlesRotationOverlay } from "./handles-rotation";
 import { IContainer } from "./icontainer";
 import { IDrawable } from './idrawable';
@@ -15,7 +16,8 @@ import {
     ICoords2D, 
     ITransformable, 
     SvgTransformString,
-    TransformType
+    TransformType,
+    TransformStringService
 } from "../services/svg-transform-service";
 import { getPolygonPointsString } from "../helpers/geometry-helpers";
 import { SvgColors, SvgItem, ColorMap, isColorMap } from "./svg-item-model";
@@ -44,6 +46,7 @@ interface ColorElementUIControl {
     value: any;
 }
 
+// TODO: Move this to names.ts.
 const LinearGradientsContainerName = "linear-gradients-container";
 
 export enum HandlesColorMode {
@@ -59,12 +62,15 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
     private readonly colorBtnTransform: ITransformable;
     private readonly colorPickerTransform: ITransformable;
     private readonly colorRingTransform: ITransformable;
+    private readonly htmlContainer: d3.Selection<HTMLDivElement, {}, null, undefined>;
     private readonly svgItemToLinearGradientMap: Map<SvgColors,LinearGradient>;
     private data: IColorsOverlayData[];
+    private selectedColor?: SvgItemToColor;
     
     private colorRingContainer?: d3.Selection<SVGGElement, {}, null, undefined>;
     private elementColorContainer?: d3.Selection<SVGGElement, {}, null, undefined>;
-    private colorPickerContainer?: d3.Selection<SVGGElement, {}, null, undefined>;
+    private elementColorPicker?: d3.Selection<HTMLDivElement, {}, null, undefined>;
+    private attributeColorPicker?: d3.Selection<HTMLDivElement, {}, null, undefined>;
 
     public container: d3.Selection<SVGGElement, {}, null, undefined>;
     public containerNode: SVGGElement;
@@ -76,7 +82,8 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
     //#region Ctor
 
     public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>,
-        canvas: SvgCanvas)
+        canvas: SvgCanvas,
+        htmlContainer: HTMLDivElement)
     {
         this.colorBtnTransform = new SvgTransformString([
             TransformType.ROTATE,
@@ -84,9 +91,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
             TransformType.ROTATE
         ]).setTranslate({ x: -40, y: 0 });
         this.colorPickerTransform = new SvgTransformString([
-            TransformType.ROTATE,
-            TransformType.TRANSLATE,
-            TransformType.ROTATE
+            TransformType.TRANSLATE
         ]);
         this.colorRingTransform = new SvgTransformString([
             TransformType.ROTATE,
@@ -95,6 +100,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         ]);
         this.container = container;
         this.data = [];
+        this.htmlContainer = d3.select(htmlContainer);
         this.canvas = canvas;
         this.radius = 100;
         this.svgItemToLinearGradientMap = new Map();
@@ -113,6 +119,57 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
 
     //#region Functions
 
+    private displayColorPicker(coords: ICoords2D): void {
+
+        // Verify the color picker el isn't null
+        if (this.elementColorPicker == undefined
+            || this.attributeColorPicker == undefined) 
+        {
+            return;
+        }
+
+        if (this.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
+            
+            // Activate element
+            this.attributeColorPicker
+                .each(function(d) {
+                    ActivatableServiceSingleton.activate(this);
+                });
+        } else {
+
+            // Activate element
+            this.elementColorPicker
+                .each(function(d) {
+                    ActivatableServiceSingleton.activate(this);
+                });
+        }
+
+        console.log("Displaying color-picker TODO.");
+    }
+
+    private hideColorPicker(): void {
+
+        // Verify the color picker el isn't null
+        if (this.elementColorPicker == undefined
+            || this.attributeColorPicker == undefined) 
+        {
+            return;
+        }
+
+        // Deactivate element
+        this.attributeColorPicker
+            .each(function(d) {
+                ActivatableServiceSingleton.deactivate(this);
+            });
+
+        this.elementColorPicker
+            .each(function(d) {
+                ActivatableServiceSingleton.deactivate(this);
+            });
+
+        console.log("Hiding color-picker TODO.");
+    }
+
     private calcAngle(): number {
         let distanceBetweenBtnCenters = 50;
         let angle = Math.asin(distanceBetweenBtnCenters / this.radius);
@@ -120,6 +177,12 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
     }
 
     public draw(): void {
+        
+        // Verify the color picker container isn't null.
+        if (this.htmlContainer == undefined) {
+            throw new InternalError();
+        }
+        
         let self = this;
         
         this.colorRingContainer = this.container
@@ -130,18 +193,60 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
             .append<SVGGElement>("g")
             .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
                 .SubElements.ElementColorContainer.DATA_NAME);
-        this.colorPickerContainer = this.container
-            .append<SVGGElement>("g")
+        
+        
+        // Two color pickers:
+        // 1) One for fill/stroke/width of an element
+        // 2) One for just color associated with an elements attribute
+        let colorPickerContainer = this.htmlContainer
+            .append<HTMLDivElement>("div")
             .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
                 .SubElements.ColorPickerContainer.DATA_NAME);
+
+        // Attribute color picker.
+        this.attributeColorPicker = colorPickerContainer
+            .append<HTMLDivElement>("div")
+            .attr("data-name", "attribute-color-picker")
+            .classed("attributeColorPicker", true)
+            .each(function() {
+                ActivatableServiceSingleton.register(this, false);
+            });
+
+        // Element color picker.
+        this.elementColorPicker = colorPickerContainer
+            .append<HTMLDivElement>("div")
+            .attr("data-name", "element-color-picker")
+            .classed("elementColorPicker", true)
+            .each(function() {
+                ActivatableServiceSingleton.register(this, false);
+            });
+
+        // Three tabs
+        let tabs = this.elementColorPicker
+            .append("div")
+            .classed("tabs", true);
+
+        // First tab is fill
+        tabs.append("div")
+            .classed("fill", true)
+            .classed("tab", true);
+
+        tabs.append("div")
+            .classed("stroke", true)
+            .classed("tab", true);
+
+        tabs.append("div")
+            .classed("stroke-style", true)
+            .classed("tab", true);
     }
 
     public update(): void {
         let self = this;
+
+        // Verify the handles aren't null (normally this should never happen).
         if (this.canvas.handles == undefined
             || this.colorRingContainer == undefined
-            || this.elementColorContainer == undefined
-            || this.colorPickerContainer == undefined) 
+            || this.elementColorContainer == undefined) 
         {
             return;
         }
@@ -204,7 +309,6 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         } else {
             data = colorGroups;
         }
-        console.log(data);
 
         //#region Linear Gradients
 
@@ -418,30 +522,33 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
                     }
                 }
             })
-            .attr("transform", function(d, i) {
-                let angle = self.calcAngle() * (i + 1);
+            .attr("transform", function(_d, _i) {
+                let angle = self.calcAngle() * (_i + 1);
                 self.colorRingTransform
                     .setRotation({ a: angle })
                     .setTranslate({ x: 0, y: self.radius })
                     .setRotation({ a: -1 * angle }, 1);
                 return self.colorRingTransform.toTransformString();
             })
-            .on("click", function (d, i) {
+            .on("click", function (_d, _i) {
                 console.log(`Clicked:`);
-                console.log(d);
+                console.log(_d);
                 d3.event.stopPropagation();
 
+                // Verify the element color container isn't null.
                 if (self.elementColorContainer == undefined) {
                     return;
                 }
 
                 if (self.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
-
-                } else {
-
-                    // Not sure why this isn't casting correctly
                     let center =
-                        SvgTransformServiceSingleton.getCenter(<any>this);
+                        SvgTransformServiceSingleton.getCenter(this);
+                    
+                    // Display color picker
+                    self.displayColorPicker(center);
+                } else {
+                    let center =
+                        SvgTransformServiceSingleton.getCenter(this);
 
                     // Retrieve the first rotation
                     let rotation = self.colorRingTransform.getRotation(0);
@@ -455,15 +562,15 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
                     // 3) Stroke-width
 
                     let data: ColorElementUIControl[] = [
-                        { name: "fill", value: d },
-                        { name: "stroke", value: d },
-                        { name: "stroke-width", value: d }
+                        { name: "fill", value: _d },
+                        { name: "stroke", value: _d },
+                        { name: "stroke-width", value: _d }
                     ];
 
                     // Update
                     let elementColors = self.elementColorContainer
                         .selectAll<SVGCircleElement, {}>("circle")
-                        .data([d])
+                        .data([_d])
                         .attr("transform", function(d) {
                             return self.colorRingTransform.toTransformString();
                         });

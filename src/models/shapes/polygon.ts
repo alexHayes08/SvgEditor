@@ -73,13 +73,11 @@ export class Polygon {
     //#region Ctor
 
     public constructor(data: PolygonData) {
-        console.log(data);
         if (isPolygonFromValuesData(data)) {
             this.center = { x: 0, y: 0 };
             this.circumRadius = data.circumRadius;
             this.numberOfSides = data.numberOfSides;
             this.startAngle = data.startAngle || Angle.fromDegrees(0);
-            console.log(`startAngle: ${this.startAngle.asDegrees()}`);
         } else if (isPolygonFromVerticiesData(data)) {
             this.center = data.center;
             this.numberOfSides = data.numberOfSides;
@@ -97,7 +95,8 @@ export class Polygon {
             this.startAngle = Angle.fromRadians(Math.atan2(dx_0, dy_0));
             this.circumRadius = pythagoreanTheroem(dx_0, dy_0);
             this.numberOfSides = 
-                Math.PI / (Math.asin((2 * this.circumRadius)/ data.sideLength));
+                Math.PI / (Math.asin(
+                    (2 * this.circumRadius) / data.sideLength));
         } else {
             throw new InvalidCastError();
         }
@@ -111,10 +110,8 @@ export class Polygon {
             this.center,
             this.startAngle);
 
-        console.log(`x0: ${x0.x}`);
-        console.log(`x0: ${x0.y}`);
-
         // Populate verticies
-        this.verticies = calcPolygonVerticies(this.center, x0, this.numberOfSides);
+        this.verticies = calcPolygonVerticies(this.center, 
+            x0, this.numberOfSides);
     }
 }

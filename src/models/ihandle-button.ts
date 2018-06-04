@@ -11,6 +11,7 @@ export enum HandleMode {
 export interface IMode {
     label: string;
     selected: boolean;
+    iconUrl: string;
 }
 
 export interface IHandleButton {

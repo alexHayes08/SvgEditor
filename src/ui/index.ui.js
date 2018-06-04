@@ -260,7 +260,7 @@ Aperture.resolve(["SvgEditors"]).then(() => {
                 height: 100,
                 fill: colorService.randomColor,
                 stroke: colorService.randomColor,
-                strokeWidth: 1
+                "stroke-width": 4
             });
             
             // Compose elements in frag
@@ -285,7 +285,7 @@ Aperture.resolve(["SvgEditors"]).then(() => {
                 r: 50,
                 fill: colorService.randomColor,
                 stroke: colorService.randomColor,
-                strokeWidth: 1
+                "stroke-width": 4
             });
 
             frag.appendChild(circle);
@@ -306,7 +306,7 @@ Aperture.resolve(["SvgEditors"]).then(() => {
             d: "M0 100 L100 100 50 0 Z",
             fill: colorService.randomColor,
             stroke: colorService.randomColor,
-            strokeWidth: 1
+            "stroke-width": 4
         });
 
         frag.appendChild(path);

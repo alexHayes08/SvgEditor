@@ -39,6 +39,7 @@ interface IMainOverlayData {
     buttonDataName: string;
     buttonPathArcDataName?: string;
     buttonTransformData: ITransformable;
+    mainButtonIconUrl: string;
     modes: IMode[];
 
     handleMode?: HandleMode;
@@ -67,6 +68,7 @@ export class HandlesMain implements IContainer, IDrawable {
 
     private readonly elementDataMap: WeakMap<Element, ITransformable>;
     private readonly cache: CacheService<String>;
+    private readonly htmlHandlesContainer: HTMLDivElement;
     private defaultWidth: number;
     private highlightData: ITransformable;
     private minRadius: number;
@@ -84,6 +86,7 @@ export class HandlesMain implements IContainer, IDrawable {
     
     private arcsContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private modeContainer: d3.Selection<SVGGElement, {}, null, undefined>;
+    private subModeContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private colorsOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private mainOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
     private rotationOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
@@ -103,10 +106,23 @@ export class HandlesMain implements IContainer, IDrawable {
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.ColorsArc.DATA_NAME,
             arcTransformData: new SvgTransformString(arcTransformService),
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME,
+            mainButtonIconUrl: "assets/color-bttn.svg",
             modes: [
-                { label: "Colors (all)", selected: true },
-                { label: "Colors (non-empty)", selected: false },
-                { label: "Colors (unique)", selected: false }
+                { 
+                    label: "Colors (all)", 
+                    selected: true, 
+                    iconUrl: "assets/color-submode-all-bttn.svg"
+                },
+                { 
+                    label: "Colors (non-empty)", 
+                    selected: false, 
+                    iconUrl: "assets/color-submode-non-empty-bttn.svg"
+                },
+                { 
+                    label: "Colors (unique)", 
+                    selected: false, 
+                    iconUrl: "assets/color-submode-unique-bttn.svg"
+                }
             ],
             buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.ColorsBtnArcPath.DATA_NAME,
             buttonTransformData: new SvgTransformString(buttonTransformOrder),
@@ -117,26 +133,29 @@ export class HandlesMain implements IContainer, IDrawable {
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.EditArc.DATA_NAME,
             arcTransformData: new SvgTransformString(arcTransformService),
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME,
-            modes: [{ label: "Edit", selected: true }],
+            mainButtonIconUrl: "assets/edit-bttn.svg",
+            modes: [{ label: "Edit", selected: true, iconUrl: "" }],
             buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.EditBtnArcPath.DATA_NAME,
             buttonTransformData: new SvgTransformString(buttonTransformOrder),
-            handleMode: HandleMode.COLORS
+            handleMode: HandleMode.EDIT
         },
         {
             angle: Angle.fromDegrees(90),
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.FillArc.DATA_NAME,
             arcTransformData: new SvgTransformString(arcTransformService),
             buttonDataName: "",
+            mainButtonIconUrl: "",
             modes: [],
             buttonTransformData: new SvgTransformString(buttonTransformOrder),
-            handleMode: HandleMode.COLORS
+            handleMode: HandleMode.SELECT_MODE
         },
         {
             angle: Angle.fromDegrees(22.5),
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.DeleteArc.DATA_NAME,
             arcTransformData: new SvgTransformString(arcTransformService),
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.DeleteBtn.DATA_NAME,
-            modes: [{ label: "Delete", selected: true }],
+            mainButtonIconUrl: "assets/delete-bttn.svg",
+            modes: [{ label: "Delete", selected: true, iconUrl: "" }],
             buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.DeleteBtnArcPath.DATA_NAME,
             buttonTransformData: new SvgTransformString(buttonTransformOrder),
             handleMode: HandleMode.DELETE
@@ -146,7 +165,8 @@ export class HandlesMain implements IContainer, IDrawable {
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.PanArc.DATA_NAME,
             arcTransformData: new SvgTransformString(arcTransformService),
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.PanBtn.DATA_NAME,
-            modes: [{ label: "Pan", selected: true }],
+            mainButtonIconUrl: "assets/pan-bttn.svg",
+            modes: [{ label: "Pan", selected: true, iconUrl: "" }],
             buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.PanBtnArcPath.DATA_NAME,
             buttonTransformData: new SvgTransformString(buttonTransformOrder),
             handleMode: HandleMode.PAN
@@ -156,10 +176,11 @@ export class HandlesMain implements IContainer, IDrawable {
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.RotateArc.DATA_NAME,
             arcTransformData: new SvgTransformString(arcTransformService),
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME,
+            mainButtonIconUrl: "assets/rotate-bttn.svg",
             modes: [
-                { label: "Rotate Collectivley", selected: true }, 
-                { label: "Rotate Individually", selected: false },
-                { label: "Test", selected: false }
+                { label: "Rotate Collectivley", selected: true, iconUrl: "" }, 
+                { label: "Rotate Individually", selected: false, iconUrl: "" },
+                { label: "Test", selected: false, iconUrl: "" }
             ],
             buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.RotateBtnArcPath.DATA_NAME,
             buttonTransformData: new SvgTransformString(buttonTransformOrder),
@@ -170,7 +191,8 @@ export class HandlesMain implements IContainer, IDrawable {
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.ScaleArc.DATA_NAME,
             arcTransformData: new SvgTransformString(arcTransformService),
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.ScaleBtn.DATA_NAME,
-            modes: [{ label: "Scale", selected: true }],
+            mainButtonIconUrl: "assets/scale-bttn.svg",
+            modes: [{ label: "Scale", selected: true, iconUrl: "" }],
             buttonPathArcDataName: Names.Handles.SubElements.ButtonArcPathsContainer.SubElements.ScaleBtnArcPath.DATA_NAME,
             buttonTransformData: new SvgTransformString(buttonTransformOrder),
             handleMode: HandleMode.SCALE
@@ -180,7 +202,8 @@ export class HandlesMain implements IContainer, IDrawable {
             arcDataName: Names.Handles.SubElements.ArcsContainer.SubElements.FillArc.DATA_NAME,
             arcTransformData: new SvgTransformString(arcTransformService),
             buttonDataName: Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME,
-            modes: [{ label: "Toggle", selected: true }],
+            mainButtonIconUrl: "",
+            modes: [{ label: "Toggle", selected: true, iconUrl: "" }],
             buttonTransformData: new SvgTransformString(buttonTransformOrder),
             handleMode: HandleMode.SCALE
         }
@@ -192,7 +215,11 @@ export class HandlesMain implements IContainer, IDrawable {
 
     //#region Ctor
 
-    public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>, canvas: SvgCanvas) {
+    public constructor(
+        container: d3.Selection<SVGGElement, {}, null, undefined>, 
+        canvas: SvgCanvas,
+        htmlContainer: HTMLDivElement) 
+    {
         this.animationDuration = 200;
         this.cache = new CacheService();
         this.center = { x: 0, y: 0};
@@ -200,6 +227,7 @@ export class HandlesMain implements IContainer, IDrawable {
         this.defaultWidth = 4;
         this.elementDataMap = new WeakMap();
         this.highlightData = SvgTransformString.CreateDefaultTransform();
+        this.htmlHandlesContainer = htmlContainer;
         this.lastUsedMode = HandleMode.PAN;
         this.minRadius = 120;
         this.onDeleteClickedHandlers = [];
@@ -243,37 +271,18 @@ export class HandlesMain implements IContainer, IDrawable {
             .append<SVGGElement>("g")
             .attr("id", uniqid())
             .attr("data-name", 
-                Names.Handles.SubElements.ArcsContainer.DATA_NAME)
-            .each(function() {
-                SvgTransformServiceSingleton.standardizeTransforms(this);
-            });
+                Names.Handles.SubElements.ArcsContainer.DATA_NAME);
 
         this.modeContainer = this.mainOverlayContainer
             .append<SVGGElement>("g")
             .attr("id", uniqid())
             .attr("data-name",
-                Names.Handles.SubElements.ButtonsContainer.DATA_NAME)
-            .each(function() {
-                SvgTransformServiceSingleton.standardizeTransforms(this);
-            });
+                Names.Handles.SubElements.ButtonsContainer.DATA_NAME);
 
-        // Three groups for each button.
-        // 1) The main button to open mode picker (if any modes).
-        // 2) Concentric circles to align mode circles to.
-        // 3) Mode circles.
-        // this.buttons_mainBtnContainer = this.modeContainer
-        //     .append<SVGGElement>("g")
-        //     .attr("data-name", "mode-main-button-container");
-
-        // this.buttons_concentricContainer = this.modeContainer
-        //     .append<SVGGElement>("g")
-        //     .attr("data-name", "concentric-circle-container");
-
-        // this.buttons_modeContainer = this.modeContainer
-        //     .append<SVGGElement>("g")
-        //     .attr("data-name", "mode-buttons-container");
-
-        // Setup other overlays
+        this.subModeContainer = this.mainOverlayContainer
+            .append<SVGGElement>("g")
+            .attr("id", uniqid())
+            .attr("data-name", "sub-mode-container");
 
         this.colorsOverlayContainer = this.container
             .append<SVGGElement>("g")
@@ -305,7 +314,10 @@ export class HandlesMain implements IContainer, IDrawable {
                 ActivatableServiceSingleton.register(this, false);
             });
 
-        this.colorsOverlay = new HandlesColorsOverlay(this.colorsOverlayContainer, canvas);
+        this.colorsOverlay = new HandlesColorsOverlay(
+            this.colorsOverlayContainer, 
+            canvas, 
+            this.htmlHandlesContainer);
         this.rotationOverlay = new HandlesRotationOverlay(this.rotationOverlayContainer);
         this.scaleOverlay = new HandlesScaleOverlay(this.scaleOverlayContainer);
 
@@ -400,12 +412,23 @@ export class HandlesMain implements IContainer, IDrawable {
 
     //#region Functions
 
+    private subModesTransition(selection: d3.Selection<SVGPathElement, IMainOverlayData, SVGGElement, {}>): void 
+    {
+
+    }
+
     private expandMode(mode: IMainOverlayData): void {
-        d3.select(`[data-name='${mode.buttonDataName}']`).classed("expanded", true);
+        this.modeContainer.selectAll(`g[data-name]:not([data-name='${mode.buttonDataName}']) > g[data-name='main-button-container']`)
+            .classed("opacity-half", true);
+        d3.select(`[data-name="sub-mode-container"] > [data-for='${mode.buttonDataName}']`)
+            .classed("expanded", true);
     }
 
     private contractMode(mode: IMainOverlayData): void {
-        d3.select(`[data-name='${mode.buttonDataName}']`).classed("expanded", false);
+        this.modeContainer.selectAll(`g[data-name]:not([data-name='${mode.buttonDataName}']) > g[data-name='main-button-container']`)
+            .classed("opacity-half", false);
+        d3.select(`[data-name="sub-mode-container"] > [data-for='${mode.buttonDataName}']`)
+            .classed("expanded", false);
     }
 
     private getSelectedSubMode(data: IMainOverlayData): IMode {
@@ -442,21 +465,12 @@ export class HandlesMain implements IContainer, IDrawable {
             .selectAll<SVGGElement, IMainOverlayData>("g[data-name='handles-button-container'] > g[data-name]")
             .data(this.buttonsData)
             .call(bttnOpacity)
-            .call(bttnTransform)
-            .each(function(d) {
-                let modeContainer = d3.select(this);
+            .call(bttnTransform);
 
-                // First create each container
-                // 1) Main button container
-                // 2) Concentric container
-                // 3) Submodes container
-                let mainButtonContainer = modeContainer
-                    .select<SVGGElement>("g[data-name='main-button-container']");
-                let concentricContainer = modeContainer
-                    .select<SVGGElement>("g[data-name='concentric-container']");
-                let submodesContainer = modeContainer
-                    .select<SVGGElement>("g[data-name='submodes-button-container']");
-            });
+        this.subModeContainer
+            .selectAll<SVGGElement, IMainOverlayData>("g[data-for]")
+            .data(this.buttonsData)
+            .call(bttnTransform);
 
         function arcTransforms(selection: d3.Selection<SVGPathElement, IMainOverlayData, SVGGElement, {}>) {
             selection.transition("arc-transform-transition")
@@ -481,7 +495,7 @@ export class HandlesMain implements IContainer, IDrawable {
                     // range [0-1].
                     if (self.collapseButtons) {
                         return function(t) {
-                            d.arcTransformData.setRotation({ 
+                            d.arcTransformData.setRotation({
                                 a: -1 * t * middleAngle.asDegrees() 
                             }, 0);
                             return d.arcTransformData.toTransformString();
@@ -785,17 +799,20 @@ export class HandlesMain implements IContainer, IDrawable {
                     .append<SVGGElement>("g")
                     .data([d.handleMode])
                     .attr("data-name", "main-button-container");
-                let concentricContainer = modeContainer
+                let buttonOverlayContainer = self.subModeContainer
+                    .append<SVGGElement>("g")
+                    .attr("data-for", d.buttonDataName)
+                let concentricContainer = buttonOverlayContainer
                     .append<SVGGElement>("g")
                     .attr("data-name", "concentric-container");
-                let submodesContainer = modeContainer
+                let submodesContainer = buttonOverlayContainer
                     .append<SVGGElement>("g")
                     .attr("data-name", "submodes-button-container");
 
                 // Append main button background
                 mainButtonContainer
                     .append<SVGCircleElement>("circle")
-                    .attr("r", 24)
+                    .attr("r", 20)
                     .attr("cx", 0)
                     .attr("cy", 0)
                     .classed("mode-button-bg", true);
@@ -803,11 +820,21 @@ export class HandlesMain implements IContainer, IDrawable {
                 // Append main button
                 mainButtonContainer
                     .append<SVGCircleElement>("circle")
-                    .attr("r", 20)
+                    .attr("r", 16)
                     .attr("cx", 0)
                     .attr("cy", 0)
                     .attr("data-name", d.buttonDataName)
                     .classed("mode-button", true);
+
+                // Append image
+                mainButtonContainer
+                    .append<SVGImageElement>("image")
+                    .attr("x", "-16px")
+                    .attr("y", "-16px")
+                    .attr("width", "32px")
+                    .attr("height", "32px")
+                    // .attr("preserveAspectRatio", true)
+                    .attr("href", d.mainButtonIconUrl);
 
                 // Draw concentric polygons/circles IF there are sub modes.
                 if (d.modes.length > 1) {
@@ -832,8 +859,6 @@ export class HandlesMain implements IContainer, IDrawable {
                         verticies = verticies.concat(p.verticies);
                     });
 
-                    console.log(verticies);
-
                     // Throw error if polygons is undefined.
                     if (concentricPolygons == undefined) {
                         throw new InternalError();
@@ -848,26 +873,23 @@ export class HandlesMain implements IContainer, IDrawable {
                         .attr("r", function(d) { return d.circumRadius })
                         .classed("concentric-submode-ring", true);
 
-                    let concentricPolygonsElsV2 = concentricContainer
-                        .selectAll<SVGPolygonElement, {}>("polygon")
-                        .data(concentricPolygons)
-                        .enter()
-                        .append<SVGPolygonElement>("polygon")
-                        .attr("points", function(d) {
-                            return coordsToPointsStr(d.verticies);
-                        })
-                        .classed("concentric-submode-ring", true);
+                    // let concentricPolygonsElsV2 = concentricContainer
+                    //     .selectAll<SVGPolygonElement, {}>("polygon")
+                    //     .data(concentricPolygons)
+                    //     .enter()
+                    //     .append<SVGPolygonElement>("polygon")
+                    //     .attr("points", function(d) {
+                    //         return coordsToPointsStr(d.verticies);
+                    //     })
+                    //     .classed("concentric-submode-ring", true);
 
                     // Draw each sub-mode button if available
                     let modeButtons = submodesContainer
-                        .selectAll<SVGCircleElement, {}>("circle")
+                        .selectAll<SVGGElement, {}>("g")
                         .data(d.modes)
                         .enter()
-                        .append<SVGCircleElement>("circle")
+                        .append<SVGGElement>("g")
                         .attr("data-mode", function(_d) { return _d.label })
-                        .attr("r", 20)
-                        .attr("cx", 0)
-                        .attr("cy", 0)
                         .attr("transform", function(_d, _i) {
 
                             // Check that there is a placement for this
@@ -879,8 +901,27 @@ export class HandlesMain implements IContainer, IDrawable {
                                 return `translate(${vertex.x},${vertex.y})`;
                             }
                         })
-                        .classed("mode-button", true)
-                        .classed("selected", function(d) { return d.selected });
+                        .classed("selected", function(d) { return d.selected })
+                        .each(function(d) {
+                            let subModeButtonContainer = d3.select(this);
+
+                            // Append circle background
+                            subModeButtonContainer
+                                .append<SVGCircleElement>("circle")
+                                .attr("r", 16)
+                                .attr("cx", 0)
+                                .attr("cy", 0)
+                                .classed("mode-button", true);
+
+                            // Append image
+                            subModeButtonContainer
+                                .append<SVGImageElement>("image")
+                                .attr("href", function() { return d.iconUrl; })
+                                .attr("x", -15)
+                                .attr("y", -15)
+                                .attr("width", 30)
+                                .attr("height", 30);
+                        });
 
                     // Add event listener to the main button to display the
                     // sub-modes.
@@ -890,30 +931,6 @@ export class HandlesMain implements IContainer, IDrawable {
                         d3.event.stopPropagation();
                     });
                 }
-
-                    // .attr("r", function(d, i) {
-                 
-                    //     // Throw error if polygons is undefined.
-                    //     if (concentricPolygons == undefined) {
-                    //         throw new InternalError();
-                    //     }
-
-                    //     let rollingVertexCount = 0;
-                    //     let circumRadius = 0;
-
-                    //     // Find which polygon tier the index (i) is on.
-                    //     concentricPolygons.find(p => {
-                    //         if (p.verticies.length + rollingVertexCount > i) {
-                    //             circumRadius = p.circumRadius;
-                    //             return true;
-                    //         } else {
-                    //             rollingVertexCount = p.verticies.length;
-                    //             return false;
-                    //         }
-                    //     });
-
-                    //     return circumRadius;
-                    // })
             });
 
         // Add event listeners to the buttons
@@ -930,21 +947,24 @@ export class HandlesMain implements IContainer, IDrawable {
                 d3.event.stopPropagation();
             });
 
-        // this.modeContainer.selectAll<Element, {}>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME}'] > *[data-mode]`)
-        //     .on("click", function() {
+        this.subModeContainer
+            .selectAll<SVGGElement, {}>(`[data-for='${Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME}'] *[data-mode]`)
+            .on("click", function() {
 
-        //         if (colorData == undefined) {
-        //             throw new InternalError();
-        //         }
+                if (colorData == undefined) {
+                    throw new InternalError();
+                }
 
-        //         let thisDataMode = this.getAttribute("data-mode");
-        //         colorData.modes.map(mode => {
-        //             mode.selected = mode.label == thisDataMode;
-        //         });
+                let thisDataMode = this.getAttribute("data-mode");
+                colorData.modes.map(mode => {
+                    mode.selected = mode.label == thisDataMode;
+                    d3.select(`[data-mode='${mode.label}']`)
+                        .classed("selected", mode.selected);
+                });
 
-        //         self.mode = HandleMode.COLORS;
-        //         d3.event.stopPropagation();
-        //     });
+                self.mode = HandleMode.COLORS;
+                d3.event.stopPropagation();
+            });
 
         this.modeContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME}']`)
             .on("click", function() {

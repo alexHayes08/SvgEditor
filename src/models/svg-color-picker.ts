@@ -3,14 +3,18 @@ const uniqid = require("uniqid");
 import * as d3 from "d3";
 
 import { IDrawable } from "./idrawable";
-import { SvgDefs } from "./svg-defs-model";
+import { SvgDefs, ISvgDefs } from "./svg-defs-model";
+import { IDOMDrawable } from "./idom-drawable";
+import { Tabs, ITab } from "./tabs";
+import { InternalError } from "./errors";
 
 export enum ColorPickerMode {
     RGB,
     HSL,
     CMYK,
     WHEEL,
-    CMS
+    CMS,
+    UNSET
 };
 
 enum ColorRefType {
@@ -25,12 +29,16 @@ enum ColorRefType {
     RADIAL_GRADIENT,
 
     // Reference a element in the defs.
-    URL
+    URL,
+
+    // No color is defined or referenced.
+    NONE
 }
 
 interface ColorMode {
     name: string;
-    type: ColorPickerMode;
+    colorFormat: ColorPickerMode;
+    colorType: ColorRefType;
 }
 
 interface ColorRef {
@@ -40,55 +48,144 @@ interface ColorRef {
 const COLOR_MODES: ColorMode[] = [
     {
         name: "RGB",
-        type: ColorPickerMode.RGB
+        colorFormat: ColorPickerMode.RGB,
+        colorType: ColorRefType.NONE
     },
     {
         name: "HSL",
-        type: ColorPickerMode.HSL
+        colorFormat: ColorPickerMode.HSL,
+        colorType: ColorRefType.NONE
     },
     {
         name: "CYMK",
-        type: ColorPickerMode.CMYK
+        colorFormat: ColorPickerMode.CMYK,
+        colorType: ColorRefType.NONE
     },
     {
         name: "Wheel",
-        type: ColorPickerMode.WHEEL
+        colorFormat: ColorPickerMode.WHEEL,
+        colorType: ColorRefType.NONE
     },
     {
         name: "CMS",
-        type: ColorPickerMode.CMS
+        colorFormat: ColorPickerMode.CMS,
+        colorType: ColorRefType.NONE
+    },
+    {
+        name: "Unset",
+        colorFormat: ColorPickerMode.UNSET,
+        colorType: ColorRefType.NONE
     }
 ];
 
-export class SvgColorPicker implements IDrawable {
+export class SvgColorPicker implements IDOMDrawable<HTMLElement> {
     //#region Fields
 
-    private static DATA_NAME: string = "color-picker-name";
+    private static DATA_NAME: string = "color-picker";
     private static RecentlyUsedColors: d3.Color[];
     
-    private readonly container: d3.Selection<HTMLDivElement, {}, null, undefined>;
-    private readonly defs: SvgDefs;
+    private readonly defs: ISvgDefs;
     
     private color: d3.Color;
-    private element?: d3.Selection<HTMLDivElement, {}, null, undefined>;
+    private container: Element;
+    private element: HTMLElement;
+    private oldColor: d3.Color;
+    private tabs: Tabs;
+
+    private newColorPreviewEl: HTMLElement;
+    private oldColorPreviewEl: HTMLElement;
+    private tabsContainerEl: HTMLElement;
+    private tabsHeaderContainerEl: HTMLElement;
+    
+    private rgbContainer?: HTMLElement;
 
     //#endregion
 
     //#region Ctor
 
-    public constructor(
-        container: d3.Selection<HTMLDivElement, {}, null, undefined>,
-        defs: SvgDefs)
+    public constructor(container: Element, defs: ISvgDefs)
     {
-
         // Assign static usedColors a property if not set
         if (SvgColorPicker.RecentlyUsedColors == undefined) {
             SvgColorPicker.RecentlyUsedColors = [];
         }
 
+        let self = this;
+
         this.color = d3.color("rgb(0,0,0)");
+        this.oldColor = d3.color("rgb(0,0,0)");
         this.container = container;
         this.defs = defs;
+
+        // Create element
+        this.element = document.createElement("div");
+        this.element.setAttribute("data-name", SvgColorPicker.DATA_NAME);
+
+        // Create color previews
+        this.newColorPreviewEl = document.createElement("div");
+        this.newColorPreviewEl.classList.add("color-preview", "new-preview");
+        this.oldColorPreviewEl = document.createElement("div");
+        this.oldColorPreviewEl.classList.add("color-preview", "old-preview");
+        let colorPreviewContainer = document.createElement("div");
+        colorPreviewContainer.classList.add("color-preview-container");
+        colorPreviewContainer.appendChild(this.newColorPreviewEl);
+        colorPreviewContainer.appendChild(this.oldColorPreviewEl);
+
+        // Create tab elements
+        this.tabsContainerEl = document.createElement("div");
+        this.tabsContainerEl.classList.add("tabs");
+        this.tabsHeaderContainerEl = document.createElement("div");
+        this.tabsHeaderContainerEl.classList.add("tab-headers");
+        let tabInfo: ITab[] = [];
+
+        // Update
+        let tabs = d3.select(this.tabsContainerEl)
+            .selectAll<HTMLElement, {}>("div")
+            .data(COLOR_MODES);
+
+        // Enter
+        tabs.enter()
+            .append<HTMLElement>("div")
+            .attr("data-name", function(d) { return d.name; })
+            .each(function(d) {
+                let tab: ITab = {
+                    disabled: false,
+                    tabBodyElement: this,
+                    tabName: d.name,
+                    selected: false,
+                    // iconUrl: undefined
+                };
+                tabInfo.push(tab);
+                switch (d.colorFormat) {
+                    case ColorPickerMode.CMS:
+                        self.drawCMS(d3.select(this));
+                        break;
+                    case ColorPickerMode.CMYK:
+                        self.drawCYMK(d3.select(this));
+                        break;
+                    case ColorPickerMode.HSL:
+                        self.drawHSL(d3.select(this));
+                        break;
+                    case ColorPickerMode.RGB:
+                        self.drawRgb(d3.select(this));
+                        break;
+                    case ColorPickerMode.WHEEL:
+                        self.drawWheel(d3.select(this));
+                        break;
+                }
+            });
+
+        // Exit
+        tabs.exit()
+            .remove();
+
+        // Compose elements
+        this.element.appendChild(colorPreviewContainer);
+        this.element.appendChild(this.tabsHeaderContainerEl);
+        this.element.appendChild(this.tabsContainerEl);
+
+        // Create tabs
+        this.tabs = new Tabs(this.tabsHeaderContainerEl, tabInfo);
     }
 
     //#endregion
@@ -99,101 +196,158 @@ export class SvgColorPicker implements IDrawable {
 
     //#region Functions
 
-    private getElement(): d3.Selection<HTMLDivElement, {}, null, undefined> {
-        if (this.element == undefined) {
-            throw new Error();
-        } else {
-            return this.element;
+    private changeColor(color: d3.Color, replaceOldColor: boolean): void {
+        console.log(`The color changed from ${this.oldColor.toString()} to ${color.toString()}`);
+        this.color = color;
+
+        if (replaceOldColor) {
+            this.oldColor = color;
         }
+
+        this.update();
     }
 
-    private drawRgb(tab: d3.Selection<HTMLDivElement, ColorMode, HTMLDivElement, {}>): void
+    //#region Draw color tabs
+
+    private drawRgb(tab: d3.Selection<HTMLElement, ColorMode, null, undefined>): void
     {
-        let controls = tab.append("div")
-            .classed("controls", true);
-        
+        let self = this;
+        let controls = tab.append<HTMLElement>("div")
+            .classed("controls", true)
+            .classed("rgb-controls", true);
+
+        let node = controls.node();
+        if (node == undefined) {
+            throw new InternalError();
+        }
+
+        this.rgbContainer = node;
+
         // Append R slider
-        controls.append("input")
-            .attr("type", "slider")
+        let r_control = controls.append("label")
+        r_control.append("span")
+            .text("R");
+        r_control.append("input")
+            .attr("type", "range")
+            .attr("min", 0)
+            .attr("max", 255)
+            .attr("value", 0)
             .attr("data-name", "r");
+        r_control.append("input")
+            .attr("type", "number")
+            .attr("min", 0)
+            .attr("max", 255)
+            .attr("value", 0)
+            .attr("data-name", "r");
+        r_control.selectAll<HTMLInputElement, {}>("input")
+            .on("keyup mousedown drag", function() {
+                let color = d3.color(self.color.toString()).rgb();
+                color.r = Number(this.value);
+                self.changeColor(color, false);
+            });
 
         // Append G slider
-        controls.append("input")
-            .attr("type", "slider")
+        let g_control = controls.append("label");
+        g_control.append("span")
+            .text("G");
+        g_control.append("input")
+            .attr("type", "range")
+            .attr("min", 0)
+            .attr("max", 255)
+            .attr("value", 0)
             .attr("data-name", "g");
+        g_control.append("input")
+            .attr("type", "number")
+            .attr("min", 0)
+            .attr("max", 255)
+            .attr("value", 0)
+            .attr("data-name", "g");
+        g_control.selectAll<HTMLInputElement, {}>("input")
+            .on("keyup mousedown", function() {
+                let color = d3.color(self.color.toString()).rgb();
+                color.g = Number(this.value);
+                self.changeColor(color, false);
+            });
 
         // Append B slider
-        controls.append("input")
-            .attr("type", "slider")
+        let b_control = controls.append("label");
+        b_control.append("span")
+            .text("B");
+        b_control
+            .append("input")
+            .attr("type", "range")
+            .attr("min", 0)
+            .attr("max", 255)
+            .attr("value", 0)
             .attr("data-name", "b");
+        b_control.append("input")
+            .attr("type", "number")
+            .attr("min", 0)
+            .attr("max", 255)
+            .attr("value", 0)
+            .attr("data-name", "b");
+        b_control.selectAll<HTMLInputElement, {}>("input")
+            .on("keyup mousedown", function() {
+                let color = d3.color(self.color.toString()).rgb();
+                color.b = Number(this.value);
+                self.changeColor(color, false);
+            });
 
         // Append A slider
-        controls.append("input")
-            .attr("type", "slider")
+        let a_control = controls.append("label");
+        a_control.append("span")
+            .text("A");
+        a_control.append("input")
+            .attr("type", "range")
+            .attr("min", 0)
+            .attr("max", 1)
+            .attr("step", .1)
+            .attr("value", 1)
             .attr("data-name", "a");
+        a_control.append("input")
+            .attr("type", "number")
+            .attr("min", 0)
+            .attr("max", 1)
+            .attr("value", 1)
+            .attr("data-name", "a");
+        a_control.selectAll<HTMLInputElement, {}>("input")
+            .on("keyup mousedown", function() {
+                let color = d3.color(self.color.toString()).rgb();
+                color.opacity = Number(this.value);
+                self.changeColor(color, false);
+            });
 
         
         console.log("Drawing RGB tab.");
     }
 
-    private drawHSL(tab: d3.Selection<HTMLDivElement, ColorMode, HTMLDivElement, {}>): void
+    private drawHSL(tab: d3.Selection<HTMLElement, ColorMode, null, undefined>): void
     {
         console.log("Drawing HSL tab.");
     }
 
-    private drawCYMK(tab: d3.Selection<HTMLDivElement, ColorMode, HTMLDivElement, {}>): void
+    private drawCYMK(tab: d3.Selection<HTMLElement, ColorMode, null, undefined>): void
     {
         console.log("Drawing CYMK tab.");
     }
 
-    private drawCMS(tab: d3.Selection<HTMLDivElement, ColorMode, HTMLDivElement, {}>): void
+    private drawCMS(tab: d3.Selection<HTMLElement, ColorMode, null, undefined>): void
     {
         console.log("Drawing CMS tab.");
     }
 
-    private drawWheel(tab: d3.Selection<HTMLDivElement, ColorMode, HTMLDivElement, {}>): void
+    private drawWheel(tab: d3.Selection<HTMLElement, ColorMode, null, undefined>): void
     {
         console.log("Drawing Wheel tab.");
     }
 
+    //#endregion
+
     public draw(): void {
-        let self = this;
-        this.element = this.container
-            .append<HTMLDivElement>("div")
-            .attr("data-name", SvgColorPicker.DATA_NAME);
-
-        // Update
-        let tabs = this.element
-            .selectAll<HTMLDivElement, {}>("div")
-            .data(COLOR_MODES);
-
-        // Enter
-        tabs.enter()
-            .append<HTMLDivElement>("div")
-            .attr("data-name", function(d) { return d.name; })
-            .each(function(d) {
-                switch (d.type) {
-                    case ColorPickerMode.CMS:
-                        self.drawCMS(tabs)
-                        break;
-                    case ColorPickerMode.CMYK:
-                        self.drawCYMK(tabs);
-                        break;
-                    case ColorPickerMode.HSL:
-                        self.drawHSL(tabs);
-                        break;
-                    case ColorPickerMode.RGB:
-                        self.drawRgb(tabs);
-                        break;
-                    case ColorPickerMode.WHEEL:
-                        self.drawWheel(tabs);
-                        break;
-                }
-            });
-
-        // Exit
-        tabs.exit()
-            .remove();
+        this.oldColorPreviewEl.style.background = this.oldColor.toString();
+        this.newColorPreviewEl.style.background = this.color.toString();
+        this.container.appendChild(this.element);
+        this.tabs.draw();
     }
 
     public update(): void {
@@ -202,6 +356,10 @@ export class SvgColorPicker implements IDrawable {
         if (this.element == undefined) {
             return;
         }
+
+        // Update color previews.
+        this.oldColorPreviewEl.style.background = this.oldColor.toString();
+        this.newColorPreviewEl.style.background = this.color.toString();
     }
 
     public erase(): void {
@@ -212,6 +370,14 @@ export class SvgColorPicker implements IDrawable {
         }
 
         this.element.remove();
+    }
+
+    public getElement(): HTMLElement {
+        return this.element;
+    }
+
+    public getContainer(): Element {
+        return this.container;
     }
 
     //#endregion

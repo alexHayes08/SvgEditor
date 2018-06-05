@@ -5,16 +5,50 @@ export function getDOMMatrix(element: SVGGraphicsElement): DOMMatrix {
     return new DOMMatrix([a, b, c, d, e, f]);
 }
 
-export function isAttr(node: any): node is Attr {
-    return (<Attr>node).value !== undefined;
+export function isAttr(value: any): value is Attr {
+    return value != undefined
+        && (<Attr>value).value !== undefined;
 }
 
-export function isNode(node: any): node is Element {
-    return (<Node>node).textContent !== undefined;
+export function isNode(value: any): value is Element {
+    return value != undefined
+        && (<Node>value).textContent !== undefined;
 }
     
-export function isElement(node: any): node is Element {
-    return (<Element>node).attributes !== undefined;
+export function isElement(value: any): value is Element {
+    return value != undefined
+        && (<Element>value).attributes !== undefined;
+}
+
+export function isHTMLElement(value: any): value is HTMLElement {
+    return value != undefined
+        && "accessKey" in value
+        && "blur" in value
+        && "click" in value
+        && "focus" in value
+        && "isContentEditable" in value
+        && "contextMenu" in value
+        && "dataset" in value
+        && "style" in value;
+}
+
+export function isHTMLTemplateElement(value: any): value is HTMLTemplateElement {
+    if (isHTMLElement(value)) {
+        return "content" in value
+            && (<HTMLElement>value).tagName == "TEMPLATE";
+    } else {
+        return false;
+    }
+}
+
+export function isHTMLScriptElement(value: any): value is HTMLScriptElement {
+    if (isHTMLElement(value)) {
+        return "type" in value
+            && "src" in value
+            && (<HTMLElement>value).tagName == "SCRIPT";
+    } else {
+        return false;
+    }
 }
 
 /**

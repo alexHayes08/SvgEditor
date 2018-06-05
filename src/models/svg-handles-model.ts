@@ -16,17 +16,6 @@ import { SvgEditor, EditorLocation } from "./svg-editor-model";
 import { SvgItem } from "./svg-item-model";
 import { SvgTransformService, SvgTransformServiceSingleton, IBBox, IRotationMatrix, ITransformable, SvgTransformString, TransformType, ITranslationMatrix } from "../services/svg-transform-service";
 import { toRadians } from "../helpers/math-helpers";
-import { 
-    drawCubicBezierArc, 
-    IDrawArcConfig, 
-    ISliceV2, 
-    isSvgElement, 
-    getNewPointAlongAngle, 
-    convertToSvgElement, 
-    convertToSvgGraphicsElement, 
-    getFurthestSvgOwner, 
-    isSvgGraphicsElement 
-} from "../helpers/svg-helpers";
 import { HandlesMain } from "./handles-main";
 import { TranslateAction } from "./actions/translate-action";
 import { IOperationCallbacks } from "./ioperation-callback";
@@ -145,7 +134,7 @@ export class SvgHandles implements ISvgHandles {
     private minHandlesRadius: number;
     private transformData: ITransformable;
 
-    private htmlHandlesContainer: HTMLDivElement;
+    private htmlHandlesContainer: HTMLElement;
     private handlesContainer: SVGGElement;
     private mainHandlesOverlay: HandlesMain;
     private highlightPathEl: SVGPathElement;
@@ -165,12 +154,13 @@ export class SvgHandles implements ISvgHandles {
         this.transformData = SvgTransformString.CreateDefaultTransform();
 
         // Create the html handles section
-        this.htmlHandlesContainer = <HTMLDivElement>document
+        this.htmlHandlesContainer = <HTMLElement>document
             .createElement("div");
         this.htmlHandlesContainer
             .setAttribute("data-name", "handles-html-container");
         this.canvas.canvasEl.insertAdjacentElement("afterend",
             this.htmlHandlesContainer);
+        ActivatableServiceSingleton.register(this.htmlHandlesContainer, true); // FIXME: Change this back to false
 
         // Create the highlight rect
         let highlightRectEl = d3.select(this.parentNode)

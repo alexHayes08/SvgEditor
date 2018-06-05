@@ -29,6 +29,7 @@ import { NS } from "../helpers/namespaces-helper";
 import { ColorValue } from "./color-value";
 import { getElementUrlPointsTo } from "../helpers/svg-helpers";
 import { InternalError, InvalidCastError } from "./errors";
+import { SvgColorPicker } from "./svg-color-picker";
 
 interface IColorsOverlayData {
     startOffsetAngle: number;
@@ -62,15 +63,15 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
     private readonly colorBtnTransform: ITransformable;
     private readonly colorPickerTransform: ITransformable;
     private readonly colorRingTransform: ITransformable;
-    private readonly htmlContainer: d3.Selection<HTMLDivElement, {}, null, undefined>;
+    private readonly htmlContainer: d3.Selection<HTMLElement, {}, null, undefined>;
     private readonly svgItemToLinearGradientMap: Map<SvgColors,LinearGradient>;
     private data: IColorsOverlayData[];
     private selectedColor?: SvgItemToColor;
     
     private colorRingContainer?: d3.Selection<SVGGElement, {}, null, undefined>;
     private elementColorContainer?: d3.Selection<SVGGElement, {}, null, undefined>;
-    private elementColorPicker?: d3.Selection<HTMLDivElement, {}, null, undefined>;
-    private attributeColorPicker?: d3.Selection<HTMLDivElement, {}, null, undefined>;
+    private elementColorPicker: SvgColorPicker;
+    private attributeColorPicker: SvgColorPicker;
 
     public container: d3.Selection<SVGGElement, {}, null, undefined>;
     public containerNode: SVGGElement;
@@ -83,7 +84,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
 
     public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>,
         canvas: SvgCanvas,
-        htmlContainer: HTMLDivElement)
+        htmlContainer: HTMLElement)
     {
         this.colorBtnTransform = new SvgTransformString([
             TransformType.ROTATE,
@@ -113,6 +114,29 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         this.mode = HandlesColorMode.ALL;
 
         this.canvas.defs.createSection(LinearGradientsContainerName);
+
+        let colorPickerContainer = this.htmlContainer
+            .append<HTMLElement>("div")
+            .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
+                .SubElements.ColorPickerContainer.DATA_NAME)
+                .node();
+
+        if (colorPickerContainer == undefined) {
+            throw new Error();
+        }
+
+        // Two color pickers:
+        // 1) One for fill/stroke/width of an element
+        // 2) One for just color associated with an elements attribute
+        this.attributeColorPicker = new SvgColorPicker(colorPickerContainer, 
+            canvas.defs);
+        ActivatableServiceSingleton.register(
+            this.attributeColorPicker.getElement(), true); // FIXME: Change this back to false
+
+        this.elementColorPicker = new SvgColorPicker(colorPickerContainer, 
+            canvas.defs);
+        ActivatableServiceSingleton.register(
+            this.elementColorPicker.getElement(), false);
     }
 
     //#endregion
@@ -128,21 +152,21 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
             return;
         }
 
-        if (this.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
+        // if (this.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
             
-            // Activate element
-            this.attributeColorPicker
-                .each(function(d) {
-                    ActivatableServiceSingleton.activate(this);
-                });
-        } else {
+        //     // Activate element
+        //     this.attributeColorPicker
+        //         .each(function(d) {
+        //             ActivatableServiceSingleton.activate(this);
+        //         });
+        // } else {
 
-            // Activate element
-            this.elementColorPicker
-                .each(function(d) {
-                    ActivatableServiceSingleton.activate(this);
-                });
-        }
+        //     // Activate element
+        //     this.elementColorPicker
+        //         .each(function(d) {
+        //             ActivatableServiceSingleton.activate(this);
+        //         });
+        // }
 
         console.log("Displaying color-picker TODO.");
     }
@@ -157,15 +181,15 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         }
 
         // Deactivate element
-        this.attributeColorPicker
-            .each(function(d) {
-                ActivatableServiceSingleton.deactivate(this);
-            });
+        // this.attributeColorPicker
+        //     .each(function(d) {
+        //         ActivatableServiceSingleton.deactivate(this);
+        //     });
 
-        this.elementColorPicker
-            .each(function(d) {
-                ActivatableServiceSingleton.deactivate(this);
-            });
+        // this.elementColorPicker
+        //     .each(function(d) {
+        //         ActivatableServiceSingleton.deactivate(this);
+        //     });
 
         console.log("Hiding color-picker TODO.");
     }
@@ -193,51 +217,44 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
             .append<SVGGElement>("g")
             .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
                 .SubElements.ElementColorContainer.DATA_NAME);
-        
-        
-        // Two color pickers:
-        // 1) One for fill/stroke/width of an element
-        // 2) One for just color associated with an elements attribute
-        let colorPickerContainer = this.htmlContainer
-            .append<HTMLDivElement>("div")
-            .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
-                .SubElements.ColorPickerContainer.DATA_NAME);
 
         // Attribute color picker.
-        this.attributeColorPicker = colorPickerContainer
-            .append<HTMLDivElement>("div")
-            .attr("data-name", "attribute-color-picker")
-            .classed("attributeColorPicker", true)
-            .each(function() {
-                ActivatableServiceSingleton.register(this, false);
-            });
+        this.attributeColorPicker.draw();
+        this.elementColorPicker.draw();
+        // this.attributeColorPicker = colorPickerContainer
+        //     .append<HTMLDivElement>("div")
+        //     .attr("data-name", "attribute-color-picker")
+        //     .classed("attributeColorPicker", true)
+        //     .each(function() {
+        //         ActivatableServiceSingleton.register(this, false);
+        //     });
 
         // Element color picker.
-        this.elementColorPicker = colorPickerContainer
-            .append<HTMLDivElement>("div")
-            .attr("data-name", "element-color-picker")
-            .classed("elementColorPicker", true)
-            .each(function() {
-                ActivatableServiceSingleton.register(this, false);
-            });
+        // this.elementColorPicker = colorPickerContainer
+        //     .append<HTMLDivElement>("div")
+        //     .attr("data-name", "element-color-picker")
+        //     .classed("elementColorPicker", true)
+        //     .each(function() {
+        //         ActivatableServiceSingleton.register(this, false);
+        //     });
 
         // Three tabs
-        let tabs = this.elementColorPicker
-            .append("div")
-            .classed("tabs", true);
+        // let tabs = this.elementColorPicker
+        //     .append("div")
+        //     .classed("tabs", true);
 
-        // First tab is fill
-        tabs.append("div")
-            .classed("fill", true)
-            .classed("tab", true);
+        // // First tab is fill
+        // tabs.append("div")
+        //     .classed("fill", true)
+        //     .classed("tab", true);
 
-        tabs.append("div")
-            .classed("stroke", true)
-            .classed("tab", true);
+        // tabs.append("div")
+        //     .classed("stroke", true)
+        //     .classed("tab", true);
 
-        tabs.append("div")
-            .classed("stroke-style", true)
-            .classed("tab", true);
+        // tabs.append("div")
+        //     .classed("stroke-style", true)
+        //     .classed("tab", true);
     }
 
     public update(): void {

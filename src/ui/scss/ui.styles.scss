@@ -50,6 +50,112 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
  */
 
 /**
+ * [Tabs]
+ */
+
+$activeTabBg: rgb(243, 243, 243);
+$inactiveTabBg: rgb(231, 231, 231);
+
+.tabs-header-container {
+    align-items: stretch;
+    display: flex;
+
+    .tab-header {
+        margin: 1em 0 0 0;
+        border: none;
+        border-bottom-color: $inactiveTabBg;
+        border-bottom-style: solid;
+        border-bottom-width: 2px;
+        outline: none;
+        transition: background .2s, border-bottom-color .2s;
+    }
+
+    .tab-header.inactive-tab-header {
+        background: $inactiveTabBg;
+        border-bottom-color: $inactiveTabBg;
+        margin-top: 4px;
+    }
+
+    .tab-header.tab-header.inactive-tab-header:hover {
+        background: rgb(207, 207, 207);
+        border-bottom-color: rgb(20, 20, 20);
+        cursor: pointer;
+    }
+
+    .tab-header.active-tab-header {
+        background: rgb(243, 243, 243);
+        border-bottom-color: rgb(38, 135, 226);
+        margin-top: 0px;
+    }
+
+    .tab-header > * {
+        display: inline-block;
+    }
+}
+
+.tabs .active-tab {
+    display: block;
+}
+
+.tabs .inactive-tab {
+    display: none;
+}
+
+/**
+ * [End Tabs]
+ */
+
+/**
+ * [Color Picker]
+ */
+
+*[data-name="color-picker"] {
+
+    .color-preview-container {
+        background: linear-gradient(45deg, #808080 25%, transparent 25%), 
+            linear-gradient(-45deg, #808080 25%, transparent 25%), 
+            linear-gradient(45deg, transparent 75%, #808080 75%), 
+            linear-gradient(-45deg, transparent 75%, #808080 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        border: 2px solid rgb(20, 20, 20);
+        height: 2em;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .color-preview {
+        display: inline-block;
+        width: 50%;
+        height: 100%;
+        z-index: 101;
+    }
+    
+    .controls {
+        margin: auto;
+        text-align: center;
+    }
+
+    .rgb-controls {
+        padding: 0 2em;
+
+        label {
+            display: flex;
+            flex-wrap: nowrap;
+            flex-direction: row;
+
+            input[type="range"] {
+                flex-grow: 1;
+            }
+        }
+    }
+}
+
+/**
+ * [End Color Picker]
+ */
+
+/**
  * [Handles]
  */
 
@@ -77,6 +183,13 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
 
 .opacity-none {
     opacity: 0;
+}
+
+*[data-name="handles-html-container"] > * {
+    background: rgb(207, 207, 207);
+    position: absolute;
+    top: 0px;
+    left: 0px;
 }
 
 *[data-name="highlight-area"] {

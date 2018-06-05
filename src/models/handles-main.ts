@@ -68,7 +68,7 @@ export class HandlesMain implements IContainer, IDrawable {
 
     private readonly elementDataMap: WeakMap<Element, ITransformable>;
     private readonly cache: CacheService<String>;
-    private readonly htmlHandlesContainer: HTMLDivElement;
+    private readonly htmlHandlesContainer: HTMLElement;
     private defaultWidth: number;
     private highlightData: ITransformable;
     private minRadius: number;
@@ -218,7 +218,7 @@ export class HandlesMain implements IContainer, IDrawable {
     public constructor(
         container: d3.Selection<SVGGElement, {}, null, undefined>, 
         canvas: SvgCanvas,
-        htmlContainer: HTMLDivElement) 
+        htmlContainer: HTMLElement) 
     {
         this.animationDuration = 200;
         this.cache = new CacheService();

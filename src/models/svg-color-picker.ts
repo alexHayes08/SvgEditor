@@ -99,8 +99,40 @@ export class SvgColorPicker implements IDrawable {
 
     //#region Functions
 
+    private getElement(): d3.Selection<HTMLDivElement, {}, null, undefined> {
+        if (this.element == undefined) {
+            throw new Error();
+        } else {
+            return this.element;
+        }
+    }
+
     private drawRgb(tab: d3.Selection<HTMLDivElement, ColorMode, HTMLDivElement, {}>): void
     {
+        let controls = tab.append("div")
+            .classed("controls", true);
+        
+        // Append R slider
+        controls.append("input")
+            .attr("type", "slider")
+            .attr("data-name", "r");
+
+        // Append G slider
+        controls.append("input")
+            .attr("type", "slider")
+            .attr("data-name", "g");
+
+        // Append B slider
+        controls.append("input")
+            .attr("type", "slider")
+            .attr("data-name", "b");
+
+        // Append A slider
+        controls.append("input")
+            .attr("type", "slider")
+            .attr("data-name", "a");
+
+        
         console.log("Drawing RGB tab.");
     }
 

@@ -2,7 +2,7 @@
 
 import { ApertureSvgEditor } from "./models/aperture-svg-editor";
 import { SvgCanvas } from "./models/svg-canvas-model";
-import { SvgHandles } from "./models/svg-handles-model";
+import { SvgHandles } from "./models/svg-handles";
 
 // This is only temporary, should be moved elsewhere...
 import "./ui/scss/ui.styles.scss";

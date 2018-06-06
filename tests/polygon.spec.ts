@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 
-import { ICoords2D } from './../src/services/svg-transform-service';
+import { ICoords2D } from './../src/services/svg-geometry-service';
 import { Polygon } from './../src/models/shapes/polygon';
 
 describe("polygon", () => {

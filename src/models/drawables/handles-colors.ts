@@ -1,35 +1,22 @@
-const uniqid = require("uniqid");
+import * as d3 from 'd3';
 
-import * as d3 from "d3";
-
-import { ActivatableServiceSingleton } from "../services/activatable-service";
-import { Angle } from "./angle";
-import { convertToEnum } from "../helpers/enum-helper";
-import { HandlesRotationOverlay } from "./handles-rotation";
-import { IContainer } from "./icontainer";
-import { IDrawable } from './idrawable';
-import { Names } from "./names";
-import { SvgEditor } from "./svg-editor-model";
-import { SvgCanvas } from "./svg-canvas-model";
-import { 
-    SvgTransformServiceSingleton, 
-    ICoords2D, 
-    ITransformable, 
+import { CardinalDirections, toDegrees } from '../../helpers/math-helpers';
+import { NS } from '../../helpers/namespaces-helper';
+import {
+    ITransformable,
+    SvgGeometryServiceSingleton,
     SvgTransformString,
     TransformType,
-    TransformStringService
-} from "../services/svg-transform-service";
-import { getPolygonPointsString } from "../helpers/geometry-helpers";
-import { SvgColors, SvgItem, ColorMap, isColorMap } from "./svg-item-model";
-import { toDegrees, CardinalDirections } from "../helpers/math-helpers";
-import { LinearGradient } from "./element-wrappers/linear-gradient";
-import { StopData } from "./element-wrappers/stop-data";
-import { SvgNumber } from "./svg-number";
-import { NS } from "../helpers/namespaces-helper";
-import { ColorValue } from "./color-value";
-import { getElementUrlPointsTo } from "../helpers/svg-helpers";
-import { InternalError, InvalidCastError } from "./errors";
-import { SvgColorPicker } from "./svg-color-picker";
+} from '../../services/svg-geometry-service';
+import { ColorControlRgb } from './../drawables/color-control-rgb';
+import { LinearGradient } from './../element-wrappers/linear-gradient';
+import { InternalError, InvalidCastError } from './../errors';
+import { IDrawable } from './../idrawable';
+import { Names } from './../names';
+import { SvgCanvas } from './../svg-canvas-model';
+import { ColorMap, isColorMap, SvgColors, SvgItem } from './../svg-item-model';
+
+const uniqid = require("uniqid");
 
 interface IColorsOverlayData {
     startOffsetAngle: number;
@@ -56,13 +43,18 @@ export enum HandlesColorMode {
     UNIQUE_COLORS_ONLY
 }
 
-export class HandlesColorsOverlay implements IContainer, IDrawable {
+/**
+ * This class violates the single parent node principle of IDOMDrawable as it
+ * modifies nodes in two different DOM trees.
+ */
+export class HandlesColorsOverlay implements IDrawable {
     //#region Fields
 
     private readonly canvas: SvgCanvas;
     private readonly colorBtnTransform: ITransformable;
     private readonly colorPickerTransform: ITransformable;
     private readonly colorRingTransform: ITransformable;
+    // private readonly element: SVGGElement;
     private readonly htmlContainer: d3.Selection<HTMLElement, {}, null, undefined>;
     private readonly svgItemToLinearGradientMap: Map<SvgColors,LinearGradient>;
     private data: IColorsOverlayData[];
@@ -70,11 +62,12 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
     
     private colorRingContainer?: d3.Selection<SVGGElement, {}, null, undefined>;
     private elementColorContainer?: d3.Selection<SVGGElement, {}, null, undefined>;
-    private elementColorPicker: SvgColorPicker;
-    private attributeColorPicker: SvgColorPicker;
+    // private elementColorPicker: SvgColorPicker;
+    // private attributeColorPicker: SvgColorPicker;
+    private rgbControl: ColorControlRgb;
+    // private rgbControlContainer: HTMLElement;
 
-    public container: d3.Selection<SVGGElement, {}, null, undefined>;
-    public containerNode: SVGGElement;
+    public container: SVGGElement;
     public mode: HandlesColorMode;
     public radius: number;
 
@@ -82,7 +75,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
 
     //#region Ctor
 
-    public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>,
+    public constructor(container: SVGGElement,
         canvas: SvgCanvas,
         htmlContainer: HTMLElement)
     {
@@ -105,14 +98,7 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         this.canvas = canvas;
         this.radius = 100;
         this.svgItemToLinearGradientMap = new Map();
-        
-        let containerNode = this.container.node();
-        if (containerNode == undefined) {
-            throw new Error("The container was undefined.");
-        }
-        this.containerNode = containerNode;
         this.mode = HandlesColorMode.ALL;
-
         this.canvas.defs.createSection(LinearGradientsContainerName);
 
         let colorPickerContainer = this.htmlContainer
@@ -125,74 +111,76 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
             throw new Error();
         }
 
+        this.rgbControl = new ColorControlRgb(colorPickerContainer);
+
         // Two color pickers:
         // 1) One for fill/stroke/width of an element
         // 2) One for just color associated with an elements attribute
-        this.attributeColorPicker = new SvgColorPicker(colorPickerContainer, 
-            canvas.defs);
-        ActivatableServiceSingleton.register(
-            this.attributeColorPicker.getElement(), true); // FIXME: Change this back to false
+        // this.attributeColorPicker = new SvgColorPicker(colorPickerContainer, 
+        //     canvas.defs);
+        // ActivatableServiceSingleton.register(
+        //     this.attributeColorPicker.getElement(), true); // FIXME: Change this back to false
 
-        this.elementColorPicker = new SvgColorPicker(colorPickerContainer, 
-            canvas.defs);
-        ActivatableServiceSingleton.register(
-            this.elementColorPicker.getElement(), false);
+        // this.elementColorPicker = new SvgColorPicker(colorPickerContainer, 
+        //     canvas.defs);
+        // ActivatableServiceSingleton.register(
+        //     this.elementColorPicker.getElement(), false);
     }
 
     //#endregion
 
     //#region Functions
 
-    private displayColorPicker(coords: ICoords2D): void {
+    // private displayColorPicker(coords: ICoords2D): void {
 
-        // Verify the color picker el isn't null
-        if (this.elementColorPicker == undefined
-            || this.attributeColorPicker == undefined) 
-        {
-            return;
-        }
+    //     // Verify the color picker el isn't null
+    //     if (this.elementColorPicker == undefined
+    //         || this.attributeColorPicker == undefined) 
+    //     {
+    //         return;
+    //     }
 
-        // if (this.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
+    //     // if (this.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
             
-        //     // Activate element
-        //     this.attributeColorPicker
-        //         .each(function(d) {
-        //             ActivatableServiceSingleton.activate(this);
-        //         });
-        // } else {
+    //     //     // Activate element
+    //     //     this.attributeColorPicker
+    //     //         .each(function(d) {
+    //     //             ActivatableServiceSingleton.activate(this);
+    //     //         });
+    //     // } else {
 
-        //     // Activate element
-        //     this.elementColorPicker
-        //         .each(function(d) {
-        //             ActivatableServiceSingleton.activate(this);
-        //         });
-        // }
+    //     //     // Activate element
+    //     //     this.elementColorPicker
+    //     //         .each(function(d) {
+    //     //             ActivatableServiceSingleton.activate(this);
+    //     //         });
+    //     // }
 
-        console.log("Displaying color-picker TODO.");
-    }
+    //     console.log("Displaying color-picker TODO.");
+    // }
 
-    private hideColorPicker(): void {
+    // private hideColorPicker(): void {
 
-        // Verify the color picker el isn't null
-        if (this.elementColorPicker == undefined
-            || this.attributeColorPicker == undefined) 
-        {
-            return;
-        }
+    //     // Verify the color picker el isn't null
+    //     if (this.elementColorPicker == undefined
+    //         || this.attributeColorPicker == undefined) 
+    //     {
+    //         return;
+    //     }
 
-        // Deactivate element
-        // this.attributeColorPicker
-        //     .each(function(d) {
-        //         ActivatableServiceSingleton.deactivate(this);
-        //     });
+    //     // Deactivate element
+    //     // this.attributeColorPicker
+    //     //     .each(function(d) {
+    //     //         ActivatableServiceSingleton.deactivate(this);
+    //     //     });
 
-        // this.elementColorPicker
-        //     .each(function(d) {
-        //         ActivatableServiceSingleton.deactivate(this);
-        //     });
+    //     // this.elementColorPicker
+    //     //     .each(function(d) {
+    //     //         ActivatableServiceSingleton.deactivate(this);
+    //     //     });
 
-        console.log("Hiding color-picker TODO.");
-    }
+    //     console.log("Hiding color-picker TODO.");
+    // }
 
     private calcAngle(): number {
         let distanceBetweenBtnCenters = 50;
@@ -209,18 +197,18 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
         
         let self = this;
         
-        this.colorRingContainer = this.container
-            .append<SVGGElement>("g")
-            .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
-                .SubElements.ColorRingContainer.DATA_NAME);
-        this.elementColorContainer = this.container
-            .append<SVGGElement>("g")
-            .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
-                .SubElements.ElementColorContainer.DATA_NAME);
+        // this.colorRingContainer = this.container
+        //     .append<SVGGElement>("g")
+        //     .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
+        //         .SubElements.ColorRingContainer.DATA_NAME);
+        // this.elementColorContainer = this.container
+        //     .append<SVGGElement>("g")
+        //     .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
+        //         .SubElements.ElementColorContainer.DATA_NAME);
 
         // Attribute color picker.
-        this.attributeColorPicker.draw();
-        this.elementColorPicker.draw();
+        // this.attributeColorPicker.draw();
+        // this.elementColorPicker.draw();
         // this.attributeColorPicker = colorPickerContainer
         //     .append<HTMLDivElement>("div")
         //     .attr("data-name", "attribute-color-picker")
@@ -559,13 +547,13 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
 
                 if (self.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
                     let center =
-                        SvgTransformServiceSingleton.getCenter(this);
+                        SvgGeometryServiceSingleton.getCenter(this);
                     
                     // Display color picker
-                    self.displayColorPicker(center);
+                    // self.displayColorPicker(center);
                 } else {
                     let center =
-                        SvgTransformServiceSingleton.getCenter(this);
+                        SvgGeometryServiceSingleton.getCenter(this);
 
                     // Retrieve the first rotation
                     let rotation = self.colorRingTransform.getRotation(0);
@@ -697,6 +685,14 @@ export class HandlesColorsOverlay implements IContainer, IDrawable {
     public erase(): void {
 
     }
+
+    // public getElement(): SVGGElement {
+    //     return this.element;
+    // }
+
+    // public getContainer(): Element {
+    //     return this.container;
+    // }
 
     //#endregion
 }

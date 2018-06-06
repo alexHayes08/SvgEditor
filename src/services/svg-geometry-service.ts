@@ -5,6 +5,7 @@ import { getAllGroups, replaceNthOccurance, getNthOccurance } from "../helpers/r
 import { getDOMMatrix } from "../helpers/node-helper";
 import { getFurthestSvgOwner } from "../helpers/svg-helpers";
 import { NS } from '../helpers/namespaces-helper';
+import { NotImplementedError } from "../models/errors";
 
 export interface ICoords2D {
     x: number;
@@ -122,7 +123,7 @@ const skewYRegex = /skewY\(\s*([\-\d\.]+)\s*\)/g;
 /**
  * Responsible for applying and retrieving transformations from an element.
  */
-export class SvgTransformService {
+export class SvgGeometryService {
     //#region Fields
 
     private readonly transformsRegex: RegExp;
@@ -837,8 +838,8 @@ export class SvgTransformService {
 }
 
 // Export singleton
-let SvgTransformServiceSingleton = new SvgTransformService();
-export { SvgTransformServiceSingleton };
+let SvgGeometryServiceSingleton = new SvgGeometryService();
+export { SvgGeometryServiceSingleton };
 
 export class TransformStringService {
     //#region Fields
@@ -947,24 +948,33 @@ export interface ITransformable {
     hasSkewY(): boolean;
     hasTranslate(): boolean;
     hasMatrix(): boolean;
+    
     getMatrix(index?: number): IMatrixMatrix;
     setMatrix(value: IMatrixMatrix, index?: number): ITransformable;
     incrementMatrix(value: IMatrixMatrix, index?: number): ITransformable;
+    
     getTranslate(index?: number): ITranslationMatrix;
     setTranslate(value: ITranslationMatrix, index?: number): ITransformable;
     incrementTranslate(value: ITranslationMatrix, index?: number): ITransformable;
+    
     getScale(index?: number): IScaleMatrix;
     setScale(value: IScaleMatrix, index?: number): ITransformable;
     incrementScale(value: IScaleMatrix, index?: number): ITransformable;
+    
     getRotation(index?: number): IRotationMatrix;
     setRotation(value: IRotationMatrix, index?: number): ITransformable;
     incrementRotation(value: IRotationMatrix, index?: number): ITransformable;
+    
     getSkewX(index?: number): number;
     setSkewX(value: number, index?: number): ITransformable;
     incrementSkewX(value: number, index?: number): ITransformable;
+    
     getSkewY(index?: number): number;
     setSkewY(value: number, index?: number): ITransformable;
     incrementSkewY(value: number, index?: number): ITransformable;
+    
+    append(type: TransformType, value: string): ITransformable;
+    prepend(type: TransformType, value: string): ITransformable;
     consolidate(): ITransformable;
     toTransformString(): string;
     //#endregion
@@ -1259,6 +1269,90 @@ export class SvgTransformString implements ITransformable {
         this.setTranslate(translation, index);
         return this;
     }
+    public append(type: TransformType, value: string): ITransformable {
+        let isValid = false;
+        
+        switch(type) {
+            case TransformType.MATRIX:
+                this._hasMatrix = true;
+                isValid = matrixRegex.test(value);
+                break;
+            case TransformType.ROTATE:
+                this._hasRotate = true;
+                isValid = rotateRegex.test(value);
+                break;
+            case TransformType.SCALE:
+                this._hasScale = true;
+                isValid = scaleRegex.test(value);
+                break;
+            case TransformType.SKEW_X:
+                this._hasSkewX = true;
+                isValid = skewXRegex.test(value);
+                break;
+            case TransformType.SKEW_Y:
+                this._hasSkewY = true;
+                isValid = skewYRegex.test(value);
+                break;
+            case TransformType.TRANSLATE:
+                this._hasTranslate = true;
+                isValid = translateRegex.test(value);
+                break;
+            default:
+                throw new NotImplementedError();
+        }
+
+        if (!isValid) {
+            throw new Error("Failed to parse the transform string passed in.");
+        }
+
+        // Append the type.
+        this.data.push(type);
+        this.transformString += ` ${value}`;
+
+        return this;
+    }
+    public prepend(type: TransformType, value: string): ITransformable {
+        let isValid = false;
+        
+        switch(type) {
+            case TransformType.MATRIX:
+                this._hasMatrix = true;
+                isValid = matrixRegex.test(value);
+                break;
+            case TransformType.ROTATE:
+                this._hasRotate = true;
+                isValid = rotateRegex.test(value);
+                break;
+            case TransformType.SCALE:
+                this._hasScale = true;
+                isValid = scaleRegex.test(value);
+                break;
+            case TransformType.SKEW_X:
+                this._hasSkewX = true;
+                isValid = skewXRegex.test(value);
+                break;
+            case TransformType.SKEW_Y:
+                this._hasSkewY = true;
+                isValid = skewYRegex.test(value);
+                break;
+            case TransformType.TRANSLATE:
+                this._hasTranslate = true;
+                isValid = translateRegex.test(value);
+                break;
+            default:
+                throw new NotImplementedError();
+        }
+
+        if (!isValid) {
+            throw new Error("Failed to parse the transform string passed in.");
+        }
+
+        // Prepend the type.
+        this.data.unshift(type);
+        this.transformString = `${value} ${this.transformString}`;
+
+        return this;
+    }
     public consolidate(): ITransformable {
         let svgcanvasEl = SvgTransformString.SVGCanvasElement;
         let matrix = svgcanvasEl.createSVGMatrix();
@@ -1314,7 +1408,6 @@ export class SvgTransformString implements ITransformable {
             }
         }
 
-        this.data = [ TransformType.MATRIX ];
         this._hasMatrix = true;
         this._hasRotate = false;
         this._hasScale = false;

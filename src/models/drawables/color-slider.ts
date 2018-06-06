@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 
 import { IDOMDrawable } from "../idom-drawable";
-import { SvgTransformString, TransformType } from "../../services/svg-transform-service";
+import { SvgTransformString, TransformType } from "../../services/svg-geometry-service";
 
 export class ColorSlider implements IDOMDrawable<HTMLElement> {
     //#region Fields

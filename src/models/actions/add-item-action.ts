@@ -1,15 +1,13 @@
+import * as d3 from 'd3';
+
+import { NS } from '../../helpers/namespaces-helper';
+import { getFurthestSvgOwner, isSvgGraphicsElement } from '../../helpers/svg-helpers';
+import { ICoords2D, SvgGeometryServiceSingleton } from '../../services/svg-geometry-service';
+import { ISvgAction } from '../isvg-action';
+import { Names } from '../names';
+import { SvgItem } from '../svg-item-model';
+
 const uniqid = require("uniqid");
-
-import * as d3 from "d3";
-
-import { ISvgAction } from "../isvg-action";
-import { SvgCanvas } from "../svg-canvas-model";
-import { SvgItem } from "../svg-item-model";
-import { isSvgGraphicsElement, getFurthestSvgOwner } from "../../helpers/svg-helpers";
-import { Names } from "../names";
-import { NS } from "../../helpers/namespaces-helper";
-import { SvgTransformServiceSingleton, ICoords2D } from "../../services/svg-transform-service";
-import { EditorLocation } from "../svg-editor-model";
 
 // import { Singleton } from 'typescript-ioc';
 
@@ -116,8 +114,8 @@ export class AddItemAction implements ISvgAction {
         // Try to scale the items to fit in the canvas. The scale ratio should
         // be the same for the x and y.
         let scaleRatio = 1;
-        let canvasBBox = SvgTransformServiceSingleton.getBBox(canvas);
-        let itemsBBox = SvgTransformServiceSingleton
+        let canvasBBox = SvgGeometryServiceSingleton.getBBox(canvas);
+        let itemsBBox = SvgGeometryServiceSingleton
             .getBBox(...this.elements);
 
         if (itemsBBox.height > (canvasBBox.height / 2)) {
@@ -138,8 +136,8 @@ export class AddItemAction implements ISvgAction {
         });
 
         // Center the items
-        let canvasCenter = SvgTransformServiceSingleton.getCenter(canvas);
-        let itemsCenter = SvgTransformServiceSingleton
+        let canvasCenter = SvgGeometryServiceSingleton.getCenter(canvas);
+        let itemsCenter = SvgGeometryServiceSingleton
             .getCenter(...svgItems.map(svgItem => svgItem.getElement()));
         let itemsOffset: ICoords2D = {
             x: Math.abs(canvasCenter.x - itemsCenter.x),

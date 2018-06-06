@@ -1,4 +1,4 @@
-import { ICoords2D } from "../../services/svg-transform-service";
+import { ICoords2D } from "../../services/svg-geometry-service";
 
 export interface CircleData {
     radius: number;

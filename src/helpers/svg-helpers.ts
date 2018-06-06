@@ -1,7 +1,11 @@
 import * as d3 from "d3";
 
 import { getAllGroups, getAllGroupsV2 } from "../helpers/regex-helper";
-import { ICoords2D, IBBox, SvgTransformService } from "../services/svg-transform-service";
+import { 
+    ICoords2D, 
+    IBBox, 
+    SvgGeometryService 
+} from "../services/svg-geometry-service";
 import { MathServiceSingleton } from "../services/math-service";
 import { normalizeAngle, toDegrees, toRadians } from "../helpers/math-helpers";
 import { NS } from "../helpers/namespaces-helper";

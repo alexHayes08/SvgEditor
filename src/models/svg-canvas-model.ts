@@ -5,15 +5,15 @@ import { AutoWired, Inject } from 'typescript-ioc';
 import * as d3 from "d3";
 
 import { DefaultCircleArc } from "./islice";
-import { ISvgHandles } from "./isvg-handles-model";
+import { ISvgHandles } from "./isvg-handles";
 import { IViewBox } from "../services/svg-canvas-service";
 import { Names } from "./names";
 import { NS } from "../helpers/namespaces-helper";
 import { SvgEditor } from "./svg-editor-model";
 import { SvgDefs, ISvgDefs, SvgDefsV2 } from "./svg-defs-model";
-import { SvgHandles } from "./svg-handles-model";
+import { SvgHandles } from "./svg-handles";
 import { SvgMaskService } from "../services/svg-mask-service";
-import { SvgTransformService, SvgTransformServiceSingleton } from "../services/svg-transform-service";
+import { SvgGeometryService, SvgGeometryServiceSingleton } from "../services/svg-geometry-service";
 import {
     DefaultTransitionStartEvtData, 
     DefaultTransitionEndEvtData, 
@@ -57,7 +57,7 @@ export class SvgCanvas {
 
     private svgCanvasSelection: d3.Selection<SVGSVGElement, {}, null, undefined>;
 
-    private transformService: SvgTransformService;
+    private transformService: SvgGeometryService;
     
     // @Inject
     // private maskService: SvgMaskService;
@@ -80,7 +80,7 @@ export class SvgCanvas {
         parentElement: HTMLElement,
         importSvg: string|null = null)
     {
-        this.transformService = SvgTransformServiceSingleton;
+        this.transformService = SvgGeometryServiceSingleton;
 
         // Create svg element
         this.svgCanvasSelection = d3.select(parentElement)

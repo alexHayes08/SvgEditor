@@ -1,13 +1,9 @@
+import * as d3 from 'd3';
+
+import { IContainer } from './../icontainer';
+import { IDrawable } from './../idrawable';
+
 const uniqid = require("uniqid");
-
-import * as d3 from "d3";
-
-import { ActivatableServiceSingleton } from "../services/activatable-service";
-import { HandlesRotationOverlay } from "./handles-rotation";
-import { IContainer } from "./icontainer";
-import { IDrawable } from './idrawable';
-import { Names } from "./names";
-import { SvgTransformServiceSingleton, ICoords2D } from "../services/svg-transform-service";
 
 export class HandlesScaleOverlay implements IContainer, IDrawable {
     //#region Fields

@@ -1,10 +1,9 @@
 /**
  * Helper objects for Math
  */
-
-import { ICoords2D, IBBox } from "../services/svg-transform-service";
-import { CacheService } from "../services/cache-service";
-import { isKeyOf, convertToEnum } from "./enum-helper";
+import { CacheService } from '../services/cache-service';
+import { ICoords2D } from '../services/svg-geometry-service';
+import { convertToEnum, isKeyOf } from './enum-helper';
 
 export enum CardinalDirections {
     EAST,

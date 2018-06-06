@@ -4,7 +4,13 @@ import * as d3 from "d3";
 import * as $ from "jquery";
 
 import { ColorValue } from "./color-value";
-import { SvgTransformService, SvgTransformServiceSingleton, ICoords2D, ITransformable, SvgTransformString } from "../services/svg-transform-service";
+import { 
+    SvgGeometryService, 
+    SvgGeometryServiceSingleton, 
+    ICoords2D, 
+    ITransformable, 
+    SvgTransformString 
+} from "../services/svg-geometry-service";
 import { isSvgGraphicsElement } from "../helpers/svg-helpers";
 
 export interface ColorMap {

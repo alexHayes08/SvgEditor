@@ -4,12 +4,11 @@ import * as d3 from "d3";
 
 import { IDrawable } from "../models/idrawable";
 import { 
-    SvgTransformServiceSingleton, 
     SvgTransformString, 
     TransformType, 
     ITransformable, 
     ICoords2D 
-} from "./svg-transform-service";
+} from "./svg-geometry-service";
 import { NS } from "../helpers/namespaces-helper";
 import { 
     getPolygonPointsString, 
@@ -18,7 +17,7 @@ import {
     calcCircumradius 
 } from "../helpers/geometry-helpers";
 import { ISvgDefs } from "../models/svg-defs-model";
-import { ISvgHandles } from "../models/isvg-handles-model";
+import { ISvgHandles } from "../models/isvg-handles";
 import { InternalError } from "../models/errors";
 import { pythagoreanTheroem } from "../helpers/math-helpers";
 import { IAngle } from "../models/angle";

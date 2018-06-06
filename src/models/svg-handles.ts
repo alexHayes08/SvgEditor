@@ -1,25 +1,25 @@
+import * as d3 from 'd3';
+
+import { NS } from '../helpers/namespaces-helper';
+import { ActivatableServiceSingleton } from '../services/activatable-service';
+import {
+    IRotationMatrix,
+    ITransformable,
+    ITranslationMatrix,
+    SvgGeometryService,
+    SvgGeometryServiceSingleton,
+    SvgTransformString,
+    TransformType,
+} from '../services/svg-geometry-service';
+import { TranslateAction } from './actions/translate-action';
+import { HandlesMain } from './drawables/handles-main';
+import { IOperationCallbacks } from './ioperation-callback';
+import { ISvgHandles } from './isvg-handles';
+import { Names } from './names';
+import { SvgCanvas } from './svg-canvas-model';
+import { SvgItem } from './svg-item-model';
+
 const uniqid = require("uniqid");
-
-import * as $ from "jquery";
-
-import * as d3 from "d3";
-
-import { ActivatableServiceSingleton } from "../services/activatable-service";
-import { HandlesRotationOverlay } from "./handles-rotation";
-import { Names } from "./names";
-import { NS } from "../helpers/namespaces-helper";
-import { ISvgHandles } from "./isvg-handles-model";
-import { ISlice, isISlice, DefaultCircleArc, ICircleArc } from "../models/islice";
-import { SvgCanvas } from "./svg-canvas-model";
-import { SvgDefs } from "./svg-defs-model";
-import { SvgEditor, EditorLocation } from "./svg-editor-model";
-import { SvgItem } from "./svg-item-model";
-import { SvgTransformService, SvgTransformServiceSingleton, IBBox, IRotationMatrix, ITransformable, SvgTransformString, TransformType, ITranslationMatrix } from "../services/svg-transform-service";
-import { toRadians } from "../helpers/math-helpers";
-import { HandlesMain } from "./handles-main";
-import { TranslateAction } from "./actions/translate-action";
-import { IOperationCallbacks } from "./ioperation-callback";
-import { HexagonTilingService } from "../services/hexagon-tiling-service";
 
 export enum SvgHandlesModes {
     INACTIVE = 0,
@@ -128,7 +128,7 @@ export class SvgHandles implements ISvgHandles {
     private canvas: SvgCanvas;
     private parentNode: SVGGraphicsElement;
     private selectedObjects: SvgItem[];
-    private transformService: SvgTransformService;
+    private transformService: SvgGeometryService;
     private _lastSelectedSection: number;
     private cachedElementsWithEvts: Element[];
     private minHandlesRadius: number;
@@ -137,6 +137,9 @@ export class SvgHandles implements ISvgHandles {
     private htmlHandlesContainer: HTMLElement;
     private handlesContainer: SVGGElement;
     private mainHandlesOverlay: HandlesMain;
+    // private colorHandlesOverlay: HandlesColorsOverlay;
+    // private rotationOverlay: HandlesRotationOverlay;
+    // private scaleOverlay: HandlesScaleOverlay;
     private highlightPathEl: SVGPathElement;
 
     //#endregion
@@ -147,7 +150,7 @@ export class SvgHandles implements ISvgHandles {
         this.canvas = editor;
         this.parentNode = editor.canvasEl;
         this.selectedObjects = [];
-        this.transformService = SvgTransformServiceSingleton;
+        this.transformService = SvgGeometryServiceSingleton;
         this._lastSelectedSection = 0;
         this.cachedElementsWithEvts = [];
         this.minHandlesRadius = 75;
@@ -193,7 +196,9 @@ export class SvgHandles implements ISvgHandles {
         ActivatableServiceSingleton.register(this.handlesContainer, false);
 
         // Create main handles overlay
-        this.mainHandlesOverlay = new HandlesMain(d3.select(handleContainer), this.canvas, this.htmlHandlesContainer);
+        this.mainHandlesOverlay = new HandlesMain(handleContainer, 
+            this.canvas, 
+            this.htmlHandlesContainer);
         this.mainHandlesOverlay.onDeleteClickedHandlers
             .push(this.onDeleteClicked.bind(this));
         this.mainHandlesOverlay.onRotationEventHandlers

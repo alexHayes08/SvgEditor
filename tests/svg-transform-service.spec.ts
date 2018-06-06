@@ -4,7 +4,7 @@ import "mocha";
 
 // import { SvgTransformServiceSingleton } from "../src/services/svg-transform-service";
 
-describe("SvgTransformService", () => {
+describe("SvgGeometryService", () => {
     describe("#extractTransformProperties", () => {
         it ("Should extract a translation of x: 43.5 and y: 22 from a transform string..", () => {
             expect(1).to.equal(1);

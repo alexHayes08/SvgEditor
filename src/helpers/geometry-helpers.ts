@@ -1,8 +1,8 @@
-import { cotangent, toRadians, pythagoreanTheroem } from "./math-helpers";
-import { ICoords2D } from "../services/svg-transform-service";
-import { IAngle, Angle } from "../models/angle";
-import { getAllGroupsV3 } from "./regex-helper";
-import { Polygon } from "../models/shapes/polygon";
+import { Angle, IAngle } from '../models/angle';
+import { Polygon } from '../models/shapes/polygon';
+import { ICoords2D } from '../services/svg-geometry-service';
+import { cotangent, pythagoreanTheroem, toRadians } from './math-helpers';
+import { getAllGroupsV3 } from './regex-helper';
 
 /**
  * Subset of math-helpers.ts

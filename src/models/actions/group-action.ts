@@ -1,15 +1,9 @@
+import { NS } from '../../helpers/namespaces-helper';
+import { ISvgAction } from '../isvg-action';
+import { SvgCanvas } from '../svg-canvas-model';
+import { SvgItem } from '../svg-item-model';
+
 const uniqid = require("uniqid");
-
-import * as d3 from "d3";
-
-import { ISvgAction } from "../isvg-action";
-import { SvgCanvas } from "../svg-canvas-model";
-import { SvgItem } from "../svg-item-model";
-import { isSvgGraphicsElement, getFurthestSvgOwner } from "../../helpers/svg-helpers";
-import { Names } from "../names";
-import { NS } from "../../helpers/namespaces-helper";
-import { SvgTransformServiceSingleton, ICoords2D } from "../../services/svg-transform-service";
-import { appyDragBehavior } from "../svg-handles-model";
 
 interface ITempData {
     parent: Element;

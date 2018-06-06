@@ -1,4 +1,4 @@
-import { ICoords2D } from "../../services/svg-transform-service";
+import { ICoords2D } from "../../services/svg-geometry-service";
 import { IAngle, Angle } from "./../angle";
 import { InvalidCastError } from "./../errors";
 import { pythagoreanTheroem } from "../../helpers/math-helpers";

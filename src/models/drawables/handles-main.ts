@@ -1,36 +1,26 @@
-const uniqid = require("uniqid");
+import * as d3 from 'd3';
 
-import * as d3 from "d3";
-
-import { ActivatableServiceSingleton } from "../services/activatable-service";
-import { CacheService } from "../services/cache-service";
-import { getNewPointAlongAngle } from "../helpers/svg-helpers";
-import { getPolygonPointsString, calcConcentricPolygons, coordsToPointsStr } from "../helpers/geometry-helpers";
-import { HandlesColorsOverlay, HandlesColorMode } from "./handles-colors";
-import { HandlesRotationOverlay } from "./handles-rotation";
-import { HandlesScaleOverlay } from "./handles-scale";
-import { IContainer } from "./icontainer";
-import { IDrawable } from './idrawable';
-import { IHandleButton, IMode, HandleMode } from "./ihandle-button";
-import { ISlice } from "./islice";
-import { Names } from "./names";
-import { toRadians, toDegrees } from "../helpers/math-helpers";
-import { 
-    DefaultTransformMatrix, 
-    ICoords2D, 
-    ITransformMatrix, 
-    SvgTransformServiceSingleton,
-    SvgTransformService,
-    TransformType,
+import { calcConcentricPolygons } from '../../helpers/geometry-helpers';
+import { toDegrees, toRadians } from '../../helpers/math-helpers';
+import { NS } from '../../helpers/namespaces-helper';
+import { CacheService } from '../../services/cache-service';
+import {
+    ICoords2D,
+    IRotationMatrix,
     ITransformable,
+    SvgGeometryService,
+    SvgGeometryServiceSingleton,
     SvgTransformString,
-    IRotationMatrix
-} from "../services/svg-transform-service";
-import { InternalError } from "./errors";
-import { SvgEditor } from "./svg-editor-model";
-import { SvgCanvas } from "./svg-canvas-model";
-import { Polygon } from "./shapes/polygon";
-import { IAngle, Angle } from "./angle";
+    TransformType,
+} from '../../services/svg-geometry-service';
+import { Angle, IAngle } from './../angle';
+import { InternalError } from './../errors';
+import { IDrawable } from './../idrawable';
+import { HandleMode, IMode } from './../ihandle-button';
+import { Names } from './../names';
+import { SvgCanvas } from './../svg-canvas-model';
+
+const uniqid = require("uniqid");
 
 interface IMainOverlayData {
     angle: IAngle;
@@ -52,7 +42,7 @@ const buttonTransformOrder: TransformType[] = [
     TransformType.TRANSLATE,
     TransformType.ROTATE
 ];
-const buttonsTransformService = new SvgTransformService({
+const buttonsTransformService = new SvgGeometryService({
     order: [
         TransformType.ROTATE,
         TransformType.TRANSLATE,
@@ -63,7 +53,7 @@ const arcTransformService: TransformType[] = [
     TransformType.ROTATE
 ];
 
-export class HandlesMain implements IContainer, IDrawable {
+export class HandlesMain implements IDrawable {
     //#region Fields
 
     private readonly elementDataMap: WeakMap<Element, ITransformable>;
@@ -80,21 +70,20 @@ export class HandlesMain implements IContainer, IDrawable {
     private _mode: HandleMode;
     private _radius: number;
 
-    private colorsOverlay: HandlesColorsOverlay;
-    private rotationOverlay: HandlesRotationOverlay;
-    private scaleOverlay: HandlesScaleOverlay;
+    // private colorsOverlay: HandlesColorsOverlay;
+    // private rotationOverlay: HandlesRotationOverlay;
+    // private scaleOverlay: HandlesScaleOverlay;
     
-    private arcsContainer: d3.Selection<SVGGElement, {}, null, undefined>;
-    private modeContainer: d3.Selection<SVGGElement, {}, null, undefined>;
-    private subModeContainer: d3.Selection<SVGGElement, {}, null, undefined>;
-    private colorsOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
-    private mainOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
-    private rotationOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
-    private scaleOverlayContainer: d3.Selection<SVGGElement, {}, null, undefined>;
-    private selectionEl: d3.Selection<SVGCircleElement, ITransformable, null, undefined>;
+    private arcsContainer: SVGGElement;
+    private modeContainer: SVGGElement;
+    private subModeContainer: SVGGElement;
+    // private colorsOverlayContainer: SVGGElement;
+    private mainOverlayContainer: SVGGElement;
+    // private rotationOverlayContainer: SVGGElement;
+    // private scaleOverlayContainer: SVGGElement;
+    private selectionEl: SVGCircleElement;
 
-    public container: d3.Selection<SVGGElement, {}, null, undefined>;
-    public containerNode: SVGGElement;
+    public container: SVGGElement;
     public center: ICoords2D;
     public animationDuration: number;
     public readonly onDeleteClickedHandlers: Function[];
@@ -216,10 +205,11 @@ export class HandlesMain implements IContainer, IDrawable {
     //#region Ctor
 
     public constructor(
-        container: d3.Selection<SVGGElement, {}, null, undefined>, 
+        container: SVGGElement, 
         canvas: SvgCanvas,
         htmlContainer: HTMLElement) 
     {
+        let self = this;
         this.animationDuration = 200;
         this.cache = new CacheService();
         this.center = { x: 0, y: 0};
@@ -238,24 +228,27 @@ export class HandlesMain implements IContainer, IDrawable {
         this._mode = HandleMode.PAN;
         this._radius = 100;
 
-        let containerNode = this.container.node();
+        let d3_container = d3.select(this.container);
 
-        if (containerNode == undefined) {
-            throw new Error("The container didn't exist.");
-        }
-
-        this.containerNode = containerNode;
-        let self = this;
-
-        this.mainOverlayContainer = this.container
+        this.mainOverlayContainer = <SVGGElement>document
+            .createElementNS(NS.SVG, "g");
+        d3.select(this.mainOverlayContainer)
             .append<SVGGElement>("g")
             .attr("id", uniqid())
             .attr("data-name", "handles-main-section");
+        this.container.appendChild(this.mainOverlayContainer);
+        let d3_mainOverlayContainer = d3.select(this.mainOverlayContainer);
 
-        this.selectionEl = this.mainOverlayContainer
-            .append<SVGGElement>("g")
-            .attr("data-name", "selected-section")
-            .append<SVGCircleElement>("circle")
+        let selectionContainerEl = <SVGGElement>document
+            .createElementNS(NS.SVG, "g");
+        d3.select(selectionContainerEl)
+            .attr("data-name", "selected-section");
+        this.mainOverlayContainer.appendChild(selectionContainerEl);
+
+        this.selectionEl = <SVGCircleElement>document
+            .createElementNS(NS.SVG, "circle");
+        this.mainOverlayContainer.appendChild(this.selectionEl);
+        d3.select(this.selectionEl)
             .data([self.highlightData])
             .attr("id", uniqid())
             .attr("data-name",
@@ -267,59 +260,64 @@ export class HandlesMain implements IContainer, IDrawable {
                 return d.toTransformString();
             });
 
-        this.arcsContainer = this.mainOverlayContainer
-            .append<SVGGElement>("g")
+        this.arcsContainer = <SVGGElement>document.createElementNS(NS.SVG, "g");
+        this.mainOverlayContainer.appendChild(this.arcsContainer);
+        d3.select(this.mainOverlayContainer)
             .attr("id", uniqid())
             .attr("data-name", 
                 Names.Handles.SubElements.ArcsContainer.DATA_NAME);
 
-        this.modeContainer = this.mainOverlayContainer
-            .append<SVGGElement>("g")
+        this.modeContainer = <SVGGElement>document.createElementNS(NS.SVG, "g");
+        this.mainOverlayContainer.appendChild(this.modeContainer);
+        d3.select(this.modeContainer)
             .attr("id", uniqid())
             .attr("data-name",
                 Names.Handles.SubElements.ButtonsContainer.DATA_NAME);
 
-        this.subModeContainer = this.mainOverlayContainer
-            .append<SVGGElement>("g")
+        this.subModeContainer = <SVGGElement>document.createElementNS(NS.SVG, "g");
+        this.mainOverlayContainer.appendChild(this.subModeContainer);
+        d3.select(this.subModeContainer)
             .attr("id", uniqid())
             .attr("data-name", "sub-mode-container");
 
-        this.colorsOverlayContainer = this.container
-            .append<SVGGElement>("g")
-            .attr("id", uniqid())
-            .attr("data-name",
-                Names.Handles.SubElements.ColorsHelperContainer.DATA_NAME)
-            .each(function() {
-                SvgTransformServiceSingleton.standardizeTransforms(this);
-                ActivatableServiceSingleton.register(this, false);
-            });
+        // this.colorsOverlayContainer = <SVGGElement>document.createElementNS(NS.SVG, "g");
+        // this.container.append(this.colorsOverlayContainer)
+        // this.container
+        //     .append<SVGGElement>("g")
+        //     .attr("id", uniqid())
+        //     .attr("data-name",
+        //         Names.Handles.SubElements.ColorsHelperContainer.DATA_NAME)
+        //     .each(function() {
+        //         SvgTransformServiceSingleton.standardizeTransforms(this);
+        //         ActivatableServiceSingleton.register(this, false);
+        //     });
 
-        this.rotationOverlayContainer = this.container
-            .append<SVGGElement>("g")
-            .attr("id", uniqid())
-            .attr("data-name", 
-                Names.Handles.SubElements.RotationHelpersContainer.DATA_NAME)
-            .each(function() {
-                SvgTransformServiceSingleton.standardizeTransforms(this);
-                ActivatableServiceSingleton.register(this, false);
-            });
+        // this.rotationOverlayContainer = this.container
+        //     .append<SVGGElement>("g")
+        //     .attr("id", uniqid())
+        //     .attr("data-name", 
+        //         Names.Handles.SubElements.RotationHelpersContainer.DATA_NAME)
+        //     .each(function() {
+        //         SvgTransformServiceSingleton.standardizeTransforms(this);
+        //         ActivatableServiceSingleton.register(this, false);
+        //     });
         
-        this.scaleOverlayContainer = this.container
-            .append<SVGGElement>("g")
-            .attr("id", uniqid())
-            .attr("data-name",
-                Names.Handles.SubElements.ScaleHelpersContainer.DATA_NAME)
-            .each(function() {
-                SvgTransformServiceSingleton.standardizeTransforms(this);
-                ActivatableServiceSingleton.register(this, false);
-            });
+        // this.scaleOverlayContainer = this.container
+        //     .append<SVGGElement>("g")
+        //     .attr("id", uniqid())
+        //     .attr("data-name",
+        //         Names.Handles.SubElements.ScaleHelpersContainer.DATA_NAME)
+        //     .each(function() {
+        //         SvgTransformServiceSingleton.standardizeTransforms(this);
+        //         ActivatableServiceSingleton.register(this, false);
+        //     });
 
-        this.colorsOverlay = new HandlesColorsOverlay(
-            this.colorsOverlayContainer, 
-            canvas, 
-            this.htmlHandlesContainer);
-        this.rotationOverlay = new HandlesRotationOverlay(this.rotationOverlayContainer);
-        this.scaleOverlay = new HandlesScaleOverlay(this.scaleOverlayContainer);
+        // this.colorsOverlay = new HandlesColorsOverlay(
+        //     this.colorsOverlayContainer, 
+        //     canvas, 
+        //     this.htmlHandlesContainer);
+        // this.rotationOverlay = new HandlesRotationOverlay(this.rotationOverlayContainer);
+        // this.scaleOverlay = new HandlesScaleOverlay(this.scaleOverlayContainer);
 
         this.buttonsData = this.data
             .filter(d => d.modes.length > 0);
@@ -366,7 +364,11 @@ export class HandlesMain implements IContainer, IDrawable {
             this.expandedMode = undefined;
 
             // Update the class on the container.
-            this.container.classed("collapsed", value);
+            if (value) {
+                this.container.classList.add("collapsed");
+            } else {
+                this.container.classList.remove("collapsed");
+            }
             this._collapseButtons = value;
             this.updateButtonsAndArcs();
         }
@@ -418,14 +420,16 @@ export class HandlesMain implements IContainer, IDrawable {
     }
 
     private expandMode(mode: IMainOverlayData): void {
-        this.modeContainer.selectAll(`g[data-name]:not([data-name='${mode.buttonDataName}']) > g[data-name='main-button-container']`)
+        d3.select(this.modeContainer)
+            .selectAll(`g[data-name]:not([data-name='${mode.buttonDataName}']) > g[data-name='main-button-container']`)
             .classed("opacity-half", true);
         d3.select(`[data-name="sub-mode-container"] > [data-for='${mode.buttonDataName}']`)
             .classed("expanded", true);
     }
 
     private contractMode(mode: IMainOverlayData): void {
-        this.modeContainer.selectAll(`g[data-name]:not([data-name='${mode.buttonDataName}']) > g[data-name='main-button-container']`)
+        d3.select(this.modeContainer)
+            .selectAll(`g[data-name]:not([data-name='${mode.buttonDataName}']) > g[data-name='main-button-container']`)
             .classed("opacity-half", false);
         d3.select(`[data-name="sub-mode-container"] > [data-for='${mode.buttonDataName}']`)
             .classed("expanded", false);
@@ -445,7 +449,7 @@ export class HandlesMain implements IContainer, IDrawable {
         let self = this;
 
         // Update arcs.
-        this.arcsContainer
+        d3.select(this.arcsContainer)
             .selectAll<SVGPathElement, IMainOverlayData>("path")
             .data(this.data)
             .call(arcOpacity)
@@ -461,13 +465,13 @@ export class HandlesMain implements IContainer, IDrawable {
          */
 
         // Draw main buttons.
-        this.modeContainer
+        d3.select(this.modeContainer)
             .selectAll<SVGGElement, IMainOverlayData>("g[data-name='handles-button-container'] > g[data-name]")
             .data(this.buttonsData)
             .call(bttnOpacity)
             .call(bttnTransform);
 
-        this.subModeContainer
+        d3.select(this.subModeContainer)
             .selectAll<SVGGElement, IMainOverlayData>("g[data-for]")
             .data(this.buttonsData)
             .call(bttnTransform);
@@ -606,116 +610,117 @@ export class HandlesMain implements IContainer, IDrawable {
     }
 
     private modeChanged(oldMode: HandleMode, newMode: HandleMode): void {
-        console.log(`Mode changed to ${this.mode}`);
-        let oldName: string = "";
-        let newName: string = "";
+        // console.log(`Mode changed to ${this.mode}`);
+        // let oldName: string = "";
+        // let newName: string = "";
 
-        switch(oldMode) {
-            case HandleMode.SELECT_MODE:
-                oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME;
-                break;
-            case HandleMode.COLORS:
-                ActivatableServiceSingleton.deactivate(this.colorsOverlay.containerNode);
-                oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME;
-                break;
-            case HandleMode.DELETE:
-                oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.DeleteBtn.DATA_NAME;
-                break;
-            case HandleMode.EDIT:
-                // ActivatableServiceSingleton.deactivate(this.edit)
-                oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME;
-                break;
-            case HandleMode.ROTATE:
-                ActivatableServiceSingleton.deactivate(this.rotationOverlay.containerNode);
-                oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME;
-                break;
-            case HandleMode.SCALE:
-                ActivatableServiceSingleton.deactivate(this.scaleOverlay.containerNode);
-                oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.ScaleBtn.DATA_NAME;
-                break;
-            case HandleMode.PAN:
-            default:
-                oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.PanBtn.DATA_NAME;
-                break;
-        }
+        // switch(oldMode) {
+        //     case HandleMode.SELECT_MODE:
+        //         oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME;
+        //         break;
+        //     case HandleMode.COLORS:
+        //         ActivatableServiceSingleton.deactivate(this.colorsOverlay.containerNode);
+        //         oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME;
+        //         break;
+        //     case HandleMode.DELETE:
+        //         oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.DeleteBtn.DATA_NAME;
+        //         break;
+        //     case HandleMode.EDIT:
+        //         // ActivatableServiceSingleton.deactivate(this.edit)
+        //         oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME;
+        //         break;
+        //     case HandleMode.ROTATE:
+        //         ActivatableServiceSingleton.deactivate(this.rotationOverlay.containerNode);
+        //         oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME;
+        //         break;
+        //     case HandleMode.SCALE:
+        //         ActivatableServiceSingleton.deactivate(this.scaleOverlay.containerNode);
+        //         oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.ScaleBtn.DATA_NAME;
+        //         break;
+        //     case HandleMode.PAN:
+        //     default:
+        //         oldName = Names.Handles.SubElements.ButtonsContainer.SubElements.PanBtn.DATA_NAME;
+        //         break;
+        // }
 
-        switch(newMode) {
-            case HandleMode.SELECT_MODE:
-                newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME;
-                break;
-            case HandleMode.COLORS:
-                ActivatableServiceSingleton.activate(this.colorsOverlay.containerNode);
-                newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME;
-                this.colorsOverlay.radius = this.radius;
-                this.data.find(d => {
-                    if (d.buttonDataName == Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME) {
-                        let selectedMode = d.modes.find(_d => _d.selected);
-                        console.log(selectedMode);
-                        if (selectedMode != undefined) {
-                            switch (selectedMode.label) {
-                                case "Colors (all)":
-                                    this.colorsOverlay.mode = HandlesColorMode.ALL;
-                                    break;
-                                case "Colors (non-empty)":
-                                    this.colorsOverlay.mode = HandlesColorMode.MUST_HAVE_FILL_OR_STROKE;
-                                    break;
-                                case "Colors (unique)":
-                                    this.colorsOverlay.mode = HandlesColorMode.UNIQUE_COLORS_ONLY;
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
-                        return true;
-                    } else {
-                        return false;
-                    }
-                });
-                this.colorsOverlay.update();
-                break;
-            case HandleMode.EDIT:
-                newName = Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME;
-                break;
-            case HandleMode.ROTATE:
-                this.rotationOverlay.radius = this.radius;
-                this.rotationOverlay.update();
-                ActivatableServiceSingleton.activate(this.rotationOverlay.containerNode);
-                newName = Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME;
-                break;
-            case HandleMode.SCALE:
-                ActivatableServiceSingleton.activate(this.scaleOverlay.containerNode);
-                newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ScaleBtn.DATA_NAME;
-                break;
-            // Delete should switch to Pan mode, it doesn't make much sense to
-            // add object and have them be in the delete mode.
-            case HandleMode.DELETE: 
-            case HandleMode.PAN:
-            default:
-                newName = Names.Handles.SubElements.ButtonsContainer.SubElements.PanBtn.DATA_NAME;
-                break;
-        }
+        // switch(newMode) {
+        //     case HandleMode.SELECT_MODE:
+        //         newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME;
+        //         break;
+        //     case HandleMode.COLORS:
+        //         ActivatableServiceSingleton.activate(this.colorsOverlay.containerNode);
+        //         newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME;
+        //         this.colorsOverlay.radius = this.radius;
+        //         this.data.find(d => {
+        //             if (d.buttonDataName == Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME) {
+        //                 let selectedMode = d.modes.find(_d => _d.selected);
+        //                 console.log(selectedMode);
+        //                 if (selectedMode != undefined) {
+        //                     switch (selectedMode.label) {
+        //                         case "Colors (all)":
+        //                             this.colorsOverlay.mode = HandlesColorMode.ALL;
+        //                             break;
+        //                         case "Colors (non-empty)":
+        //                             this.colorsOverlay.mode = HandlesColorMode.MUST_HAVE_FILL_OR_STROKE;
+        //                             break;
+        //                         case "Colors (unique)":
+        //                             this.colorsOverlay.mode = HandlesColorMode.UNIQUE_COLORS_ONLY;
+        //                             break;
+        //                         default:
+        //                             break;
+        //                     }
+        //                 }
+        //                 return true;
+        //             } else {
+        //                 return false;
+        //             }
+        //         });
+        //         this.colorsOverlay.update();
+        //         break;
+        //     case HandleMode.EDIT:
+        //         newName = Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME;
+        //         break;
+        //     case HandleMode.ROTATE:
+        //         this.rotationOverlay.radius = this.radius;
+        //         this.rotationOverlay.update();
+        //         ActivatableServiceSingleton.activate(this.rotationOverlay.containerNode);
+        //         newName = Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME;
+        //         break;
+        //     case HandleMode.SCALE:
+        //         ActivatableServiceSingleton.activate(this.scaleOverlay.containerNode);
+        //         newName = Names.Handles.SubElements.ButtonsContainer.SubElements.ScaleBtn.DATA_NAME;
+        //         break;
+        //     // Delete should switch to Pan mode, it doesn't make much sense to
+        //     // add object and have them be in the delete mode.
+        //     case HandleMode.DELETE: 
+        //     case HandleMode.PAN:
+        //     default:
+        //         newName = Names.Handles.SubElements.ButtonsContainer.SubElements.PanBtn.DATA_NAME;
+        //         break;
+        // }
         
-        // Only remove the old modes active class if the new mode isn't the
-        // select mode.
-        if (newMode != HandleMode.SELECT_MODE) {
-            this.modeContainer
-                .selectAll(`*.active:not([data-name='${newName}'])`)
-                .classed("active", false);
-        }
+        // // Only remove the old modes active class if the new mode isn't the
+        // // select mode.
+        // if (newMode != HandleMode.SELECT_MODE) {
+        //     this.modeContainer
+        //         .selectAll(`*.active:not([data-name='${newName}'])`)
+        //         .classed("active", false);
+        // }
 
-        this.modeContainer
-            .select(`*[data-name='${newName}']`)
-            .classed("active", true);
+        // this.modeContainer
+        //     .select(`*[data-name='${newName}']`)
+        //     .classed("active", true);
     }
 
     public draw(): void {
         let self = this;
         let rotateData = self.buttonsData.find(d => d.arcDataName == Names.Handles.SubElements.ArcsContainer.SubElements.RotateArc.DATA_NAME);
         let colorData = self.buttonsData.find(d => d.arcDataName == Names.Handles.SubElements.ArcsContainer.SubElements.ColorsArc.DATA_NAME);
-        const defaultTransformStr = SvgTransformServiceSingleton.defaultTransformString;
+        const defaultTransformStr = SvgGeometryServiceSingleton
+            .defaultTransformString;
 
         // Update the highlight element
-        this.selectionEl
+        d3.select(this.selectionEl)
             .attr("r", self.radius - (self.defaultWidth/2));
         
         // Draw arcs
@@ -727,7 +732,7 @@ export class HandlesMain implements IContainer, IDrawable {
                 return a;
             })(this.data);
 
-        this.arcsContainer
+        d3.select(this.arcsContainer)
             .selectAll("path")
             .data(pieData)
             .enter()
@@ -736,7 +741,7 @@ export class HandlesMain implements IContainer, IDrawable {
             .attr("data-name", d => d.data.arcDataName)
             .attr("transform", d => d.data.arcTransformData.toTransformString());
 
-        this.modeContainer
+        d3.select(this.modeContainer)
             .selectAll<SVGGElement, IMainOverlayData>("g")
             .data(this.buttonsData)
             .enter()
@@ -799,7 +804,7 @@ export class HandlesMain implements IContainer, IDrawable {
                     .append<SVGGElement>("g")
                     .data([d.handleMode])
                     .attr("data-name", "main-button-container");
-                let buttonOverlayContainer = self.subModeContainer
+                let buttonOverlayContainer = d3.select(self.subModeContainer)
                     .append<SVGGElement>("g")
                     .attr("data-for", d.buttonDataName)
                 let concentricContainer = buttonOverlayContainer
@@ -934,20 +939,22 @@ export class HandlesMain implements IContainer, IDrawable {
             });
 
         // Add event listeners to the buttons
-        this.modeContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.DeleteBtn.DATA_NAME}']`)
+        d3.select(this.modeContainer)
+            .select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.DeleteBtn.DATA_NAME}']`)
             .on("click", function() {
                 self.mode = HandleMode.DELETE;
                 self.onDeleteClickedHandlers.map(f => f())
             });
 
-        this.modeContainer.select<Element>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME}']`)
+        d3.select(this.modeContainer)
+            .select<Element>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ToggleControlsBtn.DATA_NAME}']`)
             .on("click", function() {
                 self.mode = HandleMode.SELECT_MODE;
                 console.log(`Toggled collapse buttons: ${self.collapseButtons}`);
                 d3.event.stopPropagation();
             });
 
-        this.subModeContainer
+        d3.select(this.subModeContainer)
             .selectAll<SVGGElement, {}>(`[data-for='${Names.Handles.SubElements.ButtonsContainer.SubElements.ColorsBtn.DATA_NAME}'] *[data-mode]`)
             .on("click", function() {
 
@@ -966,19 +973,22 @@ export class HandlesMain implements IContainer, IDrawable {
                 d3.event.stopPropagation();
             });
 
-        this.modeContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME}']`)
+        d3.select(this.modeContainer)
+            .select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.EditBtn.DATA_NAME}']`)
             .on("click", function() {
                 self.mode = HandleMode.EDIT;
                 d3.event.stopPropagation();
             });
 
-        this.modeContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.PanBtn.DATA_NAME}']`)
+        d3.select(this.modeContainer)
+            .select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.PanBtn.DATA_NAME}']`)
             .on("click", function() {
                 self.mode = HandleMode.PAN;
                 d3.event.stopPropagation();
             });
 
-        this.modeContainer.selectAll<Element, {}>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME}'] > *[data-mode]`)
+        d3.select(this.modeContainer)
+            .selectAll<Element, {}>(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.RotateBtn.DATA_NAME}'] > *[data-mode]`)
             .on("click", function() {
 
                 if (rotateData == undefined) {
@@ -994,41 +1004,43 @@ export class HandlesMain implements IContainer, IDrawable {
                 d3.event.stopPropagation();
             });
 
-        this.modeContainer.select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ScaleBtn.DATA_NAME}']`)
+        d3.select(this.modeContainer)
+            .select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.ScaleBtn.DATA_NAME}']`)
             .on("click", function() {
                 self.mode = HandleMode.SCALE;
                 d3.event.stopPropagation();
             });
 
-        this.colorsOverlay.draw();
-        this.rotationOverlay.draw();
-        this.scaleOverlay.draw();
-        this.rotationOverlay.onRotation = this.onRotationEventHandlers;
+        // this.colorsOverlay.draw();
+        // this.rotationOverlay.draw();
+        // this.scaleOverlay.draw();
+        // this.rotationOverlay.onRotation = this.onRotationEventHandlers;
         this.modeChanged(HandleMode.DELETE, HandleMode.PAN);
     }
 
     public update(): void {
         const self = this;
-        const defaultTransformStr = SvgTransformServiceSingleton.defaultTransformString;
+        const defaultTransformStr = SvgGeometryServiceSingleton
+            .defaultTransformString;
 
         switch(this.mode) {
             case HandleMode.COLORS:
-                this.colorsOverlay.radius = this.radius;
-                this.colorsOverlay.update();
+                // this.colorsOverlay.radius = this.radius;
+                // this.colorsOverlay.update();
                 break;
 
             case HandleMode.ROTATE:
-                this.rotationOverlay.radius = this.radius;
-                this.rotationOverlay.update();
+                // this.rotationOverlay.radius = this.radius;
+                // this.rotationOverlay.update();
                 break;
 
             case HandleMode.SCALE:
-                this.scaleOverlay.update();
+                // this.scaleOverlay.update();
                 break;
         }
 
         // Update the highlight element
-        this.selectionEl
+        d3.select(this.selectionEl)
             .attr("r", self.radius - (self.defaultWidth/2));
         
         // Draw arcs
@@ -1040,7 +1052,7 @@ export class HandlesMain implements IContainer, IDrawable {
                 return a;
             })(this.data);
 
-        this.arcsContainer
+        d3.select(this.arcsContainer)
             .selectAll("path")
             .data(pieData)
             .attr("d", function(d) {
@@ -1069,7 +1081,7 @@ export class HandlesMain implements IContainer, IDrawable {
                 }
             });
 
-        let buttons = this.modeContainer
+        let buttons = d3.select(this.modeContainer)
             .selectAll<SVGGElement, IMainOverlayData>("g[data-name='handles-button-container'] > g")
             .data(this.buttonsData)
             .attr("transform", function(d) {
@@ -1079,9 +1091,9 @@ export class HandlesMain implements IContainer, IDrawable {
     }
 
     public erase(): void {
-        this.colorsOverlay.erase();
-        this.rotationOverlay.erase();
-        this.scaleOverlay.erase();
+        // this.colorsOverlay.erase();
+        // this.rotationOverlay.erase();
+        // this.scaleOverlay.erase();
     }
 
     //#endregion

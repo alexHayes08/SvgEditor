@@ -2,12 +2,19 @@ const uniqid = require("uniqid");
 
 import * as d3 from "d3";
 
-import { ActivatableServiceSingleton } from "../services/activatable-service";
-import { IContainer } from "./icontainer";
-import { IDrawable } from './idrawable';
-import { Names } from "./names";
-import { SvgTransformServiceSingleton, ICoords2D, SvgTransformString, TransformType, ITransformable, IRotationMatrix } from "../services/svg-transform-service";
-import { getFurthestSvgOwner, getAngle } from "../helpers/svg-helpers";
+import { ActivatableServiceSingleton } from "../../services/activatable-service";
+import { IContainer } from "./../icontainer";
+import { IDrawable } from './../idrawable';
+import { Names } from "./../names";
+import { 
+    SvgGeometryServiceSingleton, 
+    ICoords2D, 
+    SvgTransformString, 
+    TransformType, 
+    ITransformable, 
+    IRotationMatrix 
+} from "../../services/svg-geometry-service";
+import { getFurthestSvgOwner, getAngle } from "../../helpers/svg-helpers";
 
 /**
  * This class moves the setup of the rotation related elements away from the
@@ -218,11 +225,11 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
                     if (self.dialPivotEl
                         && self.grabberCircle) 
                     {
-                        let relativeMouseCoords = SvgTransformServiceSingleton
+                        let relativeMouseCoords = SvgGeometryServiceSingleton
                             .convertScreenCoordsToSvgCoords(
                                 d3.event.sourceEvent, furthestSvg);
 
-                        let pivotCenter = SvgTransformServiceSingleton
+                        let pivotCenter = SvgGeometryServiceSingleton
                             .getCenter(self.dialPivotEl);
 
                         self.angle = getAngle(pivotCenter, relativeMouseCoords);
@@ -257,7 +264,7 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
             .data([self.angle])
             .attr("x2", this.radius);
 
-        SvgTransformServiceSingleton.setRotation(<any>this.dialLineEl, 
+        SvgGeometryServiceSingleton.setRotation(<any>this.dialLineEl, 
             { a: this.angle });
 
         // Update the dashed outer circle
@@ -270,7 +277,7 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
         if (this.pivotPoint) {
             ActivatableServiceSingleton.activate(<any>this.pivotPointEl);
             ActivatableServiceSingleton.activate(<any>this.dialPivotToPivotPointLine);
-            SvgTransformServiceSingleton.setTranslation(<any>this.pivotPointEl,
+            SvgGeometryServiceSingleton.setTranslation(<any>this.pivotPointEl,
                 this.pivotPoint);
             d3.select(<any>this.dialPivotToPivotPointLine)
                 .attr("x2", this.pivotPoint.x)

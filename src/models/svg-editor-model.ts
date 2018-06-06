@@ -2,13 +2,22 @@ const uniqid = require("uniqid");
 
 import * as d3 from "d3";
 import { ActivatableServiceSingleton } from "../services/activatable-service";
-import { isSvgGraphicsElement, getFurthestSvgOwner, isSvgPathElement } from "./../helpers/svg-helpers";
+import { 
+    isSvgGraphicsElement, 
+    getFurthestSvgOwner, 
+    isSvgPathElement 
+} from "./../helpers/svg-helpers";
 import { nodeListToArray } from "../helpers/node-helper";
-import { ICoords2D, SvgTransformService, SvgTransformServiceSingleton, ITransformable } from "./../services/svg-transform-service";
+import { 
+    ICoords2D, 
+    SvgGeometryService, 
+    SvgGeometryServiceSingleton, 
+    ITransformable 
+} from "./../services/svg-geometry-service";
 import { isSvgElement } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
 import { ISvgAction } from './isvg-action';
-import { ISvgHandles } from "./isvg-handles-model";
+import { ISvgHandles } from "./isvg-handles";
 import { Names } from "./names";
 import { NS } from "../helpers/namespaces-helper";
 import { InternalError, NotImplementedError } from "./errors";
@@ -44,7 +53,7 @@ export class SvgEditor {
 
     private _maskUrl?: string;
 
-    private readonly transformService: SvgTransformService;
+    private readonly transformService: SvgGeometryService;
     private readonly actionService: SvgActionService;
     private readonly dataMap: WeakMap<Element, SvgItem>;
     private readonly defs: ISvgDefs;
@@ -59,7 +68,7 @@ export class SvgEditor {
     {
         this.dataMap = new WeakMap();
         this.defs = defs;
-        this.transformService = SvgTransformServiceSingleton;
+        this.transformService = SvgGeometryServiceSingleton;
         this.actionService = actionService;
 
         let parentSelection = d3.select(parent);

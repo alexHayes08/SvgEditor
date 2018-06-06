@@ -2,11 +2,11 @@ const uniqid = require("uniqid");
 
 import * as d3 from "d3";
 
-import { IDrawable } from "./idrawable";
-import { SvgDefs, ISvgDefs } from "./svg-defs-model";
-import { IDOMDrawable } from "./idom-drawable";
-import { Tabs, ITab } from "./tabs";
-import { InternalError } from "./errors";
+import { IDrawable } from "./../idrawable";
+import { SvgDefs, ISvgDefs } from "./../svg-defs-model";
+import { IDOMDrawable } from "./../idom-drawable";
+import { Tabs, ITab } from "./../tabs";
+import { InternalError } from "./../errors";
 
 export enum ColorPickerMode {
     RGB,

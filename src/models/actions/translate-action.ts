@@ -8,8 +8,13 @@ import { SvgItem } from "../svg-item-model";
 import { isSvgGraphicsElement, getFurthestSvgOwner } from "../../helpers/svg-helpers";
 import { Names } from "../names";
 import { NS } from "../../helpers/namespaces-helper";
-import { SvgTransformServiceSingleton, ICoords2D, TransformType, SvgTransformString } from "../../services/svg-transform-service";
-import { ITranslationMatrix } from "./../../services/svg-transform-service";
+import { ITranslationMatrix } from "./../../services/svg-geometry-service";
+import { 
+    SvgGeometryServiceSingleton, 
+    ICoords2D, 
+    TransformType, 
+    SvgTransformString 
+} from "../../services/svg-geometry-service";
 
 export class TranslateAction implements ISvgAction {
     //#region Fields

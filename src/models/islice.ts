@@ -3,7 +3,10 @@ const uniqid = require("uniqid");
 import * as d3 from "d3";
 import { toRadians } from "../helpers/math-helpers";
 import { Names } from "./names";
-import { SvgTransformService, SvgTransformServiceSingleton } from "../services/svg-transform-service";
+import { 
+    SvgGeometryService, 
+    SvgGeometryServiceSingleton 
+} from "../services/svg-geometry-service";
 import { isSvgElement, getNewPointAlongAngle, convertToSvgElement } from "../helpers/svg-helpers";
 
 export interface ICircleArc {
@@ -52,7 +55,7 @@ export class DefaultCircleArc implements ICircleArc {
     public defaultColor: string;
     public radius: number;
     public defaultWidth: number;
-    public transformService: SvgTransformService;
+    public transformService: SvgGeometryService;
 
     //#endregion
 
@@ -64,7 +67,7 @@ export class DefaultCircleArc implements ICircleArc {
         this.radius = data.radius || 100;
         this.startAngleOffset = data.startAngleOffset || 0;
         this.defaultWidth = data.defaultWidth || 4;
-        this.transformService = SvgTransformServiceSingleton;
+        this.transformService = SvgGeometryServiceSingleton;
     }
 
     //#region Functions
@@ -169,12 +172,12 @@ export class DefaultCircleArc implements ICircleArc {
         }
 
         let relativeTo = { x: 0, y: 0 };
-        let deleteArcCenter = SvgTransformServiceSingleton.getCenterRelativeToPoint(relativeTo, deleteArc);
-        let moveArcCenter = SvgTransformServiceSingleton.getCenterRelativeToPoint(relativeTo, moveArc);
-        let scaleArcCenter = SvgTransformServiceSingleton.getCenterRelativeToPoint(relativeTo, scaleArc);
-        let rotateArcCenter = SvgTransformServiceSingleton.getCenterRelativeToPoint(relativeTo, rotateArc);
-        let colorArcCenter = SvgTransformServiceSingleton.getCenterRelativeToPoint(relativeTo, colorArc);
-        let editArcCenter = SvgTransformServiceSingleton.getCenterRelativeToPoint(relativeTo, editArc);
+        let deleteArcCenter = SvgGeometryServiceSingleton.getCenterRelativeToPoint(relativeTo, deleteArc);
+        let moveArcCenter = SvgGeometryServiceSingleton.getCenterRelativeToPoint(relativeTo, moveArc);
+        let scaleArcCenter = SvgGeometryServiceSingleton.getCenterRelativeToPoint(relativeTo, scaleArc);
+        let rotateArcCenter = SvgGeometryServiceSingleton.getCenterRelativeToPoint(relativeTo, rotateArc);
+        let colorArcCenter = SvgGeometryServiceSingleton.getCenterRelativeToPoint(relativeTo, colorArc);
+        let editArcCenter = SvgGeometryServiceSingleton.getCenterRelativeToPoint(relativeTo, editArc);
 
         // TODO: Make these variables, not sure where to pass these in...
         const PADDING_BETWEEN_ARC_AND_BTN = 10;
@@ -214,12 +217,12 @@ export class DefaultCircleArc implements ICircleArc {
         });
 
         // Update btn positions
-        SvgTransformServiceSingleton.setTranslation(deleteEl, deleteBtn_newCoords);
-        SvgTransformServiceSingleton.setTranslation(moveEl, moveBtn_newCoords);
-        SvgTransformServiceSingleton.setTranslation(scaleEl, scaleBtn_newCoords);
-        SvgTransformServiceSingleton.setTranslation(rotateEl, rotateBtn_newCoords);
-        SvgTransformServiceSingleton.setTranslation(colorEl, colorBtn_newCoords);
-        SvgTransformServiceSingleton.setTranslation(editEl, editBtn_newCoords);
+        SvgGeometryServiceSingleton.setTranslation(deleteEl, deleteBtn_newCoords);
+        SvgGeometryServiceSingleton.setTranslation(moveEl, moveBtn_newCoords);
+        SvgGeometryServiceSingleton.setTranslation(scaleEl, scaleBtn_newCoords);
+        SvgGeometryServiceSingleton.setTranslation(rotateEl, rotateBtn_newCoords);
+        SvgGeometryServiceSingleton.setTranslation(colorEl, colorBtn_newCoords);
+        SvgGeometryServiceSingleton.setTranslation(editEl, editBtn_newCoords);
     }
 
     //#region Functions

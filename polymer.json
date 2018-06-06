@@ -1,0 +1,10 @@
+{
+  "entrypoint": "index.html",
+  "npm": true,
+
+  "lint": {
+    "rules": [
+      "polymer-3"
+    ]
+  }
+}

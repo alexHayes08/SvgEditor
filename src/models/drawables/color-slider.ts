@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 
 import { IDOMDrawable } from "../idom-drawable";
+import { SvgTransformString, TransformType } from "../../services/svg-transform-service";
 
 export class ColorSlider implements IDOMDrawable<HTMLElement> {
     //#region Fields
@@ -8,6 +9,7 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
     private readonly container: HTMLElement;
     private readonly element: HTMLElement;
     private readonly sliderEl: HTMLElement;
+    private readonly sliderTransform: SvgTransformString;
 
     private _maxValue: number;
     private _minValue: number;
@@ -30,6 +32,9 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
         this.onDrag = [];
         this.onDragEnd = [];
         this.onDragStart = [];
+        this.sliderTransform = new SvgTransformString([
+            TransformType.TRANSLATE
+        ])
         this._maxValue = 100;
         this._minValue = 0;
         this._sliderPercentage = 0;
@@ -68,8 +73,8 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
 
     private static CreateCssLinearGradientString(colors: d3.Color[]): string {
         let colorStr = "";
-        colors.map(c => colorStr += ` ${c.toString()}`);
-        return `linear-gradient(to left,${colorStr})`;
+        colors.map(c => colorStr += `, ${c.toString()}`);
+        return `linear-gradient(to left${colorStr})`;
     }
 
     public draw(): void {

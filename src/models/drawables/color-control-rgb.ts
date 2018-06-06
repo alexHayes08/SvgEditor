@@ -95,11 +95,18 @@ export class ColorControlRgb implements IDOMDrawable<HTMLElement> {
     //#region Functions
 
     public draw(): void {
+        this.r_slider.draw();
+        this.g_slider.draw();
+        this.b_slider.draw();
+        this.a_slider.draw();
         this.getContainer().appendChild(this.getElement());
     }
 
     public update(): void {
-
+        this.r_slider.update();
+        this.g_slider.update();
+        this.b_slider.update();
+        this.a_slider.update();
     }
 
     public erase(): void {

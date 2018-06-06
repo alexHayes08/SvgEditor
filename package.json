@@ -1,65 +1,29 @@
 {
-  "name": "svgeditor",
-  "version": "1.0.0",
-  "description": "Another svg editor for the web",
+  "name": "aperture-svg-editor",
   "main": "src/index.ts",
   "scripts": {
-    "build": "webpack",
-    "test": "webpack && mocha -r ts-node/register tests/*spec.ts",
-    "watch": "webpack --watch",
-    "start:dev": "webpack-serve"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/alexHayes08/SvgEditor.git"
-  },
-  "keywords": [
-    "Svg"
-  ],
-  "author": "alex.c.hayes08@gmail.com",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/alexHayes08/SvgEditor/issues"
-  },
-  "homepage": "https://github.com/alexHayes08/SvgEditor#readme",
-  "devDependencies": {
-    "@types/chai": "^4.1.3",
-    "@types/mocha": "^5.2.0",
-    "@types/node": "^9.6.5",
-    "babel-core": "^6.26.0",
-    "babel-loader": "^7.1.4",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "chai": "^4.1.2",
-    "clean-webpack-plugin": "^0.1.19",
-    "file-loader": "^1.1.11",
-    "html-webpack-plugin": "^3.2.0",
-    "mocha": "^5.1.1",
-    "node-sass": "^4.9.0",
-    "sass-loader": "^7.0.1",
-    "ts-loader": "^4.2.0",
-    "ts-node": "^6.0.0",
-    "webpack": "^4.6.0",
-    "webpack-cli": "^2.0.14",
-    "webpack-dev-server": "^3.1.3",
-    "webpack-serve": "^0.3.1"
+    "build": "polymer build",
+    "test": "polymer test",
+    "watch": "webpack --watch --config ./build/webpack.dev.conf.js",
+    "start:dev": "polymer serve"
   },
   "dependencies": {
-    "@types/d3": "^5.0.0",
-    "@types/jquery": "^3.3.1",
-    "css-loader": "^0.28.11",
-    "custom-event-polyfill": "^0.3.0",
-    "d3": "^5.1.0",
-    "d3-color": "^1.1.0",
-    "d3-drag": "^1.2.1",
-    "d3-shape": "^1.2.0",
-    "d3-transition": "^1.1.1",
-    "geometry-interfaces": "^1.1.4",
-    "jquery": "^3.3.1",
-    "proxy-polyfill": "^0.2.0",
-    "style-loader": "^0.21.0",
-    "typescript": "^2.8.1",
-    "typescript-ioc": "^1.2.3",
-    "uniqid": "^4.1.1"
+    "@polymer/lit-element": "^0.5.1",
+    "@polymer/polymer": "^3.0.0",
+    "lit-html": "^0.10.0"
+  },
+  "devDependencies": {
+    "@polymer/iron-demo-helpers": "^3.0.0-pre.19",
+    "@webcomponents/webcomponentsjs": "^2.0.0",
+    "clean-webpack-plugin": "^0.1.19",
+    "copy-webpack-plugin": "^4.5.1",
+    "html-loader": "^0.5.5",
+    "html-webpack-plugin": "^3.2.0",
+    "ts-loader": "^4.3.1",
+    "typescript": "^2.9.1",
+    "wct-browser-legacy": "^1.0.0",
+    "webpack": "^4.11.1",
+    "webpack-cli": "^3.0.2",
+    "webpack-dev-server": "^3.1.4"
   }
 }

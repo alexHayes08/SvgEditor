@@ -5,9 +5,12 @@ import { toRadians } from "../helpers/math-helpers";
 import { Names } from "./names";
 import { 
     SvgGeometryService, 
-    SvgGeometryServiceSingleton 
+    SvgGeometryServiceSingleton, 
+    TransformType
 } from "../services/svg-geometry-service";
 import { isSvgElement, getNewPointAlongAngle, convertToSvgElement } from "../helpers/svg-helpers";
+import { ITransformable } from "./itransformable";
+import { SvgTransformString } from "./svg-transform-string";
 
 export interface ICircleArc {
     slices: ISlice[];
@@ -55,7 +58,7 @@ export class DefaultCircleArc implements ICircleArc {
     public defaultColor: string;
     public radius: number;
     public defaultWidth: number;
-    public transformService: SvgGeometryService;
+    public transforms: ITransformable;
 
     //#endregion
 
@@ -67,7 +70,11 @@ export class DefaultCircleArc implements ICircleArc {
         this.radius = data.radius || 100;
         this.startAngleOffset = data.startAngleOffset || 0;
         this.defaultWidth = data.defaultWidth || 4;
-        this.transformService = SvgGeometryServiceSingleton;
+        this.transforms = new SvgTransformString([
+            TransformType.ROTATE,
+            TransformType.TRANSLATE,
+            TransformType.ROTATE
+        ]);
     }
 
     //#region Functions
@@ -93,8 +100,7 @@ export class DefaultCircleArc implements ICircleArc {
             })
             (this.slices);
 
-        let defaultTransformStr = this.transformService.defaultTransformString;
-        this.transformService.setTranslation(parentElement, { x: 0, y: 0 });
+        this.transforms.setTranslate({ x: 0, y: 0 });
 
         let setPathFunc = function(d: d3.PieArcDatum<ISlice>) {
             let w = d.data.width || defaultWidth;
@@ -143,7 +149,7 @@ export class DefaultCircleArc implements ICircleArc {
             .attr("r", 20)
             .attr("cx", 0)
             .attr("cy", 0)
-            .attr("transform", defaultTransformStr);
+            .attr("transform", this.transforms.toTransformString());
 
         // Get the updated circles bbox
         let $parentEl = $(parentElement);
@@ -217,12 +223,12 @@ export class DefaultCircleArc implements ICircleArc {
         });
 
         // Update btn positions
-        SvgGeometryServiceSingleton.setTranslation(deleteEl, deleteBtn_newCoords);
-        SvgGeometryServiceSingleton.setTranslation(moveEl, moveBtn_newCoords);
-        SvgGeometryServiceSingleton.setTranslation(scaleEl, scaleBtn_newCoords);
-        SvgGeometryServiceSingleton.setTranslation(rotateEl, rotateBtn_newCoords);
-        SvgGeometryServiceSingleton.setTranslation(colorEl, colorBtn_newCoords);
-        SvgGeometryServiceSingleton.setTranslation(editEl, editBtn_newCoords);
+        // SvgGeometryServiceSingleton.setTranslation(deleteEl, deleteBtn_newCoords);
+        // SvgGeometryServiceSingleton.setTranslation(moveEl, moveBtn_newCoords);
+        // SvgGeometryServiceSingleton.setTranslation(scaleEl, scaleBtn_newCoords);
+        // SvgGeometryServiceSingleton.setTranslation(rotateEl, rotateBtn_newCoords);
+        // SvgGeometryServiceSingleton.setTranslation(colorEl, colorBtn_newCoords);
+        // SvgGeometryServiceSingleton.setTranslation(editEl, editBtn_newCoords);
     }
 
     //#region Functions

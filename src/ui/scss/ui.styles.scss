@@ -1,6 +1,9 @@
-/**
- * [aperture-svg-editor]
- */
+$checkerBoard: linear-gradient(45deg, #808080 25%, transparent 25%), 
+    linear-gradient(-45deg, #808080 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #808080 75%), 
+    linear-gradient(-45deg, transparent 75%, #808080 75%);
+
+//#region aperture-svg-editor
 
 aperture-svg-editor options {
     display: none;
@@ -14,9 +17,7 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     overflow: visible;
 }
 
-/**
- * [Tooltips]
- */
+//#region Tooltips
 
 [data-tooltip]:hover {
     overflow: visible;
@@ -45,13 +46,9 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
     transform: translateX(-50%);
 }
 
-/**
- * [End Tooltips]
- */
+//#endregion
 
-/**
- * [Tabs]
- */
+//#region Tabs
 
 $activeTabBg: rgb(243, 243, 243);
 $inactiveTabBg: rgb(231, 231, 231);
@@ -101,21 +98,14 @@ $inactiveTabBg: rgb(231, 231, 231);
     display: none;
 }
 
-/**
- * [End Tabs]
- */
+//#endregion
 
-/**
- * [Color Picker]
- */
+//#region Color Picker
 
 *[data-name="color-picker"] {
 
     .color-preview-container {
-        background: linear-gradient(45deg, #808080 25%, transparent 25%), 
-            linear-gradient(-45deg, #808080 25%, transparent 25%), 
-            linear-gradient(45deg, transparent 75%, #808080 75%), 
-            linear-gradient(-45deg, transparent 75%, #808080 75%);
+        background: $checkerBoard;
         background-size: 20px 20px;
         background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
         border: 2px solid rgb(20, 20, 20);
@@ -151,13 +141,55 @@ $inactiveTabBg: rgb(231, 231, 231);
     }
 }
 
-/**
- * [End Color Picker]
- */
+//#endregion
 
-/**
- * [Handles]
- */
+//#region Color Slider
+
+$slider_boxShadow: 0px 3px 3px 3px rgba(0,0,0,.15);
+
+.color-slider {
+    background: $checkerBoard;
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    display: block;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+
+    .gradientBG {
+        display: inline-block;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+    }
+
+    .slider {
+        align-items: center;
+        border-color: rgba(255,255,255,.95);
+        border-width: 2px;
+        border-style: solid;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: stretch;
+        width: 1%;
+        min-width: 2px;
+        max-width: 6px;
+        height: 100%;
+        min-height: 12px;
+        transition: box-shadow .2s;
+    }
+
+    .slider.dark {
+        border-color: rgba(0,0,0,1);
+    }
+}
+
+//#endregion
+
+//#region Handles
 
 .activatable {
     opacity: 0;
@@ -328,10 +360,6 @@ $inactiveTabBg: rgb(231, 231, 231);
     stroke-width: 2;
 }
 
-/**
- * [End Handles]
- */
+//#endregion
 
-/**
- * [End aperture-svg-editor]
- */
+//endregion

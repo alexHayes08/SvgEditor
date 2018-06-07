@@ -11,9 +11,8 @@ import { nodeListToArray } from "../helpers/node-helper";
 import { 
     ICoords2D, 
     SvgGeometryService, 
-    SvgGeometryServiceSingleton, 
-    ITransformable 
-} from "./../services/svg-geometry-service";
+    SvgGeometryServiceSingleton} from "./../services/svg-geometry-service";
+import { ITransformable } from "../models/itransformable";
 import { isSvgElement } from "../helpers/svg-helpers";
 import { SvgItem } from "./svg-item-model";
 import { ISvgAction } from './isvg-action';

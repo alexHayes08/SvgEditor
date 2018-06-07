@@ -86,13 +86,13 @@ export class Polygon {
             let dy = data.x0.y - data.center.y;
 
             this.circumRadius = pythagoreanTheroem(dx, dy);
-            this.startAngle = Angle.fromRadians(Math.atan2(dx, dy))
+            this.startAngle = Angle.fromRadians(Math.atan2(dy, dx))
                 .normalizeAngle();
         } else if (isPolygonFromSideLength(data)) {
             this.center = data.center || { x: 0, y: 0 };
             let dx_0 = data.x0.x - this.center.x;
             let dy_0 = data.x0.y - this.center.y;
-            this.startAngle = Angle.fromRadians(Math.atan2(dx_0, dy_0));
+            this.startAngle = Angle.fromRadians(Math.atan2(dy_0, dx_0));
             this.circumRadius = pythagoreanTheroem(dx_0, dy_0);
             this.numberOfSides = 
                 Math.PI / (Math.asin(

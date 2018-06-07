@@ -1,17 +1,11 @@
+import * as d3 from 'd3';
+import * as $ from 'jquery';
+
+import { ITransformable } from '../models/itransformable';
+import { ColorValue } from './color-value';
+import { SvgTransformString } from './svg-transform-string';
+
 const uniqid = require("uniqid");
-
-import * as d3 from "d3";
-import * as $ from "jquery";
-
-import { ColorValue } from "./color-value";
-import { 
-    SvgGeometryService, 
-    SvgGeometryServiceSingleton, 
-    ICoords2D, 
-    ITransformable, 
-    SvgTransformString 
-} from "../services/svg-geometry-service";
-import { isSvgGraphicsElement } from "../helpers/svg-helpers";
 
 export interface ColorMap {
     element: SVGGraphicsElement;

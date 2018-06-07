@@ -1,14 +1,13 @@
 import * as d3 from 'd3';
 
 import { NS } from '../helpers/namespaces-helper';
+import { ITransformable } from '../models/itransformable';
 import { ActivatableServiceSingleton } from '../services/activatable-service';
 import {
     IRotationMatrix,
-    ITransformable,
     ITranslationMatrix,
     SvgGeometryService,
     SvgGeometryServiceSingleton,
-    SvgTransformString,
     TransformType,
 } from '../services/svg-geometry-service';
 import { TranslateAction } from './actions/translate-action';
@@ -18,6 +17,7 @@ import { ISvgHandles } from './isvg-handles';
 import { Names } from './names';
 import { SvgCanvas } from './svg-canvas-model';
 import { SvgItem } from './svg-item-model';
+import { SvgTransformString } from './svg-transform-string';
 
 const uniqid = require("uniqid");
 
@@ -136,11 +136,13 @@ export class SvgHandles implements ISvgHandles {
 
     private htmlHandlesContainer: HTMLElement;
     private handlesContainer: SVGGElement;
+    private handlesContainerTransforms: ITransformable;
     private mainHandlesOverlay: HandlesMain;
     // private colorHandlesOverlay: HandlesColorsOverlay;
     // private rotationOverlay: HandlesRotationOverlay;
     // private scaleOverlay: HandlesScaleOverlay;
     private highlightPathEl: SVGPathElement;
+    private hightlightTransforms: ITransformable;
 
     //#endregion
 
@@ -177,7 +179,11 @@ export class SvgHandles implements ISvgHandles {
         }
 
         this.highlightPathEl = highlightRectEl;
-        this.transformService.standardizeTransforms(this.highlightPathEl);
+        this.hightlightTransforms = new SvgTransformString([
+            TransformType.TRANSLATE
+        ]);
+        d3.select(this.highlightPathEl)
+            .attr("transform", this.hightlightTransforms.toTransformString());
         ActivatableServiceSingleton.register(this.highlightPathEl);
 
         // Create handle elements
@@ -192,7 +198,12 @@ export class SvgHandles implements ISvgHandles {
         }
 
         this.handlesContainer = handleContainer;
-        this.transformService.standardizeTransforms(this.handlesContainer);
+        this.handlesContainerTransforms = new SvgTransformString([
+            TransformType.TRANSLATE
+        ]);
+        d3.select(this.handlesContainer)
+            .attr("transform", this.handlesContainerTransforms
+                .toTransformString());
         ActivatableServiceSingleton.register(this.handlesContainer, false);
 
         // Create main handles overlay

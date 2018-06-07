@@ -1,27 +1,15 @@
+import * as d3 from 'd3';
+
+import { calcApothem, calcSideLength, getPolygonPointsString } from '../helpers/geometry-helpers';
+import { NS } from '../helpers/namespaces-helper';
+import { InternalError } from '../models/errors';
+import { IDrawable } from '../models/idrawable';
+import { ISvgHandles } from '../models/isvg-handles';
+import { Polygon } from '../models/shapes/polygon';
+import { ISvgDefs } from '../models/svg-defs-model';
+import { ICoords2D } from './svg-geometry-service';
+
 const uniqid = require("uniqid");
-
-import * as d3 from "d3";
-
-import { IDrawable } from "../models/idrawable";
-import { 
-    SvgTransformString, 
-    TransformType, 
-    ITransformable, 
-    ICoords2D 
-} from "./svg-geometry-service";
-import { NS } from "../helpers/namespaces-helper";
-import { 
-    getPolygonPointsString, 
-    calcApothem, 
-    calcSideLength, 
-    calcCircumradius 
-} from "../helpers/geometry-helpers";
-import { ISvgDefs } from "../models/svg-defs-model";
-import { ISvgHandles } from "../models/isvg-handles";
-import { InternalError } from "../models/errors";
-import { pythagoreanTheroem } from "../helpers/math-helpers";
-import { IAngle } from "../models/angle";
-import { Polygon, PolygonData } from "../models/shapes/polygon";
 
 /**
  * Represents each side of a hexagon.

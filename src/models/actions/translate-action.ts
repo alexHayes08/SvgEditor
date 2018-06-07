@@ -1,20 +1,10 @@
+import { TransformType } from '../../services/svg-geometry-service';
+import { ISvgAction } from '../isvg-action';
+import { SvgItem } from '../svg-item-model';
+import { SvgTransformString } from '../svg-transform-string';
+import { ITranslationMatrix } from './../../services/svg-geometry-service';
+
 const uniqid = require("uniqid");
-
-import * as d3 from "d3";
-
-import { ISvgAction } from "../isvg-action";
-import { SvgCanvas } from "../svg-canvas-model";
-import { SvgItem } from "../svg-item-model";
-import { isSvgGraphicsElement, getFurthestSvgOwner } from "../../helpers/svg-helpers";
-import { Names } from "../names";
-import { NS } from "../../helpers/namespaces-helper";
-import { ITranslationMatrix } from "./../../services/svg-geometry-service";
-import { 
-    SvgGeometryServiceSingleton, 
-    ICoords2D, 
-    TransformType, 
-    SvgTransformString 
-} from "../../services/svg-geometry-service";
 
 export class TranslateAction implements ISvgAction {
     //#region Fields

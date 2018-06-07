@@ -20,6 +20,13 @@ export interface IConcentricPolygons {
     keepVerticiesEquidistant?: boolean;
 }
 
+export function calcOffset(x1: ICoords2D, x2: ICoords2D): ICoords2D {
+    return {
+        x: x2.x - x1.x,
+        y: x2.y - x2.y
+    };
+}
+
 /**
  * Calculates concentric polygons where each circumradius is incremented by
  * (2 * s) where the inner most polygons circumradius is the min amount to

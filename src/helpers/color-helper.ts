@@ -1,11 +1,86 @@
 import * as $ from "jquery";
+import * as d3 from "d3";
 
-import { getAllGroups } from "./regex-helper";
-
-function isIccColor(color: string) {
-    let reg = /icc-color(" name (comma-wsp number)+ ")/
+// function isIccColor(color: string) {
+//     let reg = /icc-color(" name (comma-wsp number)+ ")/
     
+// }
+
+export function calcContrast(colorA: d3.Color, colorB: d3.Color): number {
+    let colorA_hsl = d3.hsl(colorA.toString());
+    let colorB_hsl = d3.hsl(colorB.toString());
+
+    return colorA_hsl.l - colorB_hsl.l;
 }
+
+export function useBlackAsContrast(color: d3.Color): boolean {
+    let color_hsl = d3.hsl(color.toString());
+    return color_hsl.opacity > .5 && color_hsl.l > .5;
+}
+
+// export function calcContrast (color) {
+//     // Formula: http://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
+//     var alpha = this.alpha;
+
+//     if (alpha >= 1) {
+//         if (color.alpha < 1) {
+//             color = color.overlayOn(this);
+//         }
+
+//         var l1 = this.luminance + .05,
+//             l2 = color.luminance + .05,
+//             ratio = l1/l2;
+
+//         if (l2 > l1) {
+//             ratio = 1 / ratio;
+//         }
+
+//         ratio = floor(ratio, 2);
+
+//         return {
+//             ratio: ratio,
+//             error: 0,
+//             min: ratio,
+//             max: ratio
+//         };
+//     }
+
+//     // If we’re here, it means we have a semi-transparent background
+//     // The text color may or may not be semi-transparent, but that doesn't matter
+
+//     var onBlack = this.overlayOn(_.BLACK),
+//         onWhite = this.overlayOn(_.WHITE),
+//         contrastOnBlack = onBlack.contrast(color).ratio,
+//         contrastOnWhite = onWhite.contrast(color).ratio;
+
+//     var max = Math.max(contrastOnBlack, contrastOnWhite);
+
+//     // This is here for backwards compatibility and not used to calculate
+//     // `min`.  Note that there may be other colors with a closer luminance to
+//     // `color` if they have a different hue than `this`.
+//     var closest = this.rgb.map(function(c, i) {
+//         return Math.min(Math.max(0, (color.rgb[i] - c * alpha)/(1-alpha)), 255);
+//     });
+
+//     closest = new _(closest);
+
+//     var min = 1;
+//     if (onBlack.luminance > color.luminance) {
+//         min = contrastOnBlack;
+//     }
+//     else if (onWhite.luminance < color.luminance) {
+//         min = contrastOnWhite;
+//     }
+
+//     return {
+//         ratio: floor((min + max) / 2, 2),
+//         error: floor((max - min) / 2, 2),
+//         min: min,
+//         max: max,
+//         closest: closest,
+//         farthest: onWhite == max? _.WHITE : _.BLACK
+//     };
+// }
 
 /**
  * NOTE: This will most likely not be used and just deleted. I got the regex

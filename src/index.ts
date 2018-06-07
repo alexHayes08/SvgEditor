@@ -1,6 +1,6 @@
 ﻿import * as $ from "jquery";
 
-import { ApertureSvgEditor } from "./models/aperture-svg-editor";
+// import { ApertureSvgEditor } from "./models/aperture-svg-editor";
 import { SvgCanvas } from "./models/svg-canvas-model";
 import { SvgHandles } from "./models/svg-handles";
 
@@ -14,7 +14,7 @@ import "./ui/scss/ui.styles.scss";
 
 export const SvgEditors: SvgCanvas[] = [];
 let $parentEl = $("#editorCavasContainer");
-let editorEls = $("aperture-svg-editor").each(function() {
+$("aperture-svg-editor").each(function() {
     let editor = new SvgCanvas(500, 
         500, 
         { 

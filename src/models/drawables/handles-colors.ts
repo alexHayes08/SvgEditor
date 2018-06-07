@@ -2,12 +2,9 @@ import * as d3 from 'd3';
 
 import { CardinalDirections, toDegrees } from '../../helpers/math-helpers';
 import { NS } from '../../helpers/namespaces-helper';
-import {
-    ITransformable,
-    SvgGeometryServiceSingleton,
-    SvgTransformString,
-    TransformType,
-} from '../../services/svg-geometry-service';
+import { ITransformable } from '../../models/itransformable';
+import { SvgGeometryServiceSingleton, TransformType } from '../../services/svg-geometry-service';
+import { SvgTransformString } from '../svg-transform-string';
 import { ColorControlRgb } from './../drawables/color-control-rgb';
 import { LinearGradient } from './../element-wrappers/linear-gradient';
 import { InternalError, InvalidCastError } from './../errors';

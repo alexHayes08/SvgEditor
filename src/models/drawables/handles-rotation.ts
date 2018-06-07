@@ -4,52 +4,54 @@ import * as d3 from "d3";
 
 import { ActivatableServiceSingleton } from "../../services/activatable-service";
 import { IContainer } from "./../icontainer";
-import { IDrawable } from './../idrawable';
+import { IDOMDrawable } from './../idom-drawable';
 import { Names } from "./../names";
 import { 
     SvgGeometryServiceSingleton, 
-    ICoords2D, 
-    SvgTransformString, 
+    ICoords2D,
     TransformType, 
-    ITransformable, 
     IRotationMatrix 
 } from "../../services/svg-geometry-service";
+import { ITransformable } from "../../models/itransformable";
 import { getFurthestSvgOwner, getAngle } from "../../helpers/svg-helpers";
+import { SvgTransformString } from "../svg-transform-string";
+import { NS } from "../../helpers/namespaces-helper";
 
 /**
  * This class moves the setup of the rotation related elements away from the
  * handles model into here. Otherwords this class exists soley for
  * organizational purposes.
  */
-export class HandlesRotationOverlay implements IContainer, IDrawable {
+export class HandlesRotationOverlay implements IDOMDrawable<SVGGElement> {
     //#region Fields
 
-    private rotationModeContainerEl?: SVGGElement;
-    private dialLineEl?: SVGLineElement;
-    private dialPivotEl?: SVGCircleElement;
-    private pivotPointEl?: SVGCircleElement;
-    private dialPivotToPivotPointLine?: SVGLineElement;
-    private dashedOuterCircle?: SVGCircleElement;
-    private grabberCircle?: SVGCircleElement;
+    private container: SVGGElement;
+    private dialLineEl: SVGLineElement;
+    private dialPivotEl: SVGCircleElement;
+    private element: SVGGElement;
+    private pivotPointEl: SVGCircleElement;
+    private pivotPointTransform: ITransformable;
+    private dialPivotToPivotPointLine: SVGLineElement;
+    private dashedOuterCircle: SVGCircleElement;
+    private grabberCircle: SVGCircleElement;
 
     private _angle: number;
 
     public rotateIndividually: boolean;
-    public container: d3.Selection<SVGGElement, {}, null, undefined>;
-    public containerNode: SVGGElement;
+    public rotateAroundPivot: boolean;
     public dialTransform: ITransformable;
     public grabberTransform: ITransformable;
     public onRotation: Array<(angle: IRotationMatrix) => void>;
-    public pivotPointTransform?: ITransformable;
-    public pivotPoint?: ICoords2D;
     public radius: number;
 
     //#endregion
 
     //#region Ctor
 
-    public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>) {
+    public constructor(container: SVGGElement) {
+        let self = this;
         this.container = container;
+        this.rotateAroundPivot = false;
         this.rotateIndividually = true;
         this.radius = 100;
         this._angle = 0;
@@ -61,27 +63,118 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
         this.dialTransform = new SvgTransformString([
             TransformType.ROTATE
         ]);
+        this.pivotPointTransform = new SvgTransformString([
+            TransformType.TRANSLATE
+        ]);
 
         this.grabberTransform.setTranslate({x: this.radius, y: 0}, 0);
         this.dialTransform.setRotation({a: 0}, 0);
 
-        let containerNode = this.container.node();
-        if (!containerNode) {
-            throw new Error("The container didn't exist.");
-        }
+        // Create elements.
+        this.element = <SVGGElement>document
+            .createElementNS(NS.SVG, "g");
+        d3.select(this.element)
+            .attr("id", uniqid())
+            .attr("data-name", Names.Handles.SubElements.RotationHelpersContainer.DATA_NAME);
+        ActivatableServiceSingleton.register(this.element);
+        
+        this.dialLineEl = <SVGLineElement>document
+            .createElementNS(NS.SVG, "line");
+        d3.select(this.dialLineEl)
+            .attr("id", uniqid())
+            .attr("data-name", 
+                Names.Handles.SubElements.RotationHelpersContainer
+                .SubElements.DialLine.DATA_NAME)
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 100)
+            .attr("y2", 0)
+            .attr("stroke", "black")
+            .attr("transform", function(d) { 
+                return self.dialTransform.toTransformString();
+            });
 
-        this.containerNode = containerNode;
+        this.dialPivotEl = <SVGCircleElement>document
+            .createElementNS(NS.SVG, "circle");
+        d3.select(this.dialPivotEl)
+            .attr("id", uniqid())
+            .attr("data-name", Names.Handles.SubElements
+                .RotationHelpersContainer.SubElements.DialPivot.DATA_NAME)
+            .attr("r", 5);
+
+        this.pivotPointEl = <SVGCircleElement>document
+            .createElementNS(NS.SVG, "circle");
+        d3.select(this.pivotPointEl)
+            .attr("id", uniqid())
+            .attr("data-name", Names.Handles.SubElements.RotationHelpersContainer
+                .SubElements.PivotPoint.DATA_NAME)
+            .attr("r", 5);
+
+        this.dialPivotToPivotPointLine = <SVGLineElement>document
+            .createElementNS(NS.SVG, "line");
+        d3.select(this.dialPivotToPivotPointLine)
+            .attr("id", () => uniqid())
+            .attr("data-name", Names.Handles.SubElements
+                .RotationHelpersContainer.SubElements.DialPivotToPivotPointLine
+                .DATA_NAME)
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 0)
+            .attr("y2", 0)
+            .attr("stroke", "rgba(0,0,0,.25)");
+
+        this.dashedOuterCircle = <SVGCircleElement>document
+            .createElementNS(NS.SVG, "circle");
+        d3.select(this.dashedOuterCircle)
+            .attr("id", uniqid())
+            .attr("data-name", Names.Handles.SubElements
+                .RotationHelpersContainer.SubElements.DashedOuterCircle
+                .DATA_NAME)
+            .attr("r", 100)
+            .attr("fill", "none")
+            .attr("stroke", "rgba(0,1,0,.25")
+            .attr("stroke-dasharray", "5,5")
+            .attr("stroke-width", "2")
+
+        this.grabberCircle = <SVGCircleElement>document
+            .createElementNS(NS.SVG, "circle");
+        d3.select(this.grabberCircle)
+            .attr("id", () => uniqid())
+            .attr("data-name", Names.Handles.SubElements
+                .RotationHelpersContainer.SubElements.Grabber.DATA_NAME)
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", 5)
+            .attr("transform", function(d) { 
+                return self.grabberTransform.toTransformString();
+            });
+
+        // Compose elements.
+        this.element.appendChild(this.dashedOuterCircle);
+        this.element.appendChild(this.dialPivotEl);
+        this.element.appendChild(this.dialLineEl);
+        this.element.appendChild(this.dialPivotToPivotPointLine);
+        this.element.appendChild(this.pivotPointEl);
+        this.element.appendChild(this.grabberCircle);
     }
 
     //#endregion
 
     //#region Properties
 
-    get angle() {
+    public get pivotPoint(): ICoords2D {
+        return this.pivotPointTransform.getTranslate();
+    }
+    
+    public set pivotPoint(value: ICoords2D) {
+        this.pivotPointTransform.setTranslate(value);
+    }
+
+    public get angle() {
         return this._angle;
     }
 
-    set angle(value: number) {
+    public set angle(value: number) {
         this._angle = value;
         this.dialTransform.setRotation({a: this.angle}, 0);
         this.grabberTransform.setRotation({a: this.angle}, 0);
@@ -92,129 +185,11 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
     //#region Functions
 
     public draw(): void {
-
-        // Create the rotation mode container
-        let rotationModeContainerEl = this.container
-            .append<SVGGElement>("g")
-            .attr("id", uniqid())
-            .attr("data-name",
-                Names.Handles.SubElements.RotationHelpersContainer.DATA_NAME)
-            .node();
-
-        if (rotationModeContainerEl == null) {
-            throw new Error("Failed to create the rotation mode container element.");
-        }
-
-        this.rotationModeContainerEl = rotationModeContainerEl;
-        ActivatableServiceSingleton.register(this.containerNode, false);
-
-        // Create the rotation pivot element
-        let pivotEl = d3.select(rotationModeContainerEl)
-            .append<SVGCircleElement>("circle")
-            .attr("id", uniqid())
-            .attr("data-name",
-                Names.Handles.SubElements.RotationHelpersContainer
-                .SubElements.PivotPoint.DATA_NAME)
-            .attr("r", 5)
-            .node();
-
-        if (pivotEl == null) {
-            throw new Error("Failed to create the pivot point element.");
-        }
-
-        this.pivotPointEl = pivotEl;
-        ActivatableServiceSingleton.register(this.pivotPointEl, false);
-
-        // Create the dial pivot point el
-        let dialPivotEl = d3.select(rotationModeContainerEl)
-            .append<SVGCircleElement>("circle")
-            .attr("id", uniqid())
-            .attr("data-name", Names.Handles.SubElements
-                .RotationHelpersContainer.SubElements.DialPivot.DATA_NAME)
-            .attr("r", 5)
-            .node();
-
-        if (dialPivotEl == null) {
-            throw new Error("Failed to create the dial pivot element.");
-        }
-
-        this.dialPivotEl = dialPivotEl;
-
-        // Create the dial line
-        let dialLineEl = d3.select(rotationModeContainerEl)
-            .data([this.dialTransform])
-            .append<SVGLineElement>("line")
-            .attr("id", uniqid())
-            .attr("data-name", 
-                Names.Handles.SubElements.RotationHelpersContainer
-                .SubElements.DialLine.DATA_NAME)
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 100)
-            .attr("y2", 0)
-            .attr("stroke", "black")
-            .attr("transform", function(d) { return d.toTransformString(); })
-            .node();
-
-        if (dialLineEl == null) {
-            throw new Error("Failed to create the dial line element.");
-        }
-
-        this.dialLineEl = dialLineEl;
-
-        // Create the dashed outline circle
-        let dashedOuterCircle = d3.select(rotationModeContainerEl)
-            .append<SVGCircleElement>("circle")
-            .attr("id", uniqid())
-            .attr("data-name", Names.Handles.SubElements
-                .RotationHelpersContainer.SubElements.DashedOuterCircle.DATA_NAME)
-            .attr("r", 100)
-            .attr("fill", "none")
-            .attr("stroke", "rgba(0,1,0,.25")
-            .attr("stroke-dasharray", "5,5")
-            .attr("stroke-width", "2")
-            .node();
-
-        if (dashedOuterCircle == null) {
-            throw new Error("Failed to create the dashed outer circle.");
-        }
-
-        this.dashedOuterCircle = dashedOuterCircle;
-
-        // Create the dial pivot to pivot point line
-        let dialPivotToPivotPointLine = d3.select(rotationModeContainerEl)
-            .append<SVGLineElement>("line")
-            .attr("id", () => uniqid())
-            .attr("data-name", Names.Handles.SubElements
-                .RotationHelpersContainer.SubElements.DialPivotToPivotPointLine
-                .DATA_NAME)
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 0)
-            .attr("y2", 0)
-            .attr("stroke", "rgba(0,0,0,.25)");
-        
-        let grabberCircle = d3.select(rotationModeContainerEl)
-            .append<SVGCircleElement>("circle")
-            .data([this.grabberTransform])
-            .attr("id", () => uniqid())
-            .attr("data-name", Names.Handles.SubElements
-                .RotationHelpersContainer.SubElements.Grabber.DATA_NAME)
-            .attr("cx", 0)
-            .attr("cy", 0)
-            .attr("r", 5)
-            .attr("transform", function(d) { return d.toTransformString(); })
-            .node();
-
-        if (grabberCircle == undefined) {
-            throw new Error("Failed to create the rotation grabber element.");
-        }
-
-        this.grabberCircle = grabberCircle;
+        this.getContainer().appendChild(this.getElement());
 
         /** Add event listeners */
         let self = this;
-        let furthestSvg = getFurthestSvgOwner(this.containerNode);
+        let furthestSvg = getFurthestSvgOwner(this.element);
 
         d3.select<Element, {}>(this.grabberCircle)
             .call(d3.drag()
@@ -254,18 +229,13 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
     public update(): void {
         let self = this;
 
-        // Check that none of the elements are null
-        if (!this.assertElementsExist()) {
-            throw new Error("Some of the elements were undefined.");
-        }
-
         // Update the dial line
-        d3.select(<any>this.dialLineEl)
+        d3.select(this.dialLineEl)
             .data([self.angle])
-            .attr("x2", this.radius);
-
-        SvgGeometryServiceSingleton.setRotation(<any>this.dialLineEl, 
-            { a: this.angle });
+            .attr("x2", this.radius)
+            .attr("transform", function(d) {
+                return self.dialTransform.toTransformString();
+            });
 
         // Update the dashed outer circle
         if (this.dashedOuterCircle) {
@@ -274,14 +244,14 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
         }
 
         // Update the pivot point
-        if (this.pivotPoint) {
+        if (this.pivotPoint && this.pivotPointEl) {
             ActivatableServiceSingleton.activate(<any>this.pivotPointEl);
             ActivatableServiceSingleton.activate(<any>this.dialPivotToPivotPointLine);
-            SvgGeometryServiceSingleton.setTranslation(<any>this.pivotPointEl,
-                this.pivotPoint);
             d3.select(<any>this.dialPivotToPivotPointLine)
                 .attr("x2", this.pivotPoint.x)
                 .attr("y2", this.pivotPoint.y);
+            d3.select(<any>this.pivotPointEl)
+                .attr("transform", this.pivotPointTransform.toTransformString());
         } else {
             ActivatableServiceSingleton.deactivate(<any>this.pivotPointEl);
             ActivatableServiceSingleton.deactivate(<any>this.dialPivotToPivotPointLine);
@@ -299,25 +269,17 @@ export class HandlesRotationOverlay implements IContainer, IDrawable {
     }
 
     public erase(): void {
+        
         // Check that none of the elements are null
-        if (!this.assertElementsExist()) {
-            throw new Error("Some of the elements were undefined.");
-        }
+        this.getElement().remove();
     }
 
-    private assertElementsExist(): boolean {
+    public getContainer(): Element {
+        return this.container;
+    }
 
-        // Check that none of the elements are null
-        if (this.dashedOuterCircle == undefined
-            || this.dialLineEl == undefined
-            || this.dialPivotEl == undefined
-            || this.pivotPointEl == undefined
-            || this.grabberCircle == undefined)
-        {
-            return false;
-        } else {
-            return true;
-        }
+    public getElement(): SVGGElement {
+        return this.element;
     }
 
     //#endregion

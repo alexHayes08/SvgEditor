@@ -7,18 +7,16 @@ import { CacheService } from '../../services/cache-service';
 import {
     ICoords2D,
     IRotationMatrix,
-    ITransformable,
-    SvgGeometryService,
-    SvgGeometryServiceSingleton,
-    SvgTransformString,
     TransformType,
 } from '../../services/svg-geometry-service';
+import { ITransformable } from "../../models/itransformable";
 import { Angle, IAngle } from './../angle';
 import { InternalError } from './../errors';
 import { IDrawable } from './../idrawable';
 import { HandleMode, IMode } from './../ihandle-button';
 import { Names } from './../names';
 import { SvgCanvas } from './../svg-canvas-model';
+import { SvgTransformString } from '../svg-transform-string';
 
 const uniqid = require("uniqid");
 
@@ -42,13 +40,11 @@ const buttonTransformOrder: TransformType[] = [
     TransformType.TRANSLATE,
     TransformType.ROTATE
 ];
-const buttonsTransformService = new SvgGeometryService({
-    order: [
+const buttonsTransform = new SvgTransformString([
         TransformType.ROTATE,
         TransformType.TRANSLATE,
         TransformType.ROTATE
-    ]
-});
+    ]);
 const arcTransformService: TransformType[] = [
     TransformType.ROTATE
 ];
@@ -716,8 +712,6 @@ export class HandlesMain implements IDrawable {
         let self = this;
         let rotateData = self.buttonsData.find(d => d.arcDataName == Names.Handles.SubElements.ArcsContainer.SubElements.RotateArc.DATA_NAME);
         let colorData = self.buttonsData.find(d => d.arcDataName == Names.Handles.SubElements.ArcsContainer.SubElements.ColorsArc.DATA_NAME);
-        const defaultTransformStr = SvgGeometryServiceSingleton
-            .defaultTransformString;
 
         // Update the highlight element
         d3.select(this.selectionEl)
@@ -785,13 +779,17 @@ export class HandlesMain implements IDrawable {
                 d.middleAngle = Angle.fromDegrees(180 + toDegrees(pieSlice.startAngle 
                     + ((pieSlice.endAngle - pieSlice.startAngle) / 2)));
 
-                buttonsTransformService.setRotation(this, { 
-                    a: d.middleAngle.asDegrees() 
+                d.buttonTransformData.setRotation({ 
+                    a: d.middleAngle.asDegrees()
                 });
-                buttonsTransformService.setRotation(this, { 
+                d.buttonTransformData.setRotation({ 
                     a: -1 * d.middleAngle.asDegrees() 
                 }, 2)
-                buttonsTransformService.setTranslation(this, { x: 0, y: self.radius })
+                d.buttonTransformData.setTranslate({ x: 0, y: self.radius })
+                d3.select(this)
+                    .attr("transform", d.buttonTransformData
+                        .toTransformString());
+                self.update();
 
                 // Draw the modes
                 let modeContainer = d3.select(this);
@@ -1020,8 +1018,6 @@ export class HandlesMain implements IDrawable {
 
     public update(): void {
         const self = this;
-        const defaultTransformStr = SvgGeometryServiceSingleton
-            .defaultTransformString;
 
         switch(this.mode) {
             case HandleMode.COLORS:

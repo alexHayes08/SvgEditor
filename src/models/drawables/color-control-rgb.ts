@@ -36,6 +36,7 @@ export class ColorControlRgb implements IDOMDrawable<HTMLElement> {
         let r_text = document.createElement("span");
         let r_slider_container = document.createElement("div");
         this.r_inputEl = document.createElement("input");
+        r_text.innerText = "R";
         r_label.appendChild(r_text);
         r_label.appendChild(r_slider_container);
         r_label.appendChild(this.r_inputEl);
@@ -46,6 +47,7 @@ export class ColorControlRgb implements IDOMDrawable<HTMLElement> {
         let g_text = document.createElement("span");
         let g_slider_container = document.createElement("div");
         this.g_inputEl = document.createElement("input");
+        g_text.innerText = "G";
         g_label.appendChild(g_text);
         g_label.appendChild(g_slider_container);
         g_label.appendChild(this.g_inputEl);
@@ -56,6 +58,7 @@ export class ColorControlRgb implements IDOMDrawable<HTMLElement> {
         let b_text = document.createElement("span");
         let b_slider_container = document.createElement("div");
         this.b_inputEl = document.createElement("input");
+        b_text.innerText = "B";
         b_label.appendChild(b_text);
         b_label.appendChild(b_slider_container);
         b_label.appendChild(this.b_inputEl);
@@ -66,10 +69,11 @@ export class ColorControlRgb implements IDOMDrawable<HTMLElement> {
         let a_text = document.createElement("span");
         let a_slider_container = document.createElement("div");
         this.a_inputEl = document.createElement("input");
+        a_text.innerText = "A";
         a_label.appendChild(a_text);
         a_label.appendChild(a_slider_container);
         a_label.appendChild(this.a_inputEl);
-        this.a_slider = new ColorSlider(r_slider_container);
+        this.a_slider = new ColorSlider(a_slider_container);
 
         // Compose elements
         this.element.appendChild(r_label);

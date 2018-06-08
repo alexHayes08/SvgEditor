@@ -1,28 +1,22 @@
-import * as d3 from 'd3';
-
-import { IContainer } from './../icontainer';
-import { IDrawable } from './../idrawable';
+import { NS } from '../../helpers/namespaces-helper';
+import { IDOMDrawable } from '../idom-drawable';
 
 const uniqid = require("uniqid");
 
-export class HandlesScaleOverlay implements IContainer, IDrawable {
+export class HandlesScaleOverlay implements IDOMDrawable<SVGGElement> {
     //#region Fields
 
-    public container: d3.Selection<SVGGElement, {}, null, undefined>;
-    public containerNode: SVGGElement;
+    private container: SVGGElement;
+    private element: SVGGElement;
 
     //#endregion
 
     //#region Ctor
 
-    public constructor(container: d3.Selection<SVGGElement, {}, null, undefined>) {
+    public constructor(container: SVGGElement) {
         this.container = container;
-
-        let containerNode = this.container.node();
-        if (containerNode == undefined) {
-            throw new Error("The container was undefined.");
-        }
-        this.containerNode = containerNode;
+        this.element = <SVGGElement>document.createElementNS(NS.SVG, "g");
+        this.element.id = uniqid();
     }
 
     //#endregion
@@ -34,7 +28,7 @@ export class HandlesScaleOverlay implements IContainer, IDrawable {
     //#region Functions
 
     public draw(): void {
-
+        this.getContainer().appendChild(this.getElement());
     }
 
     public update(): void {
@@ -42,7 +36,15 @@ export class HandlesScaleOverlay implements IContainer, IDrawable {
     }
 
     public erase(): void {
+        this.getElement().remove();
+    }
 
+    public getContainer(): Element {
+        return this.container;
+    }
+
+    public getElement(): SVGGElement {
+        return this.element;
     }
 
     //#endregion

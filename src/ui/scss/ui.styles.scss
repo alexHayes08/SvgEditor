@@ -125,18 +125,23 @@ $inactiveTabBg: rgb(231, 231, 231);
         margin: auto;
         text-align: center;
     }
+}
 
-    .rgb-controls {
-        padding: 0 2em;
+.rgb-controls {
+    padding: 0 2em;
 
-        label {
-            display: flex;
-            flex-wrap: nowrap;
-            flex-direction: row;
+    label {
+        display: flex;
+        flex-wrap: nowrap;
+        flex-direction: row;
+        justify-content: stretch;
 
-            input[type="range"] {
-                flex-grow: 1;
-            }
+        div {
+            flex-grow: 1;
+        }
+
+        input {
+            height: 1em;
         }
     }
 }
@@ -145,7 +150,7 @@ $inactiveTabBg: rgb(231, 231, 231);
 
 //#region Color Slider
 
-$slider_boxShadow: 0px 3px 3px 3px rgba(0,0,0,.15);
+$slider_boxShadow: 0px 3px 3px 3px rgba(0, 0, 0, 0.15);
 
 .color-slider {
     background: $checkerBoard;

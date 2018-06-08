@@ -7,11 +7,6 @@ import { SvgHandles } from "./models/svg-handles";
 // This is only temporary, should be moved elsewhere...
 import "./ui/scss/ui.styles.scss";
 
-// export const SvgEditors: ApertureSvgEditor[] = [];
-// let editorEls = $("aperture-svg-editor").each(function() {
-//     SvgEditors.push(new ApertureSvgEditor(this));
-// });
-
 export const SvgEditors: SvgCanvas[] = [];
 let $parentEl = $("#editorCavasContainer");
 $("aperture-svg-editor").each(function() {

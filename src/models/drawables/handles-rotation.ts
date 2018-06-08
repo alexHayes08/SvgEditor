@@ -1,21 +1,15 @@
-const uniqid = require("uniqid");
+import * as d3 from 'd3';
 
-import * as d3 from "d3";
-
-import { ActivatableServiceSingleton } from "../../services/activatable-service";
-import { IContainer } from "./../icontainer";
+import { NS } from '../../helpers/namespaces-helper';
+import { getAngle, getFurthestSvgOwner } from '../../helpers/svg-helpers';
+import { ITransformable } from '../../models/itransformable';
+import { ActivatableServiceSingleton } from '../../services/activatable-service';
+import { ICoords2D, IRotationMatrix, SvgGeometryServiceSingleton, TransformType } from '../../services/svg-geometry-service';
+import { SvgTransformString } from '../svg-transform-string';
 import { IDOMDrawable } from './../idom-drawable';
-import { Names } from "./../names";
-import { 
-    SvgGeometryServiceSingleton, 
-    ICoords2D,
-    TransformType, 
-    IRotationMatrix 
-} from "../../services/svg-geometry-service";
-import { ITransformable } from "../../models/itransformable";
-import { getFurthestSvgOwner, getAngle } from "../../helpers/svg-helpers";
-import { SvgTransformString } from "../svg-transform-string";
-import { NS } from "../../helpers/namespaces-helper";
+import { Names } from './../names';
+
+const uniqid = require("uniqid");
 
 /**
  * This class moves the setup of the rotation related elements away from the

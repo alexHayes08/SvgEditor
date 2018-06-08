@@ -12,12 +12,18 @@ import {
 } from '../services/svg-geometry-service';
 import { TranslateAction } from './actions/translate-action';
 import { HandlesMain } from './drawables/handles-main';
+import { HandlesColorsOverlay } from "./drawables/handles-colors";
 import { IOperationCallbacks } from './ioperation-callback';
 import { ISvgHandles } from './isvg-handles';
 import { Names } from './names';
 import { SvgCanvas } from './svg-canvas-model';
 import { SvgItem } from './svg-item-model';
 import { SvgTransformString } from './svg-transform-string';
+import { HandlesRotationOverlay } from './drawables/handles-rotation';
+import { HandlesScaleOverlay } from './drawables/handles-scale';
+import { createSvgEl } from '../helpers/svg-helpers';
+import { IDrawable } from './idrawable';
+import { HandleMode } from './ihandle-button';
 
 const uniqid = require("uniqid");
 
@@ -122,27 +128,29 @@ export function appyDragBehavior(canvas: SvgCanvas,
 /**
  * This should be moved out of here into the UI.
  */
-export class SvgHandles implements ISvgHandles {
+export class SvgHandles implements ISvgHandles, IDrawable {
     //#region Fields
 
     private canvas: SvgCanvas;
-    private parentNode: SVGGraphicsElement;
     private selectedObjects: SvgItem[];
     private transformService: SvgGeometryService;
-    private _lastSelectedSection: number;
     private cachedElementsWithEvts: Element[];
+    private hightlightTransforms: ITransformable;
     private minHandlesRadius: number;
     private transformData: ITransformable;
 
+    private _lastSelectedSection: number;
+
     private htmlHandlesContainer: HTMLElement;
-    private handlesContainer: SVGGElement;
+    private element: SVGGElement;
     private handlesContainerTransforms: ITransformable;
     private mainHandlesOverlay: HandlesMain;
-    // private colorHandlesOverlay: HandlesColorsOverlay;
-    // private rotationOverlay: HandlesRotationOverlay;
-    // private scaleOverlay: HandlesScaleOverlay;
+    private container: SVGGraphicsElement;
     private highlightPathEl: SVGPathElement;
-    private hightlightTransforms: ITransformable;
+
+    private colorHandlesOverlay: HandlesColorsOverlay;
+    private rotationOverlay: HandlesRotationOverlay;
+    private scaleOverlay: HandlesScaleOverlay;
 
     //#endregion
 
@@ -150,7 +158,7 @@ export class SvgHandles implements ISvgHandles {
 
     constructor(editor: SvgCanvas) {
         this.canvas = editor;
-        this.parentNode = editor.canvasEl;
+        this.container = editor.canvasEl;
         this.selectedObjects = [];
         this.transformService = SvgGeometryServiceSingleton;
         this._lastSelectedSection = 0;
@@ -168,53 +176,68 @@ export class SvgHandles implements ISvgHandles {
         ActivatableServiceSingleton.register(this.htmlHandlesContainer, true); // FIXME: Change this back to false
 
         // Create the highlight rect
-        let highlightRectEl = d3.select(this.parentNode)
-            .append<SVGPathElement>("path")
-            .attr("id", uniqid())
-            .attr("data-name", Names.Handles.SubElements.HightlightRect.DATA_NAME)
-            .node();
-
-        if (highlightRectEl == null) {
-            throw new Error("Failed to create the highlight rectangle.");
-        }
-
-        this.highlightPathEl = highlightRectEl;
         this.hightlightTransforms = new SvgTransformString([
             TransformType.TRANSLATE
         ]);
+        this.highlightPathEl = 
+            createSvgEl<SVGPathElement>("path", this.container);
+        d3.select(this.highlightPathEl)
+            .attr("id", uniqid())
+            .attr("data-name", 
+                Names.Handles.SubElements.HightlightRect.DATA_NAME)
         d3.select(this.highlightPathEl)
             .attr("transform", this.hightlightTransforms.toTransformString());
         ActivatableServiceSingleton.register(this.highlightPathEl);
 
-        // Create handle elements
-        let handleContainer = d3.select(this.parentNode)
-            .append<SVGGElement>("g")
-            .attr("id", uniqid())
-            .attr("data-name", Names.Handles.DATA_NAME)
-            .node();
-
-        if (handleContainer == undefined) {
-            throw new Error("Failed to create the handles container element.");
-        }
-
-        this.handlesContainer = handleContainer;
+        // Create handles container
         this.handlesContainerTransforms = new SvgTransformString([
             TransformType.TRANSLATE
         ]);
-        d3.select(this.handlesContainer)
+        this.element = 
+            createSvgEl<SVGGElement>("g", this.container);
+        d3.select(this.element)
+            .attr("id", uniqid())
+            .attr("data-name", Names.Handles.DATA_NAME)
             .attr("transform", this.handlesContainerTransforms
                 .toTransformString());
-        ActivatableServiceSingleton.register(this.handlesContainer, false);
+        ActivatableServiceSingleton.register(this.element, false);
 
         // Create main handles overlay
-        this.mainHandlesOverlay = new HandlesMain(handleContainer, 
-            this.canvas, 
-            this.htmlHandlesContainer);
+        let mainHandleContainer =
+            createSvgEl<SVGGElement>("g", this.element);
+        this.mainHandlesOverlay = new HandlesMain(mainHandleContainer,
+            this.canvas);
         this.mainHandlesOverlay.onDeleteClickedHandlers
             .push(this.onDeleteClicked.bind(this));
         this.mainHandlesOverlay.onRotationEventHandlers
             .push(this.onRotation.bind(this));
         this.mainHandlesOverlay.draw();
+        this.mainHandlesOverlay.update();
+
+        // Create colors handles overlay
+        let colorsHandleContainer =
+            createSvgEl<SVGGElement>("g", this.element);
+        this.colorHandlesOverlay = new HandlesColorsOverlay(
+            colorsHandleContainer,
+            this.canvas,
+            this.htmlHandlesContainer);
+        this.colorHandlesOverlay.draw();
+        this.colorHandlesOverlay.update();
+
+        // Create rotation handles overlay
+        let rotationOverlayContainer =
+            createSvgEl<SVGGElement>("g", this.element);
+        this.rotationOverlay = new HandlesRotationOverlay(
+            rotationOverlayContainer);
+        this.rotationOverlay.draw();
+        this.rotationOverlay.update();
+
+        // Create scale handles overlay
+        let scaleOverlayContainer =
+            createSvgEl<SVGGElement>("g", this.element);
+        this.scaleOverlay = new HandlesScaleOverlay(scaleOverlayContainer);
+        this.scaleOverlay.draw();
+        this.scaleOverlay.update();
 
         // Add a shadows definition
         this.canvas.defs.createSection("shadows");
@@ -228,7 +251,7 @@ export class SvgHandles implements ISvgHandles {
         feDropShadow.setAttribute("stdDeviation", "2");        
         filter.appendChild(feDropShadow);
         this.canvas.defs.pushToSection(filter, "shadows");
-        this.handlesContainer.style.filter = this.canvas.defs
+        this.element.style.filter = this.canvas.defs
             .getUrlOfSectionItem("shadow-1", "shadows");
     }
 
@@ -304,7 +327,7 @@ export class SvgHandles implements ISvgHandles {
         let callbacks: IOperationCallbacks<ITranslationMatrix> = {
             onDuring: (context: ITranslationMatrix) => {
                 self.transformData.incrementTranslate(context);
-                d3.select(self.handlesContainer)
+                d3.select(self.element)
                     .attr("transform", self.transformData.toTransformString());
             }
         };
@@ -333,13 +356,13 @@ export class SvgHandles implements ISvgHandles {
         let self = this;
 
         // Add event listener to the canvas
-        d3.select(this.parentNode)
+        d3.select(this.container)
             .on("click", function({}, i: number) {
                 
                 // Check if any items intersect the point
                 let { x, y } = d3.event;
                 let transformedCoords = self.transformService
-                    .convertScreenCoordsToSvgCoords({x,y}, <any>self.parentNode);
+                    .convertScreenCoordsToSvgCoords({x,y}, <any>self.container);
                 let intersectingItems = self.canvas.editor
                     .getItemsIntersectionPoint(transformedCoords);
                 
@@ -353,7 +376,7 @@ export class SvgHandles implements ISvgHandles {
         console.log("Removed from the editor.")
 
         // Remove event listener from the canvas
-        d3.select(this.parentNode)
+        d3.select(this.container)
             .on("click", null);
     }
 
@@ -365,10 +388,10 @@ export class SvgHandles implements ISvgHandles {
      */
     private displayHandles(): void {
         if (this.selectedObjects.length == 0) {
-            ActivatableServiceSingleton.deactivate(this.handlesContainer);
+            ActivatableServiceSingleton.deactivate(this.element);
             // this.removeEvtListeners();
         } else {
-            ActivatableServiceSingleton.activate(this.handlesContainer);
+            ActivatableServiceSingleton.activate(this.element);
             this.drawHandles();
             this.updateHandlesPosition();
             // this.addEvtListeners();
@@ -389,7 +412,7 @@ export class SvgHandles implements ISvgHandles {
 
         // Update the handles to surround the bbox
         this.transformData.setTranslate(centerOfSelectedItems);
-        d3.select(this.handlesContainer)
+        d3.select(this.element)
             .attr("transform", this.transformData.toTransformString());
         // this.transformService
         //     .setTranslation(this.handlesContainer, centerOfSelectedItems);
@@ -476,6 +499,35 @@ export class SvgHandles implements ISvgHandles {
 
         // Return a copy of the array
         return [ ...this.selectedObjects ];
+    }
+
+    public draw(): void {
+        this.container.appendChild(this.element);
+    }
+
+    public update(): void {
+        let { radius } = this.mainHandlesOverlay;
+        this.mainHandlesOverlay.update();
+
+        switch (this.mainHandlesOverlay.mode) {
+            case HandleMode.COLORS:
+                this.colorHandlesOverlay.radius = radius;
+                this.colorHandlesOverlay.update();
+                break;
+
+            case HandleMode.ROTATE:
+                this.rotationOverlay.radius = radius;
+                this.rotationOverlay.update();
+                break;
+
+            case HandleMode.SCALE:
+                this.scaleOverlay.update();
+                break;
+        }
+    }
+
+    public erase(): void {
+        this.element.remove();
     }
 
     //#endregion

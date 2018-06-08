@@ -52,8 +52,8 @@ export class HandlesColorsOverlay implements IDrawable {
     private readonly colorPickerTransform: ITransformable;
     private readonly colorRingTransform: ITransformable;
     // private readonly element: SVGGElement;
-    private readonly htmlContainer: d3.Selection<HTMLElement, {}, null, undefined>;
-    private readonly svgItemToLinearGradientMap: Map<SvgColors,LinearGradient>;
+    private readonly htmlContainer: HTMLElement;
+
     private data: IColorsOverlayData[];
     private selectedColor?: SvgItemToColor;
     
@@ -91,22 +91,16 @@ export class HandlesColorsOverlay implements IDrawable {
         ]);
         this.container = container;
         this.data = [];
-        this.htmlContainer = d3.select(htmlContainer);
+        this.htmlContainer = htmlContainer;
         this.canvas = canvas;
         this.radius = 100;
-        this.svgItemToLinearGradientMap = new Map();
         this.mode = HandlesColorMode.ALL;
         this.canvas.defs.createSection(LinearGradientsContainerName);
 
-        let colorPickerContainer = this.htmlContainer
-            .append<HTMLElement>("div")
+        let colorPickerContainer = document.createElement("div");
+        d3.select(colorPickerContainer)
             .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
-                .SubElements.ColorPickerContainer.DATA_NAME)
-                .node();
-
-        if (colorPickerContainer == undefined) {
-            throw new Error();
-        }
+                .SubElements.ColorPickerContainer.DATA_NAME);
 
         this.rgbControl = new ColorControlRgb(colorPickerContainer);
 

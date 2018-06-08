@@ -1,20 +1,111 @@
-import * as d3 from "d3";
+import * as d3 from 'd3';
 
-import { getAllGroups, getAllGroupsV2 } from "../helpers/regex-helper";
-import { 
-    ICoords2D, 
-    IBBox, 
-    SvgGeometryService 
-} from "../services/svg-geometry-service";
-import { MathServiceSingleton } from "../services/math-service";
-import { normalizeAngle, toDegrees, toRadians } from "../helpers/math-helpers";
-import { NS } from "../helpers/namespaces-helper";
-import { IAngle } from "../models/angle";
+import { normalizeAngle, toDegrees, toRadians } from '../helpers/math-helpers';
+import { NS } from '../helpers/namespaces-helper';
+import { getAllGroups, getAllGroupsV2 } from '../helpers/regex-helper';
+import { ICoords2D } from '../services/svg-geometry-service';
+
+//#region Element names
+
+/**
+ * The tagNames of ALL svg elements, including the deprecated ones.
+ */
+export const SVGElementTagNames = [
+    "a", 
+    "altGlyph", 
+    "altGlyphDef", 
+    "altGlyphItem", 
+    "animate", 
+    "animateColor", 
+    "animateMotion", 
+    "animateTransform", 
+    "circle", 
+    "clipPath", 
+    "color-profile", 
+    "cursor", 
+    "defs", 
+    "desc", 
+    "discard", 
+    "ellipse", 
+    "feBlend", 
+    "feColorMatrix", 
+    "feComponentTransfer", 
+    "feComposite", 
+    "feConvolveMatrix", 
+    "feDiffuseLighting", 
+    "feDisplacementMap", 
+    "feDistantLight", 
+    "feDropShadow", 
+    "feFlood", 
+    "feFuncA", 
+    "feFuncB", 
+    "feFuncG", 
+    "feFuncR", 
+    "feGaussianBlur", 
+    "feImage", "feMerge", 
+    "feMergeNode", 
+    "feMorphology", 
+    "feOffset", 
+    "fePointLight", 
+    "feSpecularLighting", 
+    "feSpotLight", 
+    "feTile", 
+    "feTurbulence", 
+    "filter", 
+    "font", 
+    "font-face", 
+    "font-face-format", 
+    "font-face-name", 
+    "font-face-src", 
+    "font-face-uri", 
+    "foreignObject", 
+    "g", 
+    "glyph", 
+    "glyphRef", 
+    "hatch", 
+    "hatchpath", 
+    "hkern", 
+    "image", 
+    "line", 
+    "linearGradient", 
+    "marker", 
+    "mask", 
+    "mesh", 
+    "meshgradient", 
+    "meshpatch", 
+    "meshrow", 
+    "metadata", 
+    "missing-glyph", 
+    "mpath", 
+    "path", 
+    "pattern", 
+    "polygon", 
+    "polyline", 
+    "radialGradient", 
+    "rect", 
+    "script", 
+    "set", 
+    "solidcolor", 
+    "stop", 
+    "style", 
+    "svg", 
+    "switch", 
+    "symbol", 
+    "text", 
+    "textPath", 
+    "title", 
+    "tref", 
+    "tspan", 
+    "unknown", 
+    "use", 
+    "view", 
+    "vkern"
+];
 
 /**
  * https://www.w3.org/TR/SVG2/struct.html#TermGraphicsElement
  */
-export const GraphicsElements = [
+export const SvgGraphicElements = [
     "audio", 
     "canvas", 
     "circle", 
@@ -36,6 +127,32 @@ export const GraphicsElements = [
     // ELements not included in the spec, but inherit from SVGGraphicsElement
     "g"
 ];
+
+//#endregion
+
+/**
+ * Simplifies the process of creating an element and appending it to another
+ * element.
+ * @param tagName - Must be a valid svg element name.
+ * @param parent - Reference to the parent element, will append element to it
+ * if not null.
+ * @returns - The created element.
+ */
+export function createSvgEl<T extends SVGElement>(tagName: string, parent?: Element): T {
+    
+    // Check that tagName is a valid name.
+    if (SVGElementTagNames.indexOf(tagName) == -1) {
+        throw new Error("The argument 'tagName' was not a recognized svg element.");
+    }
+
+    let el = <T>document.createElementNS(NS.SVG, tagName);
+
+    if (parent) {
+        parent.appendChild(el);
+    }
+
+    return el;
+}
 
 /**
  * Converts the element to an SVGElement. Will throw an error if the element
@@ -73,7 +190,7 @@ export function isSvgElement(element: any): element is SVGGraphicsElement {
 export function isSvgGraphicsElement(element: any): element is SVGGraphicsElement {
     return element != undefined 
         && element.transform != undefined
-        && GraphicsElements.indexOf(element.tagName) != -1;
+        && SvgGraphicElements.indexOf(element.tagName) != -1;
 }
 
 export function isSvgSvgElement(element: any): element is SVGSVGElement {

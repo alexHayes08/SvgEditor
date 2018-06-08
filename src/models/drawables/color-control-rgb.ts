@@ -56,9 +56,9 @@ export class ColorControlRgb implements IDOMDrawable<HTMLElement> {
         let b_text = document.createElement("span");
         let b_slider_container = document.createElement("div");
         this.b_inputEl = document.createElement("input");
-        g_label.appendChild(g_text);
-        g_label.appendChild(g_slider_container);
-        g_label.appendChild(this.g_inputEl);
+        b_label.appendChild(b_text);
+        b_label.appendChild(b_slider_container);
+        b_label.appendChild(this.b_inputEl);
         this.b_slider = new ColorSlider(b_slider_container);
 
         // Create and compose elements controlling A

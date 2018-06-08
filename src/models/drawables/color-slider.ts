@@ -199,21 +199,15 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
         let self = this;
         self.getContainer().appendChild(self.getElement());
 
-        d3.select(self.gradientBgEl)
+        d3.selectAll([self.gradientBgEl, self.sliderEl])
             .on("click", function() {
                 self.executeDragStartActions();
                 self.updateCachedProps();
-                self.updateValueFromD3Event(calcOffset({
-                    x: self.elementBcr.right - self.elementBcr.right,
-                    y: 0
-                }, d3.event));
+                self.updateValueFromD3Event(d3.event);
                 self.update();
                 self.executeDragActions();
                 self.executeDragEndActions();
-            });
-        
-        // Add drag behavior to the slider.
-        d3.select<HTMLElement, {}>(self.sliderEl)
+            })
             .call(d3.drag<HTMLElement, {}>()
                 .on("start", function() {
                     console.log("ColorSlider drag started.");

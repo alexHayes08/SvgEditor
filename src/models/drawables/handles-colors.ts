@@ -59,8 +59,8 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
     private data: IColorsOverlayData[];
     private selectedColor?: SvgItemToColor;
     
-    private colorRingContainer?: d3.Selection<SVGGElement, {}, null, undefined>;
-    private elementColorContainer?: d3.Selection<SVGGElement, {}, null, undefined>;
+    private colorRingContainer: SVGGElement;
+    private elementColorContainer: SVGGElement;
     // private elementColorPicker: SvgColorPicker;
     // private attributeColorPicker: SvgColorPicker;
     private rgbControl: ColorControlRgb;
@@ -104,7 +104,20 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
             .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
                 .SubElements.ColorPickerContainer.DATA_NAME);
 
+        // Create element
         this.element = createSvgEl<SVGGElement>("g");
+
+        // Create color ring container
+        this.colorRingContainer = 
+            createSvgEl<SVGGElement>("g", this.element);
+        this.colorRingContainer.setAttribute("data-name", Names.Handles.SubElements.ColorsHelperContainer
+            .SubElements.ColorRingContainer.DATA_NAME);
+        
+        // Create element color container
+        this.elementColorContainer =
+            createSvgEl<SVGGElement>("g", this.element);
+        this.elementColorContainer.setAttribute("data-name", Names.Handles.SubElements.ColorsHelperContainer
+                .SubElements.ElementColorContainer.DATA_NAME);
 
         this.rgbControl = new ColorControlRgb(colorPickerContainer);
 
@@ -191,15 +204,7 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
         }
         
         let self = this;
-        
-        // this.colorRingContainer = this.container
-        //     .append<SVGGElement>("g")
-        //     .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
-        //         .SubElements.ColorRingContainer.DATA_NAME);
-        // this.elementColorContainer = this.container
-        //     .append<SVGGElement>("g")
-        //     .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
-        //         .SubElements.ElementColorContainer.DATA_NAME);
+        this.getContainer().appendChild(this.getElement());
 
         // Attribute color picker.
         // this.attributeColorPicker.draw();
@@ -457,7 +462,7 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
 
         //#endregion
 
-        let colorBtns = this.colorRingContainer
+        let colorBtns = d3.select(this.colorRingContainer)
             .selectAll<SVGCircleElement, {}>("circle")
             .data<ColorMap|string>(data)
             .attr("stroke", "black")
@@ -568,7 +573,7 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
                     ];
 
                     // Update
-                    let elementColors = self.elementColorContainer
+                    let elementColors = d3.select(self.elementColorContainer)
                         .selectAll<SVGCircleElement, {}>("circle")
                         .data([_d])
                         .attr("transform", function(d) {

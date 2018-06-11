@@ -325,7 +325,7 @@ export class SvgHandles implements ISvgHandles, IDrawable {
         this.lastUsedMode = HandleMode.PAN;
         this.selectedObjects = [];
         this.transformService = SvgGeometryServiceSingleton;
-        this.minHandlesRadius = 75;
+        this.minHandlesRadius = 120;
         this.selectedElTransform = SvgTransformString.CreateDefaultTransform();
         this.startAngleOffset = 45 + 180;
         this.transformData = SvgTransformString.CreateDefaultTransform();
@@ -370,7 +370,8 @@ export class SvgHandles implements ISvgHandles, IDrawable {
             .attr("id", uniqid())
             .attr("data-name", Names.Handles.DATA_NAME)
             .attr("transform", this.handlesContainerTransforms
-                .toTransformString());
+                .toTransformString())
+            .classed("collapsed", true);
         ActivatableServiceSingleton.register(this.element, false);
 
         // Create main handles overlay
@@ -431,6 +432,8 @@ export class SvgHandles implements ISvgHandles, IDrawable {
             this.htmlHandlesContainer);
         this.colorHandlesOverlay.draw();
         this.colorHandlesOverlay.update();
+        ActivatableServiceSingleton.register(
+            this.colorHandlesOverlay.getElement(), false);
 
         // Create rotation handles overlay
         let rotationOverlayContainer =
@@ -439,6 +442,8 @@ export class SvgHandles implements ISvgHandles, IDrawable {
             rotationOverlayContainer);
         this.rotationOverlay.draw();
         this.rotationOverlay.update();
+        ActivatableServiceSingleton.register(
+            this.rotationOverlay.getElement(), false);
 
         // Create scale handles overlay
         let scaleOverlayContainer =
@@ -446,6 +451,12 @@ export class SvgHandles implements ISvgHandles, IDrawable {
         this.scaleOverlay = new HandlesScaleOverlay(scaleOverlayContainer);
         this.scaleOverlay.draw();
         this.scaleOverlay.update();
+        ActivatableServiceSingleton.register(
+            this.scaleOverlay.getElement(), false);
+
+        this.colorHandlesOverlay.draw();
+        this.rotationOverlay.draw();
+        this.scaleOverlay.draw();
 
         // Add a shadows definition
         this.canvas.defs.createSection("shadows");
@@ -479,9 +490,9 @@ export class SvgHandles implements ISvgHandles, IDrawable {
 
             // Update the class on the container.
             if (value) {
-                this.container.classList.add("collapsed");
+                this.element.classList.add("collapsed");
             } else {
-                this.container.classList.remove("collapsed");
+                this.element.classList.remove("collapsed");
             }
             this._collapseButtons = value;
             this.updateButtonsAndArcs();
@@ -717,25 +728,11 @@ export class SvgHandles implements ISvgHandles, IDrawable {
                     startAngle: d.startAngle,
                     endAngle: d.endAngle
                 });
-            })
-            .transition()
-            .attrTween("transform", function(d) {
-                let middleAngle = (d.data.middleAngle || Angle.fromDegrees(0));
-                let angleIncrement = 1 / middleAngle.asDegrees();
-
-                if (self.collapseButtons) {
-                    return function(t) {
-                        return "";
-                    }
-                } else {
-                    return function(t) {
-                        return "";
-                    }
-                }
             });
 
-        let buttons = d3.select(this.modeContainer)
-            .selectAll<SVGGElement, IMainOverlayData>("g[data-name='handles-button-container'] > g")
+        // Update buttons
+        d3.select(this.modeContainer)
+            .selectAll<SVGGElement, IMainOverlayData>("g[data-name='handles-btn-path-container'] > g")
             .data(this.buttonsData)
             .attr("transform", function(d) {
                 d.buttonTransformData.setTranslate({ x: 0, y: self.radius })
@@ -867,7 +864,7 @@ export class SvgHandles implements ISvgHandles, IDrawable {
 
         // Draw main buttons.
         d3.select(this.modeContainer)
-            .selectAll<SVGGElement, IMainOverlayData>("g[data-name='handles-button-container'] > g[data-name]")
+            .selectAll<SVGGElement, IMainOverlayData>("g[data-name='handles-btn-path-container'] > g[data-name]")
             .data(this.buttonsData)
             .call(bttnOpacity)
             .call(bttnTransform);
@@ -1017,12 +1014,10 @@ export class SvgHandles implements ISvgHandles, IDrawable {
     private displayHandles(): void {
         if (this.selectedObjects.length == 0) {
             ActivatableServiceSingleton.deactivate(this.element);
-            // this.removeEvtListeners();
         } else {
             ActivatableServiceSingleton.activate(this.element);
             this.drawHandles();
             this.updateHandlesPosition();
-            // this.addEvtListeners();
         }
     }
 
@@ -1132,6 +1127,7 @@ export class SvgHandles implements ISvgHandles, IDrawable {
     public draw(): void {
         let self = this;
         this.container.appendChild(this.element);
+        self.collapseButtons = true;
 
         let rotateData = self.buttonsData
             .find(d => d.arcDataName == Names.Handles.SubElements.ArcsContainer
@@ -1294,7 +1290,7 @@ export class SvgHandles implements ISvgHandles, IDrawable {
                     }
 
                     // Draw concentrics
-                    let concentricPolygonsEls = concentricContainer
+                    concentricContainer
                         .selectAll<SVGCircleElement, {}>("circle")
                         .data(concentricPolygons)
                         .enter()
@@ -1313,7 +1309,7 @@ export class SvgHandles implements ISvgHandles, IDrawable {
                     //     .classed("concentric-submode-ring", true);
 
                     // Draw each sub-mode button if available
-                    let modeButtons = submodesContainer
+                    submodesContainer
                         .selectAll<SVGGElement, {}>("g")
                         .data(d.modes)
                         .enter()
@@ -1367,7 +1363,7 @@ export class SvgHandles implements ISvgHandles, IDrawable {
             .select(`[data-name='${Names.Handles.SubElements.ButtonsContainer.SubElements.DeleteBtn.DATA_NAME}']`)
             .on("click", function() {
                 self.mode = HandleMode.DELETE;
-                // self.onDeleteClickedHandlers.map(f => f())
+                self.onDeleteClicked();
             });
 
         d3.select(this.modeContainer)
@@ -1440,6 +1436,7 @@ export class SvgHandles implements ISvgHandles, IDrawable {
         // this.scaleOverlay.draw();
         // this.rotationOverlay.onRotation = this.onRotationEventHandlers;
         this.modeChanged(HandleMode.DELETE, HandleMode.PAN);
+        this.updateButtonsAndArcs();
     }
 
     public update(): void {

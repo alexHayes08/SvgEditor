@@ -70,7 +70,6 @@ export class HandlesRotationOverlay implements IDOMDrawable<SVGGElement> {
         d3.select(this.element)
             .attr("id", uniqid())
             .attr("data-name", Names.Handles.SubElements.RotationHelpersContainer.DATA_NAME);
-        ActivatableServiceSingleton.register(this.element);
         
         this.dialLineEl = <SVGLineElement>document
             .createElementNS(NS.SVG, "line");

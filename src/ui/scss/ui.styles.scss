@@ -257,6 +257,12 @@ $slider_boxShadow: 0px 3px 3px 3px rgba(0, 0, 0, 0.15);
     opacity: 1;
 }
 
+.collapsed [data-name="handles-toggle-controls-btn"] {
+    .mode-button, .mode-button-bg {
+        fill: transparent;
+    }
+}
+
 *[data-name="handles-delete-arc"],
 *[data-name="handles-delete-btn"] .mode-button,
 *[data-for="handles-delete-btn"] .mode-button {

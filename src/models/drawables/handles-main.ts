@@ -386,11 +386,6 @@ export class HandlesMain implements IDOMDrawable<SVGGElement> {
 
     //#region Functions
 
-    private subModesTransition(selection: d3.Selection<SVGPathElement, IMainOverlayData, SVGGElement, {}>): void 
-    {
-
-    }
-
     private expandMode(mode: IMainOverlayData): void {
         d3.select(this.modeContainer)
             .selectAll(`g[data-name]:not([data-name='${mode.buttonDataName}']) > g[data-name='main-button-container']`)

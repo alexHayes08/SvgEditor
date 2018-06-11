@@ -20,6 +20,7 @@ $("aperture-svg-editor").each(function() {
         }, 
         $parentEl[0]);
     let handles = new SvgHandles(editor);
+    handles.draw();
     editor.handles = handles;
     SvgEditors.push(editor);
 });

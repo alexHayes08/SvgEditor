@@ -1,3 +1,4 @@
+import { IDOMDrawable } from './../idom-drawable';
 import * as d3 from 'd3';
 
 import { CardinalDirections, toDegrees } from '../../helpers/math-helpers';
@@ -12,6 +13,7 @@ import { IDrawable } from './../idrawable';
 import { Names } from './../names';
 import { SvgCanvas } from './../svg-canvas-model';
 import { ColorMap, isColorMap, SvgColors, SvgItem } from './../svg-item-model';
+import { createSvgEl } from '../../helpers/svg-helpers';
 
 const uniqid = require("uniqid");
 
@@ -44,14 +46,14 @@ export enum HandlesColorMode {
  * This class violates the single parent node principle of IDOMDrawable as it
  * modifies nodes in two different DOM trees.
  */
-export class HandlesColorsOverlay implements IDrawable {
+export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
     //#region Fields
 
     private readonly canvas: SvgCanvas;
     private readonly colorBtnTransform: ITransformable;
     private readonly colorPickerTransform: ITransformable;
     private readonly colorRingTransform: ITransformable;
-    // private readonly element: SVGGElement;
+    private readonly element: SVGGElement;
     private readonly htmlContainer: HTMLElement;
 
     private data: IColorsOverlayData[];
@@ -101,6 +103,8 @@ export class HandlesColorsOverlay implements IDrawable {
         d3.select(colorPickerContainer)
             .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
                 .SubElements.ColorPickerContainer.DATA_NAME);
+
+        this.element = createSvgEl<SVGGElement>("g");
 
         this.rgbControl = new ColorControlRgb(colorPickerContainer);
 
@@ -677,13 +681,13 @@ export class HandlesColorsOverlay implements IDrawable {
 
     }
 
-    // public getElement(): SVGGElement {
-    //     return this.element;
-    // }
+    public getElement(): SVGGElement {
+        return this.element;
+    }
 
-    // public getContainer(): Element {
-    //     return this.container;
-    // }
+    public getContainer(): Element {
+        return this.container;
+    }
 
     //#endregion
 }

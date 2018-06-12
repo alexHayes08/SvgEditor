@@ -1,4 +1,4 @@
-import { IDrawable } from "./idrawable";
+import { IDrawable } from './idrawable';
 
 /**
  * Represents an element that is added to the DOM by calling draw(), updated by
@@ -6,7 +6,8 @@ import { IDrawable } from "./idrawable";
  * implementing this interface should add a SINGLE element to the DOM. However
  * this element may contain child elements.
  */
-export interface IDOMDrawable<T extends Element> extends IDrawable {
+export interface IDOMDrawable<T extends Element> extends IDrawable 
+{
     
     /**
      * Returns the IDrawables 'main' node. The IDrawable should ONLY modify
@@ -19,4 +20,9 @@ export interface IDOMDrawable<T extends Element> extends IDrawable {
      * called.
      */
     getContainer(): Element;
+
+    /**
+     * Retreives the event emitter object.
+     */
+    getEventEmitter(): d3.Dispatch<EventTarget>;
 }

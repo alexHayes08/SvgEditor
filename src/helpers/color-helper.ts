@@ -6,6 +6,26 @@ import * as d3 from "d3";
     
 // }
 
+export function normalizeColor(color: d3.RGBColor): void {
+    if (Number.isNaN(color.r)) {
+        color.r = 0;
+    }
+
+    if (Number.isNaN(color.g)) {
+        color.g = 0;
+    }
+
+    if (Number.isNaN(color.b)) {
+        color.b = 0;
+    }
+}
+
+export function CreateCssLinearGradientString(colors: d3.Color[]): string {
+    let colorStr = "";
+    colors.map(c => colorStr += `, ${c.toString()}`);
+    return `linear-gradient(to right${colorStr})`;
+}
+
 export function calcContrast(colorA: d3.Color, colorB: d3.Color): number {
     let colorA_hsl = d3.hsl(colorA.toString());
     let colorB_hsl = d3.hsl(colorB.toString());

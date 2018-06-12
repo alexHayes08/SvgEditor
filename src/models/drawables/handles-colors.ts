@@ -14,6 +14,7 @@ import { Names } from './../names';
 import { SvgCanvas } from './../svg-canvas-model';
 import { ColorMap, isColorMap, SvgColors, SvgItem } from './../svg-item-model';
 import { createSvgEl } from '../../helpers/svg-helpers';
+import { ColorPicker } from './color-picker';
 
 const uniqid = require("uniqid");
 
@@ -50,20 +51,22 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
     //#region Fields
 
     private readonly canvas: SvgCanvas;
+    private readonly colorPicker: ColorPicker;
     private readonly colorBtnTransform: ITransformable;
     private readonly colorPickerTransform: ITransformable;
     private readonly colorRingTransform: ITransformable;
     private readonly element: SVGGElement;
+    private readonly emitter: d3.Dispatch<EventTarget>;
     private readonly htmlContainer: HTMLElement;
 
     private data: IColorsOverlayData[];
     private selectedColor?: SvgItemToColor;
     
+    private colorPickerContainer: HTMLElement;
     private colorRingContainer: SVGGElement;
     private elementColorContainer: SVGGElement;
     // private elementColorPicker: SvgColorPicker;
     // private attributeColorPicker: SvgColorPicker;
-    private rgbControl: ColorControlRgb;
     // private rgbControlContainer: HTMLElement;
 
     public container: SVGGElement;
@@ -93,16 +96,18 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
         ]);
         this.container = container;
         this.data = [];
+        this.emitter = d3.dispatch("change");
         this.htmlContainer = htmlContainer;
         this.canvas = canvas;
         this.radius = 100;
         this.mode = HandlesColorMode.ALL;
         this.canvas.defs.createSection(LinearGradientsContainerName);
 
-        let colorPickerContainer = document.createElement("div");
-        d3.select(colorPickerContainer)
-            .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
-                .SubElements.ColorPickerContainer.DATA_NAME);
+        this.colorPickerContainer = document.createElement("div");
+        this.colorPickerContainer.setAttribute("data-name", Names.Handles
+            .SubElements.ColorsHelperContainer
+            .SubElements.ColorPickerContainer.DATA_NAME);
+        this.colorPicker = new ColorPicker(this.colorPickerContainer);
 
         // Create element
         this.element = createSvgEl<SVGGElement>("g");
@@ -118,8 +123,6 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
             createSvgEl<SVGGElement>("g", this.element);
         this.elementColorContainer.setAttribute("data-name", Names.Handles.SubElements.ColorsHelperContainer
                 .SubElements.ElementColorContainer.DATA_NAME);
-
-        this.rgbControl = new ColorControlRgb(colorPickerContainer);
 
         // Two color pickers:
         // 1) One for fill/stroke/width of an element
@@ -203,8 +206,10 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
             throw new InternalError();
         }
         
-        let self = this;
+        // let self = this;
         this.getContainer().appendChild(this.getElement());
+        this.htmlContainer.appendChild(this.colorPickerContainer);
+        this.colorPicker.draw();
 
         // Attribute color picker.
         // this.attributeColorPicker.draw();
@@ -249,10 +254,7 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
         let self = this;
 
         // Verify the handles aren't null (normally this should never happen).
-        if (this.canvas.handles == undefined
-            || this.colorRingContainer == undefined
-            || this.elementColorContainer == undefined) 
-        {
+        if (this.canvas.handles == undefined) {
             return;
         }
 
@@ -692,6 +694,10 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
 
     public getContainer(): Element {
         return this.container;
+    }
+    
+    public getEventEmitter(): d3.Dispatch<EventTarget> {
+        return this.emitter;
     }
 
     //#endregion

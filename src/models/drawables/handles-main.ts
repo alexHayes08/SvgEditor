@@ -49,6 +49,7 @@ export class HandlesMain implements IDOMDrawable<SVGGElement> {
     //#region Fields
 
     private defaultWidth: number;
+    private emitter: d3.Dispatch<EventTarget>
     private highlightData: ITransformable;
     private minRadius: number;
     private startAngleOffset: number;
@@ -195,6 +196,7 @@ export class HandlesMain implements IDOMDrawable<SVGGElement> {
         this.center = { x: 0, y: 0};
         this.container = container;
         this.defaultWidth = 4;
+        this.emitter = d3.dispatch("change");
         this.highlightData = SvgTransformString.CreateDefaultTransform();
         this.lastUsedMode = HandleMode.PAN;
         this.minRadius = 120;
@@ -1055,6 +1057,10 @@ export class HandlesMain implements IDOMDrawable<SVGGElement> {
 
     public getElement(): SVGGElement {
         return this.element;
+    }
+
+    public getEventEmitter(): d3.Dispatch<EventTarget> {
+        return this.emitter;
     }
 
     //#endregion

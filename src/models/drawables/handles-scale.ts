@@ -1,3 +1,5 @@
+import * as d3 from "d3";
+
 import { NS } from '../../helpers/namespaces-helper';
 import { IDOMDrawable } from '../idom-drawable';
 
@@ -6,8 +8,9 @@ const uniqid = require("uniqid");
 export class HandlesScaleOverlay implements IDOMDrawable<SVGGElement> {
     //#region Fields
 
-    private container: SVGGElement;
-    private element: SVGGElement;
+    private readonly container: SVGGElement;
+    private readonly element: SVGGElement;
+    private readonly emitter: d3.Dispatch<EventTarget>;
 
     //#endregion
 
@@ -17,6 +20,7 @@ export class HandlesScaleOverlay implements IDOMDrawable<SVGGElement> {
         this.container = container;
         this.element = <SVGGElement>document.createElementNS(NS.SVG, "g");
         this.element.id = uniqid();
+        this.emitter = d3.dispatch("change");
     }
 
     //#endregion
@@ -45,6 +49,10 @@ export class HandlesScaleOverlay implements IDOMDrawable<SVGGElement> {
 
     public getElement(): SVGGElement {
         return this.element;
+    }
+
+    public getEventEmitter(): d3.Dispatch<EventTarget> {
+        return this.emitter;
     }
 
     //#endregion

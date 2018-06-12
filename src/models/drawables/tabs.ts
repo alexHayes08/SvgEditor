@@ -1,11 +1,11 @@
 import * as d3 from "d3";
 
-import { IDOMDrawable } from "./idom-drawable";
+import { IDOMDrawable } from "../idom-drawable";
 import { 
     isHTMLTemplateElement, 
     isHTMLScriptElement, 
     isHTMLElement 
-} from "../helpers/node-helper";
+} from "../../helpers/node-helper";
 
 export interface ITab {
     disabled: boolean;
@@ -52,6 +52,7 @@ export class Tabs implements IDOMDrawable<HTMLElement> {
     //#region Fields
 
     private readonly container: HTMLElement;
+    private readonly emitter: d3.Dispatch<EventTarget>;
     private readonly tabs: ITab[];
     private readonly tabsContainer: HTMLElement;
     private readonly onTabChanged: Array<(oldTab: ITab, newTab: ITab) => void>;
@@ -85,6 +86,7 @@ export class Tabs implements IDOMDrawable<HTMLElement> {
 
         this.activeTabIndex = 0;
         this.container = container;
+        this.emitter = d3.dispatch();
         this.onTabChanged = data.onTabChanged || [];
         this.tabs = tabs;
         this.tabTemplate = data.tabTemplate;
@@ -299,6 +301,10 @@ export class Tabs implements IDOMDrawable<HTMLElement> {
 
     public getContainer(): Element {
         return this.container;
+    }
+
+    getEventEmitter(): d3.Dispatch<EventTarget> {
+        return this.emitter;
     }
 
     //#endregion

@@ -23,6 +23,7 @@ export class HandlesRotationOverlay implements IDOMDrawable<SVGGElement> {
     private dialLineEl: SVGLineElement;
     private dialPivotEl: SVGCircleElement;
     private element: SVGGElement;
+    private readonly emitter: d3.Dispatch<EventTarget>;
     private pivotPointEl: SVGCircleElement;
     private pivotPointTransform: ITransformable;
     private dialPivotToPivotPointLine: SVGLineElement;
@@ -45,6 +46,7 @@ export class HandlesRotationOverlay implements IDOMDrawable<SVGGElement> {
     public constructor(container: SVGGElement) {
         let self = this;
         this.container = container;
+        this.emitter = d3.dispatch("change");
         this.rotateAroundPivot = false;
         this.rotateIndividually = true;
         this.radius = 100;
@@ -273,6 +275,10 @@ export class HandlesRotationOverlay implements IDOMDrawable<SVGGElement> {
 
     public getElement(): SVGGElement {
         return this.element;
+    }
+    
+    public getEventEmitter(): d3.Dispatch<EventTarget> {
+        return this.emitter;
     }
 
     //#endregion

@@ -5,6 +5,60 @@ $checkerBoard: linear-gradient(45deg, #808080 25%, transparent 25%),
 
 //#region aperture-svg-editor
 
+//#region General
+
+.flex-grow {
+    flex-grow: 1;
+    flex-shrink: 0;
+}
+
+.flex-shrink {
+    flex-grow: 0;
+    flex-shrink: 1;
+}
+
+.width-1-em {
+    width: 1em;
+}
+
+.width-2-em {
+    width: 2em;
+}
+
+.width-3-em {
+    width: 3em;
+}
+
+.width-4-em {
+    width: 4em;
+}
+
+.width-5-em {
+    width: 5em;
+}
+
+.width-100-per {
+    width: 100%;
+}
+
+.width-75-per {
+    width: 75%;
+}
+
+.width-50-per {
+    width: 50%;
+}
+
+.width-25-per {
+    width: 25%;
+}
+
+.width-0-per {
+    width: 0;
+}
+
+//#endregion
+
 aperture-svg-editor options {
     display: none;
 }
@@ -16,6 +70,22 @@ svg *:not(.editableAreaRect):not(.editAreaMask) {
 *:not(svg) svg {
     overflow: visible;
 }
+
+//#region Input
+
+.input {
+    input,
+    .error-message {
+        display: inline-block;
+    }
+
+    .error-message {
+        color: rgba(255,20,20,.92);
+        font-family: serif;
+    }
+}
+
+//#endregion
 
 //#region Tooltips
 
@@ -90,12 +160,17 @@ $inactiveTabBg: rgb(231, 231, 231);
     }
 }
 
-.tabs .active-tab {
-    display: block;
-}
+.tabs {
+    border-top: 1px solid rgba(0,0,0,0.25);
+    padding: 4px 0px;
 
-.tabs .inactive-tab {
-    display: none;
+    .active-tab {
+        display: block;
+    }
+
+    .inactive-tab {
+        display: none;
+    }
 }
 
 //#endregion
@@ -129,15 +204,21 @@ $inactiveTabBg: rgb(231, 231, 231);
 
 .rgb-controls {
     padding: 0 2em;
+    font-family: monospace;
+    font-size: 16px;
 
     label {
         display: flex;
         flex-wrap: nowrap;
         flex-direction: row;
         justify-content: stretch;
+        min-width: 300px;
 
-        div {
-            flex-grow: 1;
+        span::before, 
+        span::after {
+            content: "";
+            display: inline-block;
+            width: .25em;
         }
 
         input {

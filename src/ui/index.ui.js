@@ -13,44 +13,6 @@ import { NS } from "../helpers/namespaces-helper";
 import { SvgColorService } from "../services/svg-color-service";
 import { SvgEditors } from "../index";
 
-//#region Testing
-
-import { ColorSlider } from "../models/drawables/color-slider";
-import { ColorControlRgb } from "../models/drawables/color-control-rgb";
-let slider1 = new ColorSlider(document.getElementById("test1"));
-slider1.startColor = d3.color("red");
-let endColor1 = d3.color("white");
-endColor1.opacity = .5;
-slider1.endColor = endColor1;
-slider1.value = .5;
-slider1.draw();
-slider1.update();
-
-let slider2 = new ColorSlider(document.getElementById("test2"));
-slider2.startColor = d3.color("green");
-let endColor2 = d3.color("white");
-endColor2.opacity = .5;
-slider2.endColor = endColor2;
-slider2.value = .5;
-slider2.draw();
-slider2.update();
-
-let slider3 = new ColorSlider(document.getElementById("test3"));
-slider3.startColor = d3.color("blue");
-let endColor3 = d3.color("white");
-endColor3.opacity = .5;
-slider3.endColor = endColor3;
-slider3.value = .5;
-slider3.draw();
-slider3.update();
-
-let colorControlRgb = new ColorControlRgb(document.getElementById("test4"));
-colorControlRgb.draw();
-colorControlRgb.update();
-console.log(colorControlRgb.color);
-
-//#endregion
-
 export { Aperture } from "./aperture.main";
 
 Aperture.Math = mathHelpers;

@@ -3,15 +3,21 @@ import * as d3 from 'd3';
 import { ICoords2D, TransformType } from '../../services/svg-geometry-service';
 import { HTMLTransformString } from '../html-transform-string';
 import { IDOMDrawable } from '../idom-drawable';
-import { calcOffset } from '../../helpers/geometry-helpers';
-import { useBlackAsContrast } from '../../helpers/color-helper';
+import { useBlackAsContrast, CreateCssLinearGradientString } from '../../helpers/color-helper';
+
+const ColorSliderReferences: ColorSlider[] = [];
+
+document.addEventListener("resize", function() {
+    ColorSliderReferences.map(s => s.update());
+});
 
 export class ColorSlider implements IDOMDrawable<HTMLElement> {
     //#region Fields
 
     private readonly container: HTMLElement;
-    private readonly gradientBgEl: HTMLElement;
     private readonly element: HTMLElement;
+    private readonly emitter: d3.Dispatch<EventTarget>;
+    private readonly gradientBgEl: HTMLElement;
     private readonly sliderEl: HTMLElement;
     // private readonly sliderTop: HTMLElement;
     // private readonly sliderMid: HTMLElement;
@@ -21,13 +27,10 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
     private elementBcr: ClientRect|DOMRect;
     private sliderBcr: ClientRect|DOMRect;
     private sliderWidth: number;
-    private _value: number;
+    private value: number;
 
     public startColor: d3.Color;
     public endColor: d3.Color;
-    public onBeforeChange: Array<() => void>;
-    public onChange: Array<() => void>;
-    public onAfterChange: Array<() => void>;
 
     //#endregion
 
@@ -35,11 +38,9 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
 
     public constructor(container: HTMLElement) {
         this.container = container;
+        this.emitter = d3.dispatch("change");
         this.startColor = d3.color("rgb(0,0,0)");
         this.endColor = d3.color("rgb(0,0,0)");
-        this.onChange = [];
-        this.onAfterChange = [];
-        this.onBeforeChange = [];
         
         this.sliderTransform = new HTMLTransformString([
             TransformType.TRANSLATE,
@@ -47,7 +48,7 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
         ]);
 
         this.sliderWidth = 0;
-        this._value = 0;
+        this.value = 0;
 
         // Create the element
         this.element = document.createElement("div");
@@ -57,7 +58,7 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
         this.gradientBgEl = document.createElement("div");
         d3.select(this.gradientBgEl)
             .classed("gradientBG", true)
-            .style("background", ColorSlider.CreateCssLinearGradientString([
+            .style("background", CreateCssLinearGradientString([
                 this.startColor,
                 this.endColor
             ]));
@@ -87,17 +88,6 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
     //#endregion
 
     //#region Properties
-
-    public get value(): number {
-        return this._value;
-    }
-
-    public set value(value: number) {
-        if (value < 0 || value > 1) {
-            throw new Error("Must be greater than or equal to zero and less than or equal to one.");
-        }
-        this._value = value;
-    }
 
     public get color(): d3.Color {
         let startRgb = d3.color(this.startColor.toString()).rgb();
@@ -130,16 +120,10 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
 
     //#region Functions
 
-    private static CreateCssLinearGradientString(colors: d3.Color[]): string {
-        let colorStr = "";
-        colors.map(c => colorStr += `, ${c.toString()}`);
-        return `linear-gradient(to right${colorStr})`;
-    }
-
     private updateCachedProps(): void {
         this.elementBcr = this.getElement().getBoundingClientRect();
         this.sliderBcr = this.sliderEl.getBoundingClientRect();
-        this.sliderWidth = this.sliderBcr.right 
+        this.sliderWidth = this.sliderBcr.right
             - this.sliderBcr.left;
 
         this.sliderTransform.setTranslate({
@@ -165,34 +149,23 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
         this.value = dx;
     }
 
-    private executeDragStartActions(): void {
-        for (let action of this.onBeforeChange) {
-            try {
-                action();
-            } catch (e) {
-                console.error(e);
+    private changed(): void {
+        this.emitter.call("change", this.getElement());
+    }
+
+    public setValue(value: number, emitEvent: boolean = true): void {
+        if (value < 0 || value > 1) {
+            throw new Error("Must be greater than or equal to zero and less than or equal to one.");
+        } else if (value != this.value) {
+            this.value = value;
+            if (emitEvent) {
+                this.changed();
             }
         }
     }
 
-    private executeDragActions(): void {
-        for (let action of this.onChange) {
-            try {
-                action();
-            } catch(e) {
-                console.error(e);
-            }
-        }
-    }
-
-    private executeDragEndActions(): void {
-        for (let action of this.onAfterChange) {
-            try {
-                action();
-            } catch(e) {
-                console.error(e);
-            }
-        }
+    public getValue(): number {
+        return this.value;
     }
 
     public draw(): void {
@@ -201,36 +174,39 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
 
         d3.selectAll([self.gradientBgEl, self.sliderEl])
             .on("click", function() {
-                self.executeDragStartActions();
                 self.updateCachedProps();
-                self.updateValueFromD3Event(d3.event);
+                let coords = d3.mouse(self.gradientBgEl);
+                let x = coords[0];
+                let y = coords[1];
+                self.updateValueFromD3Event({x,y});
                 self.update();
-                self.executeDragActions();
-                self.executeDragEndActions();
+                self.changed();
             })
             .call(d3.drag<HTMLElement, {}>()
                 .on("start", function() {
                     console.log("ColorSlider drag started.");
                     self.updateCachedProps();
-                    self.executeDragStartActions();
                 })
                 .on("drag", function() {
-                    let { x, y } = d3.event;
-                    self.updateValueFromD3Event({x,y});
+                    self.updateValueFromD3Event(d3.event);
                     self.update();
-                    self.executeDragActions();
+                    self.changed();
                 })
                 .on("end", function() {
                     console.log("ColorSlider drag ended.");
-                    self.executeDragEndActions();
                 }));
+
+        self.updateCachedProps();
+        self.update();
+
+        ColorSliderReferences.push(this);
     }
 
     public update(): void {
         let self = this;
         d3.select(self.gradientBgEl)
             .style("background", function() {
-                return ColorSlider.CreateCssLinearGradientString([
+                return CreateCssLinearGradientString([
                     self.startColor, 
                     self.endColor
                 ]);
@@ -245,13 +221,12 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
             }).classed("dark", function() {
                 return useBlackAsContrast(self.color);
             });
-
-        // d3.select(self.sliderTop)
-        //     .style("background", self.color.toString());
     }
 
     public erase(): void {
         this.getElement().remove();
+        let index = ColorSliderReferences.findIndex(s => s == this);
+        ColorSliderReferences.splice(index, 1);
     }
 
     public getElement(): HTMLElement {
@@ -260,6 +235,10 @@ export class ColorSlider implements IDOMDrawable<HTMLElement> {
 
     public getContainer(): Element {
         return this.container;
+    }
+
+    public getEventEmitter(): d3.Dispatch<EventTarget> {
+        return this.emitter;
     }
 
     //#endregion

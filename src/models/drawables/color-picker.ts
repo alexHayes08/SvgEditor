@@ -1,11 +1,9 @@
 import * as d3 from 'd3';
 
+import { createEl } from '../../helpers/html-helpers';
 import { ITab, Tabs } from '../drawables/tabs';
 import { IDOMDrawable } from './../idom-drawable';
-import { ISvgDefs } from './../svg-defs-model';
 import { ColorControlRgb } from './color-control-rgb';
-import { interpolateRgbBasisClosed } from 'd3';
-import { createEl } from '../../helpers/html-helper';
 
 const uniqid = require("uniqid");
 
@@ -181,6 +179,11 @@ export class ColorPicker implements IDOMDrawable<HTMLElement> {
         return this._color;
     }
 
+    public set color(value: d3.Color) {
+        this._color = value;
+        this.oldColor = value;
+    }
+
     //#endregion
 
     //#region Functions
@@ -194,6 +197,7 @@ export class ColorPicker implements IDOMDrawable<HTMLElement> {
         }
 
         this.update();
+        this.getEventEmitter().call("change", this.getElement());
     }
 
     public draw(): void {

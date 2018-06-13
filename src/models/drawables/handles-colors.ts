@@ -13,9 +13,12 @@ import { IDrawable } from './../idrawable';
 import { Names } from './../names';
 import { SvgCanvas } from './../svg-canvas-model';
 import { ColorMap, isColorMap, SvgColors, SvgItem } from './../svg-item-model';
-import { createSvgEl } from '../../helpers/svg-helpers';
+import { createSvgEl, convertSvgCoordsToScreenCoords, convertCoordsRelativeTo } from '../../helpers/svg-helpers';
 import { ColorPicker } from './color-picker';
 import { ActivatableServiceSingleton } from '../../services/activatable-service';
+import { HTMLTransformString } from '../html-transform-string';
+import { getBBox } from '../../helpers/html-helpers';
+import { ModalFrame } from './modal-frame';
 
 const uniqid = require("uniqid");
 
@@ -63,7 +66,7 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
     private data: IColorsOverlayData[];
     private selectedColor?: SvgItemToColor;
     
-    private colorPickerContainer: HTMLElement;
+    private attrColorPickerFrame: ModalFrame;
     private colorRingContainer: SVGGElement;
     private elementColorContainer: SVGGElement;
     // private elementColorPicker: SvgColorPicker;
@@ -87,7 +90,7 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
             TransformType.TRANSLATE,
             TransformType.ROTATE
         ]).setTranslate({ x: -40, y: 0 });
-        this.colorPickerTransform = new SvgTransformString([
+        this.colorPickerTransform = new HTMLTransformString([
             TransformType.TRANSLATE
         ]);
         this.colorRingTransform = new SvgTransformString([
@@ -104,14 +107,14 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
         this.mode = HandlesColorMode.ALL;
         this.canvas.defs.createSection(LinearGradientsContainerName);
 
-        this.colorPickerContainer = document.createElement("div");
-        this.colorPickerContainer.setAttribute("data-name", Names.Handles
-            .SubElements.ColorsHelperContainer
-            .SubElements.ColorPickerContainer.DATA_NAME);
-        this.colorPickerContainer.style.transform =
-            this.colorPickerTransform.toTransformString();
-        this.colorPicker = new ColorPicker(this.colorPickerContainer);
-        ActivatableServiceSingleton.register(this.colorPickerContainer);
+        let attrColorPickerContainer = document.createElement("div");
+        this.attrColorPickerFrame = new ModalFrame(attrColorPickerContainer);
+        d3.select(attrColorPickerContainer)
+            .attr("data-name", Names.Handles.SubElements.ColorsHelperContainer
+                .SubElements.ColorPickerContainer.DATA_NAME)
+            .style("transform", this.colorPickerTransform.toTransformString());
+        this.colorPicker = new ColorPicker(attrColorPickerContainer);
+        ActivatableServiceSingleton.register(attrColorPickerContainer);
 
         // Create element
         this.element = createSvgEl<SVGGElement>("g");
@@ -146,15 +149,79 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
 
     //#region Functions
 
-    private displayColorPicker(coords: ICoords2D): void {
-        if (this.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
-            this.colorPickerTransform.setTranslate(coords);
-            this.colorPickerContainer.style.transform =
-                this.colorPickerTransform.toTransformString();
+    private displayAttributeColorPicker(button: Element,
+        coords: ICoords2D,
+        left: boolean,
+        top: boolean,
+        color: d3.Color): void 
+    {
+        let self = this;
+        let attrColorPickerContainer = this.attrColorPickerFrame.getContainer();
+        let attrColorPickerElement = this.attrColorPickerFrame.getElement();
+        
+        // Update the color picker.
+        this.colorPicker.color = color;
+        this.colorPicker.update();
+
+        // Update the color picker container position.
+        let bbox = getBBox(attrColorPickerElement);
+        let newPos = {
+            x: coords.x + (left ? bbox.width / -2 : bbox.width / 2),
+            y: coords.y + (top ? bbox.height / -2 : bbox.width / 2)
+        };
+        this.colorPickerTransform.setTranslate(newPos);
+        d3.select(attrColorPickerContainer)
+            .style("transform", function() {
+                console.log(self.colorPickerTransform.toTransformString());
+                return self.colorPickerTransform.toTransformString();
+            });
+        
+        // Activate element
+        ActivatableServiceSingleton.activate(this.htmlContainer);
+        ActivatableServiceSingleton.activate(attrColorPickerContainer);
+
+        let body = d3.select("body");
+        let attrColPickCon = d3.select(attrColorPickerContainer);
+        let targetedEls = this.getElementsWithColor(color);
+        let colorAsStr = color.toString();
+        
+        // Handles when the color picker loses focus.
+        let blurEvtHandler = function() {
+            ActivatableServiceSingleton.deactivate(attrColorPickerContainer);
             
+            // Remove all evt listeners.
+            attrColPickCon.on("mousedown keydown", null);
+            body.on("mousedown keydown", null);
+        }
+
+        // Prevents events from propagating upwards from the color picker.
+        let focusedEvtHandler = function() {
+            d3.event.stopPropagation();
+        }
+
+        // Add evt listners
+        attrColPickCon.on("mousedown keydown", focusedEvtHandler);
+        d3.select("body").on("mousedown keydown", blurEvtHandler);
+        this.colorPicker.getEventEmitter().on("change", function() {
+            let newColor = d3.rgb(self.colorPicker.color.toString());
+            
+            // Assign new colors
+            button.setAttribute("fill", newColor.toString());
+            targetedEls.strokeRefs.map(ref => {
+                ref.colors.stroke = newColor;
+            });
+            targetedEls.fillRefs.map(ref => {
+                ref.colors.fill = newColor;
+            });
+        });
+    }
+
+    private displayElementColorPicker(coords: ICoords2D): void {
+        if (this.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
+
             // Activate element
-            ActivatableServiceSingleton.activate(this.colorPickerContainer);
-            ActivatableServiceSingleton.activate(this.htmlContainer);
+            // ActivatableServiceSingleton.activate(this.attributeColorPickerContainer);
+            // ActivatableServiceSingleton.activate(this.htmlContainer);
             // this.attributeColorPicker
             //     .each(function(d) {
             //         ActivatableServiceSingleton.activate(this);
@@ -171,22 +238,32 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
         console.log("Displaying color-picker TODO.");
     }
 
-    private hideColorPicker(): void {
+    private getElementsWithColor(color: d3.Color) {
+        
+        // Verify the handles are defined
+        if (this.canvas.handles == undefined) {
+            throw new InternalError();
+        }
+        
+        let colorAsStr = color.toString();
+        let handles = this.canvas.handles;
 
-        // Verify the color picker el isn't null
+        let strokeColorMaps: ColorMap[] = [];
+        let fillColorMaps: ColorMap[] = [];
+        handles.getSelectedObjects().map(svgItem => {
+            svgItem.colors.map(color => {
+                if ((color.colors.fill || "") == colorAsStr) {
+                    fillColorMaps.push(color);
+                } else if ((color.colors.fill || "") == colorAsStr) {
+                    strokeColorMaps.push(color);
+                }
+            });
+        })
 
-        // Deactivate element
-        // this.attributeColorPicker
-        //     .each(function(d) {
-        //         ActivatableServiceSingleton.deactivate(this);
-        //     });
-
-        // this.elementColorPicker
-        //     .each(function(d) {
-        //         ActivatableServiceSingleton.deactivate(this);
-        //     });
-
-        console.log("Hiding color-picker TODO.");
+        return {
+            strokeRefs: strokeColorMaps,
+            fillRefs: fillColorMaps
+        };
     }
 
     private calcAngle(): number {
@@ -204,7 +281,7 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
         
         // let self = this;
         this.getContainer().appendChild(this.getElement());
-        this.htmlContainer.appendChild(this.colorPickerContainer);
+        this.htmlContainer.appendChild(this.attrColorPickerFrame.getContainer());
         this.colorPicker.draw();
 
         // Attribute color picker.
@@ -539,16 +616,27 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
                 d3.event.stopPropagation();
 
                 // Verify the element color container isn't null.
-                if (self.elementColorContainer == undefined) {
-                    return;
-                }
+                // if (self.elementColorContainer == undefined) {
+                //     return;
+                // }
 
                 if (self.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
+                    
+                    // Verify the html container isn't undefined.
+                    if (self.htmlContainer.parentElement == undefined) {
+                        return;
+                    }
+                    
                     let center =
                         SvgGeometryServiceSingleton.getCenter(this);
+
+                    center = convertCoordsRelativeTo(center, 
+                        self.canvas.canvasEl,
+                        self.htmlContainer.parentElement);
                     
                     // Display color picker
-                    self.displayColorPicker(center);
+                    self.displayAttributeColorPicker(this, 
+                        center, false, false, d3.color(_d.toString()));
                 } else {
                     let center =
                         SvgGeometryServiceSingleton.getCenter(this);

@@ -1,10 +1,10 @@
-import * as d3 from "d3";
+import * as d3 from 'd3';
 
-import { IDOMDrawable } from "../idom-drawable";
-import { ColorSlider } from "./color-slider";
-import { Input } from "./input";
-import { createEl } from "../../helpers/html-helper";
-import { normalizeColor } from "../../helpers/color-helper";
+import { normalizeColor } from '../../helpers/color-helper';
+import { createEl } from '../../helpers/html-helpers';
+import { IDOMDrawable } from '../idom-drawable';
+import { ColorSlider } from './color-slider';
+import { Input } from './input';
 
 const white = d3.rgb("white");
 const black = d3.rgb("black");

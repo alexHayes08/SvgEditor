@@ -1,4 +1,4 @@
-import { ColorSpaceObject } from "d3";
+import { ColorSpaceObject } from 'd3';
 
 /**
  * Use Number.POSITIVE_INFINITY to represent multiple colors (aka full color

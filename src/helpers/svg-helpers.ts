@@ -130,6 +130,44 @@ export const SvgGraphicElements = [
 
 //#endregion
 
+export function convertCoordsRelativeTo(coords: ICoords2D,
+    originallyRelativeTo: Element,
+    makeRelativeTo: Element): ICoords2D 
+{
+    let result: ICoords2D = {
+        x: coords.x,
+        y: coords.y
+    };
+
+    let originallyBcr = originallyRelativeTo.getBoundingClientRect();
+    let newlyRelativeBcr = makeRelativeTo.getBoundingClientRect();
+
+    // Make relative to page
+    result.x += originallyBcr.left;
+    result.y += originallyBcr.top;
+
+    // Make relative to an element
+    result.x -= newlyRelativeBcr.left;
+    result.y -= newlyRelativeBcr.top;
+
+    return result;
+}
+
+export function convertSvgCoordsToScreenCoords(coords: ICoords2D, 
+    canvas: SVGSVGElement): ICoords2D 
+{
+    let result: ICoords2D = {
+        x: coords.x,
+        y: coords.y
+    };
+
+    let canvasBCR = canvas.getBoundingClientRect();
+    result.x += canvasBCR.left;
+    result.y += canvasBCR.right;
+
+    return result;
+}
+
 /**
  * Simplifies the process of creating an element and appending it to another
  * element.

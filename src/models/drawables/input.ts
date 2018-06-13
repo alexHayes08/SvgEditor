@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 
-import { createEl } from '../../helpers/html-helper';
+import { createEl } from '../../helpers/html-helpers';
 import { ActivatableServiceSingleton } from '../../services/activatable-service';
 import { IDOMDrawable } from '../idom-drawable';
 

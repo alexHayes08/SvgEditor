@@ -1,6 +1,20 @@
 import { IBBox } from "../services/svg-geometry-service";
 
 /**
+ * Creates and optionally appends an element.
+ * @param tagName - Name of the element.
+ * @param parent - Optionally append the created element to this parent element.
+ * @returns - The created element.
+ */
+export function createEl<T extends HTMLElement>(tagName: string, parent?: Element): T {
+    let el = <T>document.createElement(tagName);
+    if (parent) {
+        parent.appendChild(el);
+    }
+    return el;
+}
+
+/**
  * Calculates the bbox which covers the elements passed in. The bbox will be
  * relative to the pages upper left hand corner.
  * @param elements - A list of elements.

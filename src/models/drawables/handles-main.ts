@@ -845,7 +845,7 @@ export class HandlesMain implements IDOMDrawable<SVGGElement> {
                     }
 
                     // Draw concentrics
-                    let concentricPolygonsEls = concentricContainer
+                    concentricContainer
                         .selectAll<SVGCircleElement, {}>("circle")
                         .data(concentricPolygons)
                         .enter()
@@ -864,7 +864,7 @@ export class HandlesMain implements IDOMDrawable<SVGGElement> {
                     //     .classed("concentric-submode-ring", true);
 
                     // Draw each sub-mode button if available
-                    let modeButtons = submodesContainer
+                    submodesContainer
                         .selectAll<SVGGElement, {}>("g")
                         .data(d.modes)
                         .enter()
@@ -1048,7 +1048,7 @@ export class HandlesMain implements IDOMDrawable<SVGGElement> {
     }
 
     public erase(): void {
-
+        this.getElement().remove();
     }
 
     public getContainer(): Element {

@@ -48,7 +48,7 @@ export function getDragBehavior(canvas: SvgCanvas) {
 
 export function appyDragBehavior(canvas: SvgCanvas,
     items: SvgItem[],
-    callbacks?: IOperationCallbacks<ITranslationMatrix>) 
+    callbacks?: IOperationCallbacks<ITranslationMatrix>)
 {
     if (!canvas.handles) {
         return;
@@ -344,7 +344,7 @@ export class SvgHandles implements ISvgHandles, IDrawable {
             this.htmlHandlesContainer);
         
         // FIXME: Change this back to false
-        ActivatableServiceSingleton.register(this.htmlHandlesContainer, true);
+        ActivatableServiceSingleton.register(this.htmlHandlesContainer, false);
 
         // Create the highlight rect
         this.hightlightTransforms = new SvgTransformString([

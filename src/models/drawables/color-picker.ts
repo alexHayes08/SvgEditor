@@ -42,43 +42,6 @@ interface ColorMode {
     colorType: ColorRefType;
 }
 
-interface ColorRef {
-    type: ColorRefType;
-}
-
-const COLOR_MODES: ColorMode[] = [
-    {
-        name: "RGB",
-        colorFormat: ColorPickerMode.RGB,
-        colorType: ColorRefType.NONE
-    },
-    {
-        name: "HSL",
-        colorFormat: ColorPickerMode.HSL,
-        colorType: ColorRefType.NONE
-    },
-    {
-        name: "CYMK",
-        colorFormat: ColorPickerMode.CMYK,
-        colorType: ColorRefType.NONE
-    },
-    {
-        name: "Wheel",
-        colorFormat: ColorPickerMode.WHEEL,
-        colorType: ColorRefType.NONE
-    },
-    {
-        name: "CMS",
-        colorFormat: ColorPickerMode.CMS,
-        colorType: ColorRefType.NONE
-    },
-    {
-        name: "Unset",
-        colorFormat: ColorPickerMode.UNSET,
-        colorType: ColorRefType.NONE
-    }
-];
-
 export class ColorPicker implements IDOMDrawable<HTMLElement> {
     //#region Fields
 
@@ -112,7 +75,7 @@ export class ColorPicker implements IDOMDrawable<HTMLElement> {
         let self = this;
 
         this._color = d3.rgb("rgb(127,127,127)");
-        this.oldColor = d3.rgb("rgb(127,127,127)");
+        this.oldColor = d3.rgb("black");
         this.container = container;
         this.emitter = d3.dispatch("change");
 

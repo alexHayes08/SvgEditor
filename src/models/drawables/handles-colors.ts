@@ -4,7 +4,7 @@ import * as d3 from 'd3';
 import { CardinalDirections, toDegrees } from '../../helpers/math-helpers';
 import { NS } from '../../helpers/namespaces-helper';
 import { ITransformable } from '../../models/itransformable';
-import { SvgGeometryServiceSingleton, TransformType } from '../../services/svg-geometry-service';
+import { SvgGeometryServiceSingleton, TransformType, ICoords2D } from '../../services/svg-geometry-service';
 import { SvgTransformString } from '../svg-transform-string';
 import { ColorControlRgb } from './../drawables/color-control-rgb';
 import { LinearGradient } from './../element-wrappers/linear-gradient';
@@ -15,6 +15,7 @@ import { SvgCanvas } from './../svg-canvas-model';
 import { ColorMap, isColorMap, SvgColors, SvgItem } from './../svg-item-model';
 import { createSvgEl } from '../../helpers/svg-helpers';
 import { ColorPicker } from './color-picker';
+import { ActivatableServiceSingleton } from '../../services/activatable-service';
 
 const uniqid = require("uniqid");
 
@@ -107,7 +108,10 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
         this.colorPickerContainer.setAttribute("data-name", Names.Handles
             .SubElements.ColorsHelperContainer
             .SubElements.ColorPickerContainer.DATA_NAME);
+        this.colorPickerContainer.style.transform =
+            this.colorPickerTransform.toTransformString();
         this.colorPicker = new ColorPicker(this.colorPickerContainer);
+        ActivatableServiceSingleton.register(this.colorPickerContainer);
 
         // Create element
         this.element = createSvgEl<SVGGElement>("g");
@@ -142,56 +146,48 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
 
     //#region Functions
 
-    // private displayColorPicker(coords: ICoords2D): void {
-
-    //     // Verify the color picker el isn't null
-    //     if (this.elementColorPicker == undefined
-    //         || this.attributeColorPicker == undefined) 
-    //     {
-    //         return;
-    //     }
-
-    //     // if (this.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
+    private displayColorPicker(coords: ICoords2D): void {
+        if (this.mode == HandlesColorMode.UNIQUE_COLORS_ONLY) {
+            this.colorPickerTransform.setTranslate(coords);
+            this.colorPickerContainer.style.transform =
+                this.colorPickerTransform.toTransformString();
             
-    //     //     // Activate element
-    //     //     this.attributeColorPicker
-    //     //         .each(function(d) {
-    //     //             ActivatableServiceSingleton.activate(this);
-    //     //         });
-    //     // } else {
+            // Activate element
+            ActivatableServiceSingleton.activate(this.colorPickerContainer);
+            ActivatableServiceSingleton.activate(this.htmlContainer);
+            // this.attributeColorPicker
+            //     .each(function(d) {
+            //         ActivatableServiceSingleton.activate(this);
+            //     });
+        } else {
 
-    //     //     // Activate element
-    //     //     this.elementColorPicker
-    //     //         .each(function(d) {
-    //     //             ActivatableServiceSingleton.activate(this);
-    //     //         });
-    //     // }
+            // Activate element
+            // this.elementColorPicker
+            //     .each(function(d) {
+            //         ActivatableServiceSingleton.activate(this);
+            //     });
+        }
 
-    //     console.log("Displaying color-picker TODO.");
-    // }
+        console.log("Displaying color-picker TODO.");
+    }
 
-    // private hideColorPicker(): void {
+    private hideColorPicker(): void {
 
-    //     // Verify the color picker el isn't null
-    //     if (this.elementColorPicker == undefined
-    //         || this.attributeColorPicker == undefined) 
-    //     {
-    //         return;
-    //     }
+        // Verify the color picker el isn't null
 
-    //     // Deactivate element
-    //     // this.attributeColorPicker
-    //     //     .each(function(d) {
-    //     //         ActivatableServiceSingleton.deactivate(this);
-    //     //     });
+        // Deactivate element
+        // this.attributeColorPicker
+        //     .each(function(d) {
+        //         ActivatableServiceSingleton.deactivate(this);
+        //     });
 
-    //     // this.elementColorPicker
-    //     //     .each(function(d) {
-    //     //         ActivatableServiceSingleton.deactivate(this);
-    //     //     });
+        // this.elementColorPicker
+        //     .each(function(d) {
+        //         ActivatableServiceSingleton.deactivate(this);
+        //     });
 
-    //     console.log("Hiding color-picker TODO.");
-    // }
+        console.log("Hiding color-picker TODO.");
+    }
 
     private calcAngle(): number {
         let distanceBetweenBtnCenters = 50;
@@ -552,7 +548,7 @@ export class HandlesColorsOverlay implements IDOMDrawable<SVGGElement> {
                         SvgGeometryServiceSingleton.getCenter(this);
                     
                     // Display color picker
-                    // self.displayColorPicker(center);
+                    self.displayColorPicker(center);
                 } else {
                     let center =
                         SvgGeometryServiceSingleton.getCenter(this);

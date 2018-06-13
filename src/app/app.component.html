@@ -1,8 +1,10 @@
 <div style="text-align:center">
   <h1>{{ title }}</h1>
-  <svg>
+  <svg viewBox="0 0 500 500" width="500" height="500" class="svg-canvas" overflow="auto">
     <defs>
-      <clipPath class="editableArea"></clipPath>
+      <g class="editor-only">
+        <clipPath class="editableArea"></clipPath>
+      </g>
     </defs>
     <use></use>
     <g class="under-editor"></g>
@@ -11,4 +13,5 @@
     <g class="over-editor"></g>
     <g class="handles"></g>
   </svg>
+  <handles></handles>
 </div>

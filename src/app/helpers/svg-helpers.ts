@@ -1,144 +1,145 @@
 import * as d3 from 'd3';
 
-import { normalizeAngle, toDegrees, toRadians } from '../helpers/math-helpers';
-import { NS } from '../helpers/namespaces-helper';
+import { NS } from 'src/app/helpers/namespace-helpers';
+import { Coords2D } from 'src/app/models/geometry';
+
+import { toDegrees, toRadians } from '../helpers/math-helpers';
 import { getAllGroups, getAllGroupsV2 } from '../helpers/regex-helper';
-import { ICoords2D } from '../services/svg-geometry-service';
 
 //#region Element names
 /**
  * The tagNames of ALL svg elements, including the deprecated ones.
  */
 export const SVGElementTagNames = [
-    "a", 
-    "altGlyph", 
-    "altGlyphDef", 
-    "altGlyphItem", 
-    "animate", 
-    "animateColor", 
-    "animateMotion", 
-    "animateTransform", 
-    "circle", 
-    "clipPath", 
-    "color-profile", 
-    "cursor", 
-    "defs", 
-    "desc", 
-    "discard", 
-    "ellipse", 
-    "feBlend", 
-    "feColorMatrix", 
-    "feComponentTransfer", 
-    "feComposite", 
-    "feConvolveMatrix", 
-    "feDiffuseLighting", 
-    "feDisplacementMap", 
-    "feDistantLight", 
-    "feDropShadow", 
-    "feFlood", 
-    "feFuncA", 
-    "feFuncB", 
-    "feFuncG", 
-    "feFuncR", 
-    "feGaussianBlur", 
-    "feImage", "feMerge", 
-    "feMergeNode", 
-    "feMorphology", 
-    "feOffset", 
-    "fePointLight", 
-    "feSpecularLighting", 
-    "feSpotLight", 
-    "feTile", 
-    "feTurbulence", 
-    "filter", 
-    "font", 
-    "font-face", 
-    "font-face-format", 
-    "font-face-name", 
-    "font-face-src", 
-    "font-face-uri", 
-    "foreignObject", 
-    "g", 
-    "glyph", 
-    "glyphRef", 
-    "hatch", 
-    "hatchpath", 
-    "hkern", 
-    "image", 
-    "line", 
-    "linearGradient", 
-    "marker", 
-    "mask", 
-    "mesh", 
-    "meshgradient", 
-    "meshpatch", 
-    "meshrow", 
-    "metadata", 
-    "missing-glyph", 
-    "mpath", 
-    "path", 
-    "pattern", 
-    "polygon", 
-    "polyline", 
-    "radialGradient", 
-    "rect", 
-    "script", 
-    "set", 
-    "solidcolor", 
-    "stop", 
-    "style", 
-    "svg", 
-    "switch", 
-    "symbol", 
-    "text", 
-    "textPath", 
-    "title", 
-    "tref", 
-    "tspan", 
-    "unknown", 
-    "use", 
-    "view", 
-    "vkern"
+  'a',
+  'altGlyph',
+  'altGlyphDef',
+  'altGlyphItem',
+  'animate',
+  'animateColor',
+  'animateMotion',
+  'animateTransform',
+  'circle',
+  'clipPath',
+  'color-profile',
+  'cursor',
+  'defs',
+  'desc',
+  'discard',
+  'ellipse',
+  'feBlend',
+  'feColorMatrix',
+  'feComponentTransfer',
+  'feComposite',
+  'feConvolveMatrix',
+  'feDiffuseLighting',
+  'feDisplacementMap',
+  'feDistantLight',
+  'feDropShadow',
+  'feFlood',
+  'feFuncA',
+  'feFuncB',
+  'feFuncG',
+  'feFuncR',
+  'feGaussianBlur',
+  'feImage',
+  'feMerge',
+  'feMergeNode',
+  'feMorphology',
+  'feOffset',
+  'fePointLight',
+  'feSpecularLighting',
+  'feSpotLight',
+  'feTile',
+  'feTurbulence',
+  'filter',
+  'font',
+  'font-face',
+  'font-face-format',
+  'font-face-name',
+  'font-face-src',
+  'font-face-uri',
+  'foreignObject',
+  'g',
+  'glyph',
+  'glyphRef',
+  'hatch',
+  'hatchpath',
+  'hkern',
+  'image',
+  'line',
+  'linearGradient',
+  'marker',
+  'mask',
+  'mesh',
+  'meshgradient',
+  'meshpatch',
+  'meshrow',
+  'metadata',
+  'missing-glyph',
+  'mpath',
+  'path',
+  'pattern',
+  'polygon',
+  'polyline',
+  'radialGradient',
+  'rect',
+  'script',
+  'set',
+  'solidcolor',
+  'stop',
+  'style',
+  'svg',
+  'switch',
+  'symbol',
+  'text',
+  'textPath',
+  'title',
+  'tref',
+  'tspan',
+  'unknown',
+  'use',
+  'view',
+  'vkern'
 ];
 
 /**
  * https://www.w3.org/TR/SVG2/struct.html#TermGraphicsElement
  */
 export const SvgGraphicElements = [
-    "audio", 
-    "canvas", 
-    "circle", 
-    "ellipse",
-    "foreignObject", 
-    "iframe", 
-    "image", 
-    "line", 
-    "mesh", 
-    "path", 
-    "polygon", 
-    "polyline", 
-    "rect", 
-    "text", 
-    "textPath", 
-    "tspan",
-    "video",
+  'audio',
+  'canvas',
+  'circle',
+  'ellipse',
+  'foreignObject',
+  'iframe',
+  'image',
+  'line',
+  'mesh',
+  'path',
+  'polygon',
+  'polyline',
+  'rect',
+  'text',
+  'textPath',
+  'tspan',
+  'video',
 
-    // ELements not included in the spec, but inherit from SVGGraphicsElement
-    "g"
+  // ELements not included in the spec, but inherit from SVGGraphicsElement
+  'g'
 ];
 
 //#endregion
-export function convertCoordsRelativeTo(coords: ICoords2D,
+export function convertCoordsRelativeTo(coords: Coords2D,
     originallyRelativeTo: Element,
-    makeRelativeTo: Element): ICoords2D 
-{
-    let result: ICoords2D = {
+    makeRelativeTo: Element): Coords2D {
+    const result: Coords2D = {
         x: coords.x,
         y: coords.y
     };
 
-    let originallyBcr = originallyRelativeTo.getBoundingClientRect();
-    let newlyRelativeBcr = makeRelativeTo.getBoundingClientRect();
+    const originallyBcr = originallyRelativeTo.getBoundingClientRect();
+    const newlyRelativeBcr = makeRelativeTo.getBoundingClientRect();
 
     // Make relative to page
     result.x += originallyBcr.left;
@@ -151,15 +152,14 @@ export function convertCoordsRelativeTo(coords: ICoords2D,
     return result;
 }
 
-export function convertSvgCoordsToScreenCoords(coords: ICoords2D, 
-    canvas: SVGSVGElement): ICoords2D 
-{
-    let result: ICoords2D = {
+export function convertSvgCoordsToScreenCoords(coords: Coords2D,
+    canvas: SVGSVGElement): Coords2D {
+    const result: Coords2D = {
         x: coords.x,
         y: coords.y
     };
 
-    let canvasBCR = canvas.getBoundingClientRect();
+    const canvasBCR = canvas.getBoundingClientRect();
     result.x += canvasBCR.left;
     result.y += canvasBCR.right;
 
@@ -174,14 +174,14 @@ export function convertSvgCoordsToScreenCoords(coords: ICoords2D,
  * if not null.
  * @returns - The created element.
  */
-export function createSvgEl<T extends SVGElement>(tagName: string, parent?: Element): T {
-    
+export function createSvgEl<T extends SVGElement>(tagName: string,
+    parent?: Element): T {
     // Check that tagName is a valid name.
-    if (SVGElementTagNames.indexOf(tagName) == -1) {
-        throw new Error("The argument 'tagName' was not a recognized svg element.");
+    if (SVGElementTagNames.indexOf(tagName) === -1) {
+        throw new Error('The argument \'tagName\' was not a recognized svg element.');
     }
 
-    let el = <T>document.createElementNS(NS.SVG, tagName);
+    const el = <T>document.createElementNS(NS.SVG, tagName);
 
     if (parent) {
         parent.appendChild(el);
@@ -193,48 +193,54 @@ export function createSvgEl<T extends SVGElement>(tagName: string, parent?: Elem
 /**
  * Converts the element to an SVGElement. Will throw an error if the element
  * isn't an svg element.
- * @param element 
+ * @param element
  * @throws - Throws an error if the element isn't an SVGElement.
  */
 export function convertToSvgElement(element: Element): SVGGraphicsElement {
     if (isSvgElement(element)) {
         return <SVGGraphicsElement>element;
     } else {
-        throw new Error("Failed to convert the element to an SVGElement");
+        throw new Error('Failed to convert the element to an SVGElement');
     }
 }
 
 /**
  * Converts an Element to an SVGGraphicsElement.
- * @param element 
+ * @param element
  * @throws - Throws an error if the element isn't an SVGGraphicsElement.
  */
 export function convertToSvgGraphicsElement(element: Element): SVGGraphicsElement {
     if (isSvgGraphicsElement(element)) {
         return <SVGGraphicsElement>element;
     } else {
-        throw new Error("Failed to convert the element to an SVGGraphicsElement");
+        throw new Error('Failed to convert the element to an SVGGraphicsElement');
     }
 }
 
 //#region Casting
 export function isSvgElement(element: any): element is SVGGraphicsElement {
-    return element!= undefined && element.ownerSVGElement;
+    return element !== undefined && element.ownerSVGElement;
 }
 
 export function isSvgGraphicsElement(element: any): element is SVGGraphicsElement {
-    return element != undefined 
-        && element.transform != undefined
-        && SvgGraphicElements.indexOf(element.tagName) != -1;
+    return element !== undefined
+        && element.transform !== undefined
+        && SvgGraphicElements.indexOf(element.tagName) !== -1;
+}
+
+export function isSvgDefsElement(element: any): element is SVGDefsElement {
+    return element !== undefined
+        && isSvgElement(element)
+        && element.tagName === 'DEFS';
 }
 
 export function isSvgSvgElement(element: any): element is SVGSVGElement {
-    return element != undefined 
-        && element.x != undefined
-        && element.y != undefined
-        && element.viewBox != undefined
-        && element.getCurrentTime != undefined
-        && element.tagName.toLowerCase() == "svg";
+    return element !== undefined
+        && element.x !== undefined
+        && element.y !== undefined
+        && element.viewBox !== undefined
+        && element.getCurrentTime !== undefined
+        && element.tagName.toLowerCase() === 'svg';
 }
 
 // export function isSvgGeometryElement(element: any): element is SVGGeometryElement {
@@ -246,48 +252,114 @@ export function isSvgSvgElement(element: any): element is SVGSVGElement {
 //         && element.getPointAtLength;
 // }
 export function isSvgPathElement(element: any): element is SVGPathElement {
-    return element != undefined
+    return element !== undefined
         && element.pathLength
         && element.getTotalLength
         && element.getPointAtLength
-        && element.tagName.toLowerCase() == "path";
+        && element.tagName.toLowerCase() === 'path';
 }
 
 //#endregion
 export function getAllSubElementWhichInheritColors(parentElement: SVGGraphicsElement) {
 
     // Get all child nodes
-    let sub_elements: SVGGraphicsElement[] = [];
+    const sub_elements: SVGGraphicsElement[] = [];
 
-    // First check if the parent element has a fill/stroke
-    for (let i = 0; i < parentElement.childElementCount; i++) {
-        let element = sub_elements[i];
+    if (parentElement.tagName === 'g') {
+
+        // First check if the parent element has a fill/stroke
+        for (let i = 0; i < parentElement.childElementCount; i++) {
+            const element = sub_elements[i];
+
+            const fill = element.getAttribute('fill');
+            const stroke = element.getAttribute('stroke');
+
+            if (fill === undefined
+                || fill === 'inherit'
+                || stroke === undefined
+                || stroke === 'inherit') {
+                sub_elements.push(element);
+            }
+        }
     }
 
     return sub_elements;
 }
 
+function parents(element: Element, selector: string): Element[] {
+    const allMatches = Array.from(document.querySelectorAll(selector));
+    const matches: Element[] = [];
+    for (let currentEl = element.parentElement;
+        currentEl !== undefined;
+        currentEl = currentEl.parentElement) {
+        if (allMatches.find(el => el === currentEl)) {
+            matches.push(currentEl);
+        }
+    }
+
+    return matches;
+}
+
+function closest(element: Element, selector: string): Element {
+    const allMatches = Array.from(document.querySelectorAll(selector));
+    let match: Element;
+    for (let currentEl = element.parentElement;
+        currentEl !== undefined;
+        currentEl = currentEl.parentElement) {
+        if (allMatches.find(el => el === currentEl)) {
+            match = currentEl;
+            break;
+        }
+    }
+
+    if (match === undefined) {
+        throw new Error();
+    }
+
+    return match;
+}
+
+function farthest(element: Element, selector: string): Element {
+    const allMatches = Array.from(document.querySelectorAll(selector));
+    let match: Element;
+    for (let currentEl = element.parentElement;
+        currentEl !== undefined;
+        currentEl = currentEl.parentElement) {
+        if (allMatches.find(el => el === currentEl)) {
+            match = currentEl;
+            break;
+        }
+    }
+
+    if (match === undefined) {
+        throw new Error();
+    }
+
+    return match;
+}
+
 /**
  * Will attempt to locate the element specified in the id.
- * @param element 
+ * @param element
  * @param attr - Will check both the attr and xlink:attr.
  */
-export function getElementAttrPointsTo(element: JQuery<HTMLElement>, attr: string = "href"): JQuery<HTMLElement>|null {
-    let result: JQuery<HTMLElement>|null = null;
+export function getElementAttrPointsTo(element: Element,
+    attr: string = 'href'): Element|undefined {
+    let result: Element|undefined;
 
     // Checks for a url() in the attribute
-    let regex = /url\((#.*)\)/g;
+    const regex = /url\((#.*)\)/g;
 
     // Need to check href and xlink:href (not all clipart has been updated
     // to use href yet)
-    let matches = regex.exec(element.attr(attr) 
-        || element.attr(`xlink:${attr}`) 
-        || "");
+    const matches = regex.exec(element.getAttribute(attr)
+        || element.getAttribute(`xlink:${attr}`)
+        || '');
 
     if (matches != null && matches.length >= 2) {
-        let otherId = matches[1];
-        let parentSvg = element.closest("svg").first();
-        result = parentSvg.find(otherId);
+        const otherId = matches[1];
+        const parentSvg = closest(element, 'svg');
+        result = parentSvg.querySelector(`#${otherId}`);
     }
 
     return result;
@@ -298,161 +370,19 @@ export function getElementAttrPointsTo(element: JQuery<HTMLElement>, attr: strin
  * @param url - Must be in the format 'url(#...)'.
  */
 export function getElementUrlPointsTo(url: string): Element {
-    
+
     // Checks for a url() in the attribute
-    let regex = /url\((#.*)\)/g;
+    const regex = /url\((#.*)\)/g;
 
-    let matches = getAllGroupsV2(regex, url);
-    let firstMatch = matches[0];
+    const matches = getAllGroupsV2(regex, url);
+    const firstMatch = matches[0];
 
-    let node = d3.select<Element, {}>(firstMatch).node();
-    if (node == undefined) {
+    const node = d3.select<Element, {}>(firstMatch).node();
+    if (node === undefined) {
         throw new Error(`Failed to find element matching selector "${firstMatch}".`);
     }
 
     return node;
-}
-
-export interface ISlice {
-    degrees: number;
-    color: string;
-}
-
-export function updateArcs(radius: number, paths: SVGPathElement[]): void {
-    for (let path of paths) {
-        let data = path.getAttribute("d") || "";
-        let reg = /[\d+\.]+/g;
-        let matches = getAllGroups(reg, data);
-
-        let start_pt_x = Number(matches[0][0] || 0);
-        let start_pt_y = Number(matches[1][0] || 0);
-        let rad_x = Number(matches[2][0] || 0);
-        let rad_y = Number(matches[3][0] || 0);
-        let x_axis_rot = Number(matches[4][0] || 0);
-        let large_arg = Number(matches[5][0] || 0);
-        let sweep_flag = Number(matches[6][0] || 0);
-        let end_pt_x = Number(matches[7][0] || 0);
-        let end_pt_y = Number(matches[8][0] || 0);
-
-        rad_x = radius;
-        rad_y = radius;
-    }
-}
-
-export function updateArcsV2(data: IDrawArcConfig, paths: SVGPathElement[]): void {
-    let { radius, width = 4, startAngle = 0, slices } = data;
-    
-    let currentPath: SVGPathElement|null = null;
-    for (let slice of slices) {
-
-    }
-}
-
-export interface ISliceV2 {
-    radius: number;
-    endAngle: number;
-    startAngle: number;
-    width?: number;
-    color: string;
-}
-
-export interface ID3ArcConfig {
-    outerRadius: number;
-    innerRadius?: number;
-    startAngle?: number;
-    endAngle: number;
-}
-
-export interface IDrawArcConfig {
-    radius: number;
-    width?: number;
-    startAngle?: number;
-    slices: ISlice[];
-}
-
-/**
- * Creates a bunch of arcs to form a circle.
- * @param center 
- * @param radius 
- * @param slices - Must have a length greater than one.
- * @param width 
- * @param startAngle 
- */
-export function drawCubicBezierArc(data: IDrawArcConfig): SVGPathElement[]
-{
-    let { radius, width = 4, startAngle = 0, slices } = data;
-
-    if (slices.length <= 1) {
-        throw new Error("Must have at least two slices.");
-    }
-
-    let circlePaths: SVGPathElement[] = [];
-
-    // Current position
-    let curPos = {
-        x: 0,
-        y: 0
-    };
-
-    // Normalize the starting angle
-    let currentAngle = normalizeAngle(startAngle);
-
-    // Determine the starting point
-    curPos.x = getXCircleCoord(currentAngle, radius);
-    curPos.y = getYCircleCoord(currentAngle, radius);
-
-    // Starting point
-    let startPt = {
-        x: curPos.x,
-        y: curPos.y
-    };
-
-    for (let slice of slices) {
-        let pathStr = `M${curPos.x.toFixed(3)},${curPos.y.toFixed(3)}`;
-        // pathStr += ` A ${radius} ${radius} 0 0 0 ${curPos.x} ${curPos.y}`;
-        // Update the angle
-        currentAngle += normalizeAngle(slice.degrees);
-
-        // Get the x & y coords
-        curPos.x = getXCircleCoord(currentAngle, radius);
-        curPos.y = getYCircleCoord(currentAngle, radius);
-
-        // A rx ry x-axis-rotation large-arc-flag sweep-flag x y
-        let largeFlag = getLargeFlagArc(slice.degrees);
-        pathStr += ` A ${radius} ${radius} 0 ${largeFlag} 0 ${curPos.x.toFixed(3)} ${curPos.y.toFixed(3)}`;
-
-        let path = <SVGPathElement>document.createElementNS(NS.SVG, "path");
-        $(path).attr({
-            d: pathStr,
-            fill: "none",
-            stroke: slice.color,
-            "stroke-width": width
-        });
-
-        circlePaths.push(path);
-    }
-
-    // Wrap up circle, use black as color
-    let remainingDegrees = 360;
-    slices.map(value => {
-        return remainingDegrees -= value.degrees;
-    });
-    if (remainingDegrees > 0) {
-        let pathStr = `M${curPos.x.toFixed(3)},${curPos.y.toFixed(3)}`;
-        let largeFlag = getLargeFlagArc(remainingDegrees);
-        pathStr += ` A ${radius} ${radius} 0 ${largeFlag} 0 ${startPt.x.toFixed(3)} ${startPt.y.toFixed(3)}`;
-
-       let path = <SVGPathElement>document.createElementNS(NS.SVG, "path");
-       $(path).attr({
-           d: pathStr,
-           stroke: "black",
-           fill: "none",
-           "stroke-width": width
-       });
-       circlePaths.push(path);
-    }
-
-    return circlePaths;
 }
 
 function getLargeFlagArc(angle: number): number {
@@ -460,7 +390,7 @@ function getLargeFlagArc(angle: number): number {
 }
 
 function getYCircleCoord(currentAngle: number, radius: number): number {
-    let y = Math.sin(toRadians(currentAngle)) * radius;
+    const y = Math.sin(toRadians(currentAngle)) * radius;
 
     // Account for offsets
     // if (currentAngle <= 180) {
@@ -472,7 +402,7 @@ function getYCircleCoord(currentAngle: number, radius: number): number {
 }
 
 function getXCircleCoord(currentAngle: number, radius: number): number {
-    let x = Math.cos(toRadians(currentAngle)) * radius;
+    const x = Math.cos(toRadians(currentAngle)) * radius;
 
     // if (currentAngle <= 90) {
     //     x += radius;
@@ -486,86 +416,86 @@ function getXCircleCoord(currentAngle: number, radius: number): number {
 
 /**
  * Cross browser polyfill for 'ownerSvgDocument' which isn't avaiable on IE9.
- * @param element 
+ * @param element
  */
 export function getFurthestSvgOwner(element: SVGGraphicsElement): SVGSVGElement {
-    let parents: Element[] = [];
+    const parentEls: Element[] = [];
 
     // Check if the current element is a svg
     if (isSvgSvgElement(element)) {
-        parents.push(element);
+        parentEls.push(element);
     }
 
     let currentEl = element.parentElement;
     while (currentEl != null) {
-        if (currentEl.tagName.toLowerCase() == "svg") {
-            parents.push(currentEl);
+        if (currentEl.tagName.toLowerCase() === 'svg') {
+            parentEls.push(currentEl);
         }
 
         currentEl = currentEl.parentElement;
     }
 
-    let lastSvgParent = parents.pop();
+    const lastSvgParent = parentEls.pop();
 
     if (isSvgSvgElement(lastSvgParent)) {
         return lastSvgParent;
     } else {
-        throw new Error("Failed to cast the last svg parent element to the SVGSVGElement interface.")
+        throw new Error('Failed to cast the last svg parent element to the SVGSVGElement interface.');
     }
 }
 
-export interface IPointAlongAngleFromPointData {
-    pt_a: ICoords2D;
-    pt_b: ICoords2D;
+export interface PointAlongAngleFromPointData {
+    pt_a: Coords2D;
+    pt_b: Coords2D;
     radius: number;
 }
 
-export interface IPointAlongAngleFromAngleData {
-    pt_a: ICoords2D;
+export interface PointAlongAngleFromAngleData {
+    pt_a: Coords2D;
     angle: number;
     radius: number;
 }
 
-export function isIPointAlongAngleFromPointData(data: any): data is IPointAlongAngleFromPointData {
-    return (data != undefined
-        && data.pt_a != undefined
-        && data.pt_b != undefined
-        && data.radius != undefined);
+export function isPointAlongAngleFromPointData(data: any): data is PointAlongAngleFromPointData {
+    return (data !== undefined
+        && data.pt_a !== undefined
+        && data.pt_b !== undefined
+        && data.radius !== undefined);
 }
 
-export function isIPointAlongAngleFromAngleData(data: any): data is IPointAlongAngleFromAngleData {
-    return (data != undefined
-        && data.pt_a != undefined
-        && data.angle != undefined
-        && data.radius != undefined);
+export function isPointAlongAngleFromAngleData(data: any): data is PointAlongAngleFromAngleData {
+    return (data !== undefined
+        && data.pt_a !== undefined
+        && data.angle !== undefined
+        && data.radius !== undefined);
 }
 
 /**
  * Returns a new point along a line between two points that is a 'hyp' amount
  * away from pt_a. The center of the circle is assumed to be pt_a.
  */
-export function getNewPointAlongAngle(data: IPointAlongAngleFromAngleData|IPointAlongAngleFromPointData): ICoords2D {
-    let result: ICoords2D = {
+export function getNewPointAlongAngle(data: PointAlongAngleFromAngleData|PointAlongAngleFromPointData): Coords2D {
+    const result: Coords2D = {
         x: 0,
         y: 0
     };
-    
-    if (isIPointAlongAngleFromPointData(data)) {
-        let pointData = data as IPointAlongAngleFromPointData;
-        let { pt_a, pt_b, radius } = pointData;
-        
-        let angle = Math.atan2((pt_b.y - pt_a.y), (pt_b.x - pt_a.x));
+
+    if (isPointAlongAngleFromPointData(data)) {
+        const pointData = data as PointAlongAngleFromPointData;
+        const { pt_a, pt_b, radius } = pointData;
+
+        const angle = Math.atan2((pt_b.y - pt_a.y), (pt_b.x - pt_a.x));
         result.x = pt_a.x + (Math.cos(angle) * radius);
         result.y = pt_a.y + (Math.sin(angle) * radius);
 
-    } else if (isIPointAlongAngleFromAngleData(data)) {
-        let pointData = data as IPointAlongAngleFromAngleData;
-        let { pt_a, angle, radius } = pointData;
+    } else if (isPointAlongAngleFromAngleData(data)) {
+        const pointData = data as PointAlongAngleFromAngleData;
+        const { pt_a, angle, radius } = pointData;
 
         result.x = pt_a.x + (Math.cos(angle) * radius);
         result.y = pt_a.y + (Math.sin(angle) * radius);
     } else {
-        throw new Error("Could not determine type of 'data'.");
+        throw new Error('Could not determine type of \'data\'.');
     }
 
     return result;
@@ -573,37 +503,37 @@ export function getNewPointAlongAngle(data: IPointAlongAngleFromAngleData|IPoint
 
 /**
  * Returns a path string.
- * @param center 
- * @param radius 
+ * @param center
+ * @param radius
  * @param startAngle - Uses degrees
  * @param endAngle - Uses degrees
  */
 export function arcPath(radius: number, startAngle: number, endAngle: number): string {
     startAngle = toRadians(startAngle);
     endAngle = toRadians(endAngle);
-    
-    let arc = d3.arc()({
+
+    const arc = d3.arc()({
         innerRadius: 0,
         outerRadius: radius,
         startAngle: startAngle,
         endAngle: endAngle
-    }) || "";
+    }) || '';
 
-    return arc.replace(/L.*/, "");
+    return arc.replace(/L.*/, '');
 }
 
 /**
  * Returns the angle in degrees between two points.
- * @param pt_a 
- * @param pt_b 
+ * @param pt_a
+ * @param pt_b
  */
-export function getAngle(pt_a: ICoords2D, pt_b: ICoords2D): number {
-    let zeroed_pt_b = {
+export function getAngle(pt_a: Coords2D, pt_b: Coords2D): number {
+    const zeroed_pt_b = {
         x: pt_b.x - pt_a.x,
         y: pt_b.y - pt_a.y
-    }
+    };
 
-    let angle = Math.atan2(zeroed_pt_b.y, zeroed_pt_b.x);
+    const angle = Math.atan2(zeroed_pt_b.y, zeroed_pt_b.x);
 
     return toDegrees(angle);
 }

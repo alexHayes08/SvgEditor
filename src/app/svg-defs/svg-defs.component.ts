@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NS } from '../../helpers/namespace-helpers';
+import { UniqueIDService } from 'src/app/services/unique-id.service';
 
 @Component({
   selector: 'app-svg-defs',
@@ -11,12 +11,15 @@ export class SvgDefsComponent implements OnInit {
 
   protected readonly defsElement: SVGDefsElement;
 
+  public id: string;
+
   //#endregion
 
   //#region constructor
 
-  constructor(defs: SVGDefsElement) {
+  constructor(defs: SVGDefsElement, private uniqueIdService: UniqueIDService) {
     this.defsElement = defs;
+    this.id = uniqueIdService.generateUUID();
   }
 
   //#endregion

@@ -1,4 +1,5 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
+import { isSvgDefsElement } from 'src/app/helpers/svg-helpers';
 import { SvgDefsComponent } from './svg-defs/svg-defs.component';
 
 @Component({
@@ -15,10 +16,10 @@ export class AppComponent {
   @ViewChild('.editableArea')
   private _editableAreaEl: ElementRef<SVGGElement>;
 
-  @ViewChild(".handles")
+  @ViewChild('.handles')
   private _handlesEl: ElementRef<SVGGElement>;
-  
-  @ViewChild("defs")
+
+  @ViewChild('defs')
   private _defsEl: ElementRef;
 
   //#endregion
@@ -26,7 +27,11 @@ export class AppComponent {
   //#region Constructor
 
   constructor() {
-    this.defs = new SvgDefsComponent(this._defsEl);
+
+    // Verify the element is a defs element.
+    if (isSvgDefsElement(this._defsEl)) {
+      this.defs = new SvgDefsComponent(this._defsEl);
+    }
   }
 
   //#endregion

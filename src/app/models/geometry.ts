@@ -2,15 +2,15 @@ export interface BBox {
     x: number;
     y: number;
     width: number;
-    height: number
+    height: number;
 }
 
-export interface ICoords2D {
+export interface Coords2D {
     x: number;
     y: number;
 }
 
-export interface ICoords3D {
+export interface Coords3D {
     x: number;
     y: number;
     z: number;

@@ -1,3 +1,11 @@
+export const numberRegex = /([\d\.\-]+)/g;
+export const translateRegex = /translate\(\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*\)/g;
+export const rotateRegex = /rotate\(\s*([\-\d\.]+)\s*,?([\-\d\.]+)?,?([\-\d\.]+)?\)/g;
+export const scaleRegex = /scale\(\s*([\-\d\.]+)\s*,([\-\d\.]+)\)/g;
+export const matrixRegex = /matrix\(\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*,\s*([\-\d\.]+)\s*\)/g;
+export const skewXRegex = /skewX\(\s*([\-\d\.]+)\s*\)/g;
+export const skewYRegex = /skewY\(\s*([\-\d\.]+)\s*\)/g;
+
 /**
  * Used to 'reset' a RegExp object before using it. Pretty much just sets the
  * 'lastIndex' property to zero.

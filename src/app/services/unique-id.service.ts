@@ -1,11 +1,17 @@
 import { Injectable } from '@angular/core';
-import * as uniqid from 'uniqid';
+
+export interface UniqueIDData {
+  prefix?: string;
+  length?: number;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class UniqueIDService {
   //#region Fields
+
+  private last?: number;
 
   //#endregion
 
@@ -21,18 +27,35 @@ export class UniqueIDService {
 
   //#region Functions
 
-  public generateUUID(): string {
-    let id = uniqid.time();
+  private now(): number {
+    var time = Date.now();
+    let _last = this.last || time;
+    return this.last = time > _last ? time : _last + 1;
+  }
 
-    // This check should be uncessary but it's technically possible for an id
-    // to already exist.
-    if (document !== undefined) {
-      while (document.getElementById(id) !== undefined) {
-        id = uniqid.time();
-      }
+  /*
+   * Generates a unique id.
+   */
+  public generateUUID(data: UniqueIDData = {}): string {
+    
+    // Extract config from arguments and set to default if not set.
+    const { prefix = '', length = 6 } = data;
+
+    if (prefix.length > length) {
+      throw new Error('The prefix cannot be greater than the length.');
     }
 
-    return id;
+    let id = prefix + this.now().toString(36);
+
+    // do {
+    //   id = prefix + this.now();
+    // } while (!this.isIdAlreadyInUse(id));
+
+    return prefix + id;
+  }
+
+  public isIdAlreadyInUse(id: string) {
+    return document.getElementById(id) === undefined;
   }
 
   //#endregion

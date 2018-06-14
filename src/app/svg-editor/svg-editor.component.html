@@ -1,0 +1,10 @@
+<svg:g [attr.id]="_underEditorID" class="under-editor"></svg:g>
+<svg:g [attr.id]="_editorID" class="editor" [attr.clipPath]="_maskUrl">
+  <svg:g *ngFor="let layer of layers">
+    <svg:g *ngFor="let item of layer.items">
+      <svg:rect width="50" height="50" [attr.transform]="item.transformString"></svg:rect>
+    </svg:g>
+  </svg:g>
+</svg:g>
+<svg:use [attr.id]="_editorAreaMaskID" class="editor-mask" [attr.href]="_maskUrl"></svg:use>
+<svg:g [attr.id]="_overEditorID" class="over-editor"></svg:g>

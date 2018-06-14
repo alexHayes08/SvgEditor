@@ -5,6 +5,14 @@ export enum CardinalDirections {
     WEST
 }
 
+/**
+ * Retreives the hexadecimal version of a number.
+ * @param value 
+ */
+export function toHex(value: number): string {
+    return value.toString(16);
+}
+
 export function roundToSigFig(value: number, sigFig: number): number {
     return Number(value.toPrecision(sigFig));
 }

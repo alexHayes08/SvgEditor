@@ -1,0 +1,64 @@
+<div class="row">
+  <label>
+    Change Mode
+    <select id="changeMode">
+      <option value="1" selected>Select</option>
+      <option value="2">Zoom</option>
+      <option value="3">Draw</option>
+    </select>
+  </label>
+  <label>
+    Change Current Mask
+    <select id="changeCurrentEditorMask">
+      <option selected value="-1">No mask</option>
+    </select>
+  </label>
+</div>
+<div class="row">
+  <label for="addSquare">
+    <button id="addSquare" (click)="addSquare()" data-tooltip="Adds a square to the editor">
+      Square+
+    </button>
+  </label>
+  <label for="addCircle">
+    <button id="addCircle" data-tooltip="Adds a circle to the editor">
+      Circle+
+    </button>
+  </label>
+  <label for="addTriangle">
+    <button id="addTriangle" data-tooltip="Adds a triangle to the editor">
+      Triangle+
+  </button>
+  </label>
+  <label for="addPath">
+    <button id="addPath" data-tooltip="Adds a path to the editor">
+      Path+
+    </button>
+  </label>
+  <label for="addMultiShapes">
+    <button id="addMultiShapes" data-tooltip="Adds multiple shapes to the editor">
+      Multi-Shape+
+    </button>
+  </label>
+  <span id="polygon-section">
+    <label for="polygon-number-of-sides" data-tooltip="Number of sides of the polygon.">
+      Number of Sides
+      <input type="number" id="polygon-number-of-sides" name="polygon-number-of-sides" min="3" max="12" step="1" value="3">
+    </label>
+    <button id="addPolygon" data-tooltip="Adds a polygon to the editor.">Polygon+</button>
+  </span>
+</div>
+<div class="row">
+  <label for="undo">
+    <button id="undo" data-tooltip="Undos the action.">Undo</button>
+  </label>
+  <label for="redo">
+    <button id="redo" data-tooltip="Redos the action.">Redo</button>
+  </label>
+  <label for="group">
+    <button id="group">Group</button>
+  </label>
+  <label for="ungroup">
+    <button id="ungroup">Ungroup</button>
+  </label>
+</div>

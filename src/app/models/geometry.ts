@@ -1,3 +1,9 @@
+export interface CircleBBox {
+    cx: number;
+    cy: number;
+    r: number;
+}
+
 export interface BBox {
     x: number;
     y: number;

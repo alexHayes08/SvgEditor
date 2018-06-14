@@ -4,11 +4,212 @@
   <meta charset="utf-8">
   <title>SvgEditor</title>
   <base href="/">
-
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <style>
+    /**
+     * [Layout]
+     */
+    body {
+      display: grid;
+      font-family: sans-serif;
+      margin: 0;
+    }
+    header {
+      align-items: center;
+      background-color: dodgerblue;
+      color: white;
+      display: flex;
+      grid-area: headerArea;
+      text-indent: 40px;
+    }
+    nav {
+      align-items: center;
+      background-color: darkslateblue;
+      box-shadow: 0px 2px 3px 2px rgba(0,0,0,.25);
+      color: white;
+      display: flex;
+      grid-area: navArea;
+      justify-content: center;
+    }
+    main {
+      box-sizing: border-box;
+      grid-area: mainArea;
+      padding: 1em;
+    }
+    footer {
+      align-items: center;
+      background-color: darkgray;
+      display: flex;
+      grid-area: footerArea;
+      justify-content: center;
+      height: 300px;
+    }
+    @media (min-width: 0px) {
+      body {
+        grid-template-areas: 'headerArea headerArea headerArea headerArea'
+          'navArea navArea navArea navArea'
+          'mainArea mainArea mainArea mainArea'
+          'footerArea footerArea footerArea footerArea';
+      }
+      
+      header {
+        height: 100px;
+        justify-content: center;
+        text-indent: 0;
+      }
+      main {
+        min-height: calc(100vh - 100px - 300px - 50px);
+      }
+      nav {
+        height: 50px;
+      }
+    }
+    @media (min-width: 768px) {
+      body {
+        grid-template-areas: 'headerArea headerArea headerArea headerArea'
+          'navArea navArea navArea navArea'
+          'mainArea mainArea mainArea mainArea'
+          'footerArea footerArea footerArea footerArea';
+      }
+      
+      header {
+        height: 100px;
+      }
+      main {
+        min-height: calc(100vh - 100px - 300px - 50px);
+      }
+      nav {
+        height: 50px;
+      }
+    }
+    @media (min-width: 1280px) {
+      body {
+        grid-template-areas: 'headerArea headerArea headerArea headerArea'
+          'navArea navArea navArea navArea'
+          '. mainArea mainArea .'
+          'footerArea footerArea footerArea footerArea';
+      }
+      
+      header {
+        height: 300px;
+      }
+      main {
+        min-height: calc(100vh - 300px - 300px - 50px);
+      }
+      nav {
+        height: 50px;
+      }
+    }
+    @media (min-width: 1440px) {
+      body {
+        grid-template-areas: 'headerArea headerArea headerArea headerArea'
+            'navArea mainArea mainArea .'
+            'footerArea footerArea footerArea footerArea';
+      }
+      main {
+        min-height: calc(100vh - 300px - 300px);
+      }
+        
+      header {
+        box-shadow: 0px 2px 3px 2px rgba(0,0,0,.25);
+        height: 300px;
+      }
+      nav {
+        box-shadow: unset;
+        height: 100%;
+      }
+    }
+    /**
+     * [End Layout]
+     */
+    @keyframes loading-spinner {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    button {
+      margin: 1em 1em;
+    }
+    svg {
+      background-color: white;
+      outline: 1px solid rgba(0,0,0,.25);
+    }
+    svg svg {
+      display: unset;
+    }
+    svg.active {
+      display: block;
+    }
+    .loading {
+      overflow: hidden;
+      position: relative;
+    }
+    .loading::before {
+      background-color: rgba(0,0,0,.75);
+      top: 0;
+      left: 0;
+      bottom: 0;
+    }
+    .loading::before,
+    .loading::after {
+      content: "";
+      position: absolute;
+      right: 100%;
+      transition: all .2s;
+    }
+    .loading.loading-on::before {
+      background-color: rgba(0,0,0,.75);
+      right: 0;
+    }
+    .loading.loading-on::after {
+      background-image: url("assets/Aperture_Science.png");
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+      margin: auto;
+      position: absolute;
+      bottom: 25px;
+      right: 25px;
+      height: 250px;
+      width: 250px;
+      /* transform: rotate(0deg); */
+      animation: loading-spinner 4s linear infinite;
+    }
+    .row {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+    }
+    #editor {
+      background-color: #efefef;
+      box-shadow: 2px 2px 4px rgba(0,0,0,.25);
+      min-height: 500px;
+    }
+    #editorCavasContainer {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      padding: 8px;
+    }
+  </style>
 </head>
 <body>
-  <app-root></app-root>
+  <header>
+    <h1>Demo Svg Editor</h1>
+  </header>
+  <nav>
+    <div>Nav</div>
+  </nav>
+  <main>
+    <div id="editor" class="loading loading-on">
+      <div id="editorCavasContainer">
+        <aperture-svg-editor><h2>Hello world</h2></aperture-svg-editor>
+      </div>
+    </div>
+  </main>
 </body>
 </html>

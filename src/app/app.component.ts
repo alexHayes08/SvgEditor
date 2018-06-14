@@ -1,37 +1,31 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
-import { isSvgDefsElement } from 'src/app/helpers/svg-helpers';
-import { SvgDefsComponent } from './svg-defs/svg-defs.component';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { UniqueIDService } from 'src/app/services/unique-id.service';
+import { SvgEditorComponent } from 'src/app/svg-editor/svg-editor.component';
 
 @Component({
-  selector: 'app-root',
+  selector: 'aperture-svg-editor',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   //#region Fields
 
-  public title = 'SvgEditor';
-  public defs: SvgDefsComponent;
+  @ViewChild(SvgEditorComponent) editor: SvgEditorComponent;
 
-  @ViewChild('.editableArea')
-  private _editableAreaEl: ElementRef<SVGGElement>;
+  private readonly _defsID: string;
+  private readonly _editorID: string;
+  private readonly _handlesID: string;
 
-  @ViewChild('.handles')
-  private _handlesEl: ElementRef<SVGGElement>;
-
-  @ViewChild('defs')
-  private _defsEl: ElementRef;
+  public title = 'Aperture-Svg-Editor';
 
   //#endregion
 
   //#region Constructor
 
-  constructor() {
-
-    // Verify the element is a defs element.
-    if (isSvgDefsElement(this._defsEl)) {
-      this.defs = new SvgDefsComponent(this._defsEl);
-    }
+  public constructor(private uniqueIDService: UniqueIDService) {
+    this._defsID = uniqueIDService.generateUUID();
+    this._editorID = uniqueIDService.generateUUID();
+    this._handlesID = uniqueIDService.generateUUID();
   }
 
   //#endregion
@@ -41,6 +35,20 @@ export class AppComponent {
   //#endregion
 
   //#region Functions
+
+  public onAddShape(element: SVGElement): void {
+    console.log("App heard event, element is:");
+    console.log(element);
+    this.editor.addItem(element);
+  }
+
+  public ngOnInit(): void {
+    Array.from(document.querySelectorAll(".loading.loading-on"))
+      .map(el => {
+        el.classList.remove("loading-on");
+        el.classList.add("loading-off");
+      });
+  }
 
   //#endregion
 }

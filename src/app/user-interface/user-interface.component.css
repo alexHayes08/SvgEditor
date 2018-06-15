@@ -1,0 +1,32 @@
+.layers {
+    border: 2px solid rgba(0,0,0,.25);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.layers > .layer.selected {
+    border-bottom: 2px solid beige;
+    background: beige;
+    width: 100%;
+}
+
+.layers > .layer::after {
+    content: attr(data-layer-name);
+    display: inline-block;
+}
+
+.layers > .layer.invisible::before {
+    content: "hidden";
+    display: inline-block;
+    margin-right: 1em;
+}
+
+.layers > .layer {
+    border-bottom: 2px solid transparent;
+    transition: .2s;
+}
+
+.layers > .layer:hover {
+    border-bottom: 2px solid blue;
+}

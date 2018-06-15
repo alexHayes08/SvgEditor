@@ -4,20 +4,23 @@ import { TransformType } from 'src/app/models/transformable';
 export class SvgItem {
     //#region Fields
 
-    public transform: SvgTransformString
+    private readonly element: SVGElement;
+
+    public transform: SvgTransformString;
     public displayed: boolean;
 
     //#endregion
 
     //#region Constructor
 
-    public constructor() {
+    public constructor(element: SVGElement) {
         this.displayed = true;
+        this.element = element;
         this.transform = new SvgTransformString([TransformType.MATRIX]);
     }
 
     //#endregion
-    
+
     //#region Properties
 
     public get transformString(): string {
@@ -27,6 +30,10 @@ export class SvgItem {
     //#endregion
 
     //#region Functions
+
+    public getElement(): SVGElement {
+        return this.element;
+    }
 
     //#endregion
 }

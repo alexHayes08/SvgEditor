@@ -1,15 +1,16 @@
-import * as d3 from "d3";
-import { 
-  Component, 
-  EventEmitter, 
-  Input, 
-  Output, 
-  OnInit 
+import * as d3 from 'd3';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  OnInit
 } from '@angular/core';
 import { NS } from 'src/app/helpers/namespace-helpers';
-import { UniqueIDService } from "../services/unique-id.service";
+import { UniqueIDService } from '../services/unique-id.service';
 
 @Component({
+  // tslint:disable-next-line:component-selector
   selector: 'user-interface',
   templateUrl: './user-interface.component.html',
   styleUrls: ['./user-interface.component.css']
@@ -35,15 +36,15 @@ export class UserInterfaceComponent implements OnInit {
   //#region Functions
 
   public addSquare(): void {
-    let square = <SVGElement>document.createElementNS(NS.SVG, 'rect');
+    const square = <SVGElement>document.createElementNS(NS.SVG, 'rect');
     d3.select(square)
-      .attr("id", this.uniqueIDService.generateUUID())
-      .attr("width", 50)
-      .attr("height", 50)
-      .attr("fill", "blue")
-      .attr("stroke", "orange")
-      .attr("stroke-width", 2);
-    
+      .attr('id', this.uniqueIDService.generateUUID())
+      .attr('width', 50)
+      .attr('height', 50)
+      .attr('fill', 'blue')
+      .attr('stroke', 'orange')
+      .attr('stroke-width', 2);
+
     this.addShape.emit(square);
   }
 

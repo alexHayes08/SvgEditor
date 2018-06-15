@@ -63,7 +63,7 @@ export class SvgTransformString implements Transformable {
                         throw new Error();
                 }
             }
-            this.transformString.trimLeft();
+            this.transformString.trim();
         } else {
             this.data = this.parseTransformString(svgTransform);
             this.transformString = svgTransform;

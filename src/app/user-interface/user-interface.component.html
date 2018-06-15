@@ -15,6 +15,25 @@
   </label>
 </div>
 <div class="row">
+  <label>
+      <span>Current Layer</span>
+      <ul class="layers">
+        <li class="create-layer">
+          <input type="text" placeholder="New layer name">
+          <button>Create</button>
+        </li>
+        <li class="layer selected visible" data-layer-name="default"></li>
+        <li class="layer visible" data-layer-name="bg"></li>
+        <li class="layer invisible" data-layer-name="fg"></li>
+      </ul>
+  </label>
+  <label>
+    <span></span>
+    <input type="text" name="newLayerName" placeholder="Layer name">
+    <input type="button" value="Add Layer">
+  </label>
+</div>
+<div class="row">
   <label for="addSquare">
     <button id="addSquare" (click)="addSquare()" data-tooltip="Adds a square to the editor">
       Square+

@@ -1,5 +1,3 @@
-const uniqid = require("uniqid");
-
 function isMathOperation(data: any): data is MathOperation {
     return (data != undefined
         && data.value != undefined

@@ -1,4 +1,4 @@
-import { AutoWired, Singleton } from "typescript-ioc";
+import { Singleton } from 'typescript-ioc';
 
 import * as $ from "jquery";
 

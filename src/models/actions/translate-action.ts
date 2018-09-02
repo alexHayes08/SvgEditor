@@ -4,8 +4,6 @@ import { SvgItem } from '../svg-item-model';
 import { SvgTransformString } from '../svg-transform-string';
 import { ITranslationMatrix } from './../../services/svg-geometry-service';
 
-const uniqid = require("uniqid");
-
 export class TranslateAction implements ISvgAction {
     //#region Fields
 
